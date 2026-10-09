@@ -4,6 +4,8 @@
  * - Dark: khai báo ở [zaui-theme="dark"]; zmp-ui App gắn attribute này lên <body>.
  * - Component KHÔNG dùng hex trực tiếp, chỉ dùng var(--gy-*).
  * - File này được import SAU zmp-ui/zaui.css để override các biến --zaui-*.
+ * - Token thêm (T1): --gy-color-primary-text (chữ màu primary), --gy-color-danger-soft,
+ *   --gy-color-danger-text, --gy-avatar-bg (một màu avatar, giống nhau ở light/dark).
  */
 
 :root {
@@ -24,6 +26,11 @@
   --gy-color-danger: #DC2626;
   --gy-color-busy: #D1D5DB;
   --gy-color-star: #F59E0B;
+  --gy-color-primary-text: #005AE6;
+  --gy-color-danger-soft: #FEE2E2;
+  --gy-color-danger-text: #B91C1C;
+  /* Nền avatar, chữ trắng đạt >= 4.5:1 (đo theo WCAG 2.1). */
+  --gy-avatar-bg: #2563EB;
 
   /* Bo góc */
   --gy-radius-card: 14px;
@@ -77,6 +84,10 @@
   --gy-color-danger: #F87171;
   --gy-color-busy: #3A404A;
   --gy-color-star: #F59E0B;
+  --gy-color-primary-text: #4D94FF;
+  --gy-color-danger-soft: #2D1517;
+  --gy-color-danger-text: #F87171;
+  --gy-avatar-bg: #2563EB;
 
   --gy-shadow-card: none;
 

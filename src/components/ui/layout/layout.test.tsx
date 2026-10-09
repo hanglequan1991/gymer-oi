@@ -2,7 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { Section } from './Section';
 import { KeyValueRow } from './KeyValueRow';
-import { TabBar, GYMER_TABS } from './TabBar';
+import { TabBar } from './TabBar';
+import { GYMER_TABS } from './TabBar/tabs';
 
 describe('Section', () => {
   it('gọi onAction khi bấm link hành động', () => {

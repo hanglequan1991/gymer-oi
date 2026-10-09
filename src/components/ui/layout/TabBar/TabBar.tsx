@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { BottomNavigation, Icon } from 'zmp-ui';
+import { BottomNavigation } from 'zmp-ui';
 import { cx } from '@/utils/cx';
 import './TabBar.css';
 
@@ -11,27 +11,6 @@ export interface TabBarItem {
   /** Icon khi mục đang chọn. Không có thì dùng icon. */
   activeIcon?: ReactNode;
 }
-
-/** Khoá của 4 tab chính của Gymer. */
-export type GymerTabKey = 'overview' | 'schedule' | 'requests' | 'profile';
-
-/** Bốn tab chính: Tổng quan, Lịch và giá, Yêu cầu, Hồ sơ. */
-export const GYMER_TABS: readonly TabBarItem[] = [
-  { key: 'overview', label: 'Tổng quan', icon: <Icon icon="zi-home" /> },
-  {
-    key: 'schedule',
-    label: 'Lịch và giá',
-    icon: <Icon icon="zi-calendar" />,
-    activeIcon: <Icon icon="zi-calendar-solid" />,
-  },
-  { key: 'requests', label: 'Yêu cầu', icon: <Icon icon="zi-inbox" /> },
-  {
-    key: 'profile',
-    label: 'Hồ sơ',
-    icon: <Icon icon="zi-user" />,
-    activeIcon: <Icon icon="zi-user-solid" />,
-  },
-];
 
 /** Props của TabBar. */
 export interface TabBarProps {

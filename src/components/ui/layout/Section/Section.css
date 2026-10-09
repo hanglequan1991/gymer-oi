@@ -35,7 +35,7 @@
   font-family: inherit;
   font-size: var(--gy-font-size-md);
   font-weight: 500;
-  color: var(--gy-color-primary);
+  color: var(--gy-color-primary-text);
   cursor: pointer;
 }
 

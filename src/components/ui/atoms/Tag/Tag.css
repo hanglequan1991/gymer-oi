@@ -1,0 +1,30 @@
+.gy-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gy-space-1);
+  padding: var(--gy-space-1) var(--gy-space-3);
+  border: 1px solid var(--gy-color-border);
+  border-radius: var(--gy-radius-chip);
+  background: var(--gy-color-card);
+  color: var(--gy-color-text);
+  font-family: var(--gy-font-family);
+  font-size: var(--gy-font-size-sm);
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.gy-tag__check {
+  flex-shrink: 0;
+}
+
+.gy-tag--primary {
+  border-color: transparent;
+  background: var(--gy-color-primary-soft);
+  color: var(--gy-color-primary-text);
+}
+
+.gy-tag--ok {
+  border-color: transparent;
+  background: var(--gy-color-ok-soft);
+  color: var(--gy-color-ok-text);
+}

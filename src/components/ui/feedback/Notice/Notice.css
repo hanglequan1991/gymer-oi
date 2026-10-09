@@ -1,0 +1,63 @@
+/*
+ * Nền và màu nhấn theo tông qua biến cục bộ; chữ nội dung luôn dùng --gy-color-text cho đủ tương phản.
+ * Mặc định là warn.
+ */
+.gy-notice {
+  --gy-notice-bg: var(--gy-color-warn-soft);
+  --gy-notice-accent: var(--gy-color-warn);
+
+  display: flex;
+  align-items: flex-start;
+  gap: var(--gy-space-3);
+  padding: var(--gy-space-3) var(--gy-space-4);
+  border-radius: var(--gy-radius-control);
+  background: var(--gy-notice-bg);
+  color: var(--gy-color-text);
+}
+
+.gy-notice--warn {
+  --gy-notice-bg: var(--gy-color-warn-soft);
+  --gy-notice-accent: var(--gy-color-warn);
+}
+
+.gy-notice--info {
+  --gy-notice-bg: var(--gy-color-primary-soft);
+  --gy-notice-accent: var(--gy-color-primary-text);
+}
+
+.gy-notice--danger {
+  --gy-notice-bg: var(--gy-color-danger-soft);
+  --gy-notice-accent: var(--gy-color-danger-text);
+}
+
+.gy-notice--ok {
+  --gy-notice-bg: var(--gy-color-ok-soft);
+  --gy-notice-accent: var(--gy-color-ok-text);
+}
+
+.gy-notice__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--gy-notice-accent);
+  line-height: 0;
+  padding-top: 1px;
+}
+
+.gy-notice__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.gy-notice__title {
+  margin: 0 0 var(--gy-space-1);
+  font-size: var(--gy-font-size-md);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--gy-notice-accent);
+}
+
+.gy-notice__body {
+  font-size: var(--gy-font-size-sm);
+  line-height: 1.5;
+  color: var(--gy-color-text);
+}

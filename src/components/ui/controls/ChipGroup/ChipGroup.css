@@ -51,6 +51,6 @@
 .gy-chip--selected .gy-chip__body {
   border-color: var(--gy-color-primary);
   background: var(--gy-color-primary-soft);
-  color: var(--gy-color-primary);
+  color: var(--gy-color-primary-text);
   font-weight: 600;
 }
