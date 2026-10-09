@@ -1,0 +1,51 @@
+.gy-stat-card {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--gy-space-1);
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 88px;
+  margin: 0;
+  padding: var(--gy-space-3) var(--gy-space-4);
+  border: 1px solid var(--gy-color-border);
+  border-radius: var(--gy-radius-card);
+  background: var(--gy-color-card);
+  box-shadow: var(--gy-shadow-card);
+  color: var(--gy-color-text);
+  font-family: var(--gy-font-family);
+  text-align: left;
+}
+
+.gy-stat-card--action {
+  cursor: pointer;
+}
+
+.gy-stat-card--action:focus-visible {
+  outline: 2px solid var(--gy-color-primary);
+  outline-offset: 2px;
+}
+
+.gy-stat-card__value {
+  font-size: var(--gy-font-size-xl);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.gy-stat-card__value--primary {
+  color: var(--gy-color-primary-text);
+}
+
+.gy-stat-card__value--ok {
+  color: var(--gy-color-ok-text);
+}
+
+.gy-stat-card__value--warn {
+  color: var(--gy-color-warn);
+}
+
+.gy-stat-card__label {
+  font-size: var(--gy-font-size-sm);
+  color: var(--gy-color-muted);
+}

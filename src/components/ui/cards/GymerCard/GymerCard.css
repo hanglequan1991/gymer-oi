@@ -1,0 +1,66 @@
+/* Thẻ Gymer là một nút bấm bao toàn bộ nội dung; vùng chạm tối thiểu 88px. */
+.gy-gymer-card {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: var(--gy-space-3);
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 88px;
+  margin: 0;
+  padding: var(--gy-space-3) var(--gy-space-4);
+  border: 1px solid var(--gy-color-border);
+  border-radius: var(--gy-radius-card);
+  background: var(--gy-color-card);
+  box-shadow: var(--gy-shadow-card);
+  color: var(--gy-color-text);
+  font-family: var(--gy-font-family);
+  text-align: left;
+  cursor: pointer;
+}
+
+.gy-gymer-card:focus-visible {
+  outline: 2px solid var(--gy-color-primary);
+  outline-offset: 2px;
+}
+
+.gy-gymer-card__avatar {
+  flex-shrink: 0;
+}
+
+.gy-gymer-card__main {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--gy-space-1);
+  min-width: 0;
+}
+
+.gy-gymer-card__name {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: var(--gy-font-size-md);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gy-gymer-card__meta {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: var(--gy-font-size-sm);
+  color: var(--gy-color-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gy-gymer-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gy-space-1);
+}
+
+.gy-gymer-card__price {
+  flex-shrink: 0;
+}

@@ -1,6 +1,6 @@
 # Gymer ơi — Kế hoạch bộ core-ui (Zalo Mini App)
 
-Tác giả: sen1. Trạng thái: bản thiết kế để PM giao dev1/dev2/dev3. Ngày: 2026-10-09.
+Tác giả: sen1. Trạng thái: thiết kế đã thực thi xong (core-ui hoàn tất, xem `docs/plans/core-ui-remaining.md` mục "Kết quả và sai lệch so với plan"). Ngày: 2026-10-09.
 Phạm vi: bộ component hiển thị thuần (props in, event out), dữ liệu mock. core-ui KHÔNG gọi Supabase, KHÔNG chứa logic nghiệp vụ (chống đặt trùng, giá T7/CN, lọc khoảng cách, phân quyền).
 
 ## 0. Kết quả xác minh nền tảng (đã làm) và giả định
@@ -72,6 +72,8 @@ src/
     gallery/ GalleryPage.tsx  sections/*.tsx  gallery.css                               (T8, dev1)
 ```
 Mỗi component là một thư mục: `Name/Name.tsx`, `Name/Name.css`, `Name/index.ts` (re-export). Mỗi nhóm có `index.ts` riêng. Barrel tổng `components/ui/index.ts` chỉ T8 sửa.
+
+Trạng thái thực tế: [đã có] layout, schedule, controls, atoms, feedback, cards, barrel `components/ui/index.ts`, `TabBar/tabs.ts`, token mới trong `styles/tokens.css`, `pages/gallery` (chỉ dev, vào bằng URL `/gallery`). Chưa có test riêng cho utils (`format.test.ts`) và test barrel/a11y: người dùng quyết định không viết thêm (xem plan core-ui-remaining).
 
 ## 3. Design tokens
 
@@ -231,7 +233,7 @@ cx(...parts: (string | false | null | undefined)[]): string
 - Vùng chạm ≥ 44x44px cho mọi phần tử bấm được (chip, ô lịch, slot, link "Xem lịch"/"Tất cả", nút back). Khoảng cách giữa các vùng chạm ≥ 8px.
 - Focus nhìn thấy: `:focus-visible { outline: 2px solid var(--gy-color-primary); outline-offset: 2px }` (base.css).
 - Không truyền đạt trạng thái chỉ bằng màu: slot đã đặt có gạch ngang chữ + `aria-disabled`; trạng thái yêu cầu có chữ trong Badge; chọn có thêm viền/đậm.
-- Contrast: `muted #6B7280` trên `card #FFF` ≈ 4.8:1 đạt; trên `bg #F4F6F9` ≈ 4.4:1 sát ngưỡng → chữ phụ cỡ nhỏ (<14px) trên nền bg dùng `--gy-color-text` hoặc đặt trong thẻ card. `ok #16A34A` làm chữ trên trắng chỉ ≈ 3.3:1 → dùng `--gy-color-ok-text` (#15803D) cho chữ, `--gy-color-ok` chỉ cho viền/icon. `warn #B45309` trên `#FEF3C7` ≈ 4.6:1 đạt. Trắng trên `#0068FF` ≈ 5:1 đạt. Tính toán ước lượng, chưa chạy công cụ đo; T8 kiểm tra lại bằng script nhỏ hoặc thủ công.
+- Contrast: `muted #6B7280` trên `card #FFF` ≈ 4.8:1 đạt; trên `bg #F4F6F9` ≈ 4.4:1 sát ngưỡng → chữ phụ cỡ nhỏ (<14px) trên nền bg dùng `--gy-color-text` hoặc đặt trong thẻ card. `ok #16A34A` làm chữ trên trắng chỉ ≈ 3.3:1 → dùng `--gy-color-ok-text` (#15803D) cho chữ, `--gy-color-ok` chỉ cho viền/icon. `warn #B45309` trên `#FEF3C7` ≈ 4.6:1 đạt. Trắng trên `#0068FF` ≈ 5:1 đạt. Tính toán ước lượng, chưa chạy công cụ đo; T8 kiểm tra lại bằng script nhỏ hoặc thủ công. Cập nhật sau thực thi: `--gy-color-muted` light đổi từ #6B7280 sang #66727A để đạt 4.5:1 trên bg.
 - Dark mode: mọi màu qua biến; ảnh avatar không đổi; shadow thay bằng viền. Chuyển bằng `<App theme>`; kiểm tra gallery ở cả hai theme.
 - Font cỡ tối thiểu 12px cho chú thích, 15px cho nội dung; hỗ trợ tăng cỡ chữ hệ điều hành (dùng đơn vị px trong khung linh hoạt, không cố định chiều cao hàng chứa chữ).
 - Safe-area: trang chừa `padding-bottom: calc(BOTTOM_ACTION_BAR_HEIGHT + var(--gy-safe-bottom))` khi có BottomActionBar; TabBar do ZaUI xử lý.

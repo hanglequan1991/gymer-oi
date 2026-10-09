@@ -8,8 +8,8 @@ Phạm vi: chỉ cấu trúc và quy tắc phụ thuộc. KHÔNG thiết kế sc
 - `package.json`: react/react-dom 18.3.1, `zmp-sdk` 2.53.0, `zmp-ui` 1.11.14 (đều ghim bản chính xác); vite 5.4.21, vitest 2.1.9, eslint 9 (flat config). CHƯA có `@supabase/supabase-js`, state lib, router lib riêng.
 - `vite.config.ts` và `tsconfig.json`: alias `@/` -> `src/` dùng chung cho Vite, Vitest, tsc. Vitest: jsdom, `src/test/setup.ts`.
 - `eslint.config.js`: typescript-eslint recommended, react-hooks, react-refresh, cấm `any`. Chưa có quy tắc ranh giới import.
-- `src/`: `main.tsx`, `app.tsx` (App > SnackbarProvider > Page, trang tạm), `components/ui/{layout,schedule,controls}` (xong, có test cạnh code), `styles/`, `types/domain.ts` (Gymer, Slot, DayInfo, BookingRequest, Review, Certificate), `utils/{cx,date,format}.ts`, `mocks/{gymers,slots,requests,reviews}.ts`, `test/setup.ts`. `atoms/ feedback/ cards/` và `pages/gallery` đang chờ (core-ui-plan.md mục 2).
-- Chưa có: `app-config.json` + cấu hình zmp-cli (cần Mini App ID), routing, pages, services, Supabase, `.env.example`.
+- `src/`: `main.tsx`, `app.tsx` (App > SnackbarProvider > Page, trang tạm), `components/ui/{layout,schedule,controls,atoms,feedback,cards}` + barrel `index.ts` (xong), `pages/gallery` (chỉ dev), cùng `config/`, `i18n/`, `platform/`, `services/` (cổng + khung, chưa có repo thật), `providers/`, `stores/`, `hooks/`, `features/` (page tạm), `routes/`, `styles/`, `types/domain.ts` (Gymer, Slot, DayInfo, BookingRequest, Review, Certificate), `utils/{cx,date,format}.ts`, `mocks/{gymers,slots,requests,reviews}.ts`, `test/setup.ts`.
+- Chưa có: `app-config.json` + cấu hình zmp-cli (cần Mini App ID), nội dung page thật (hiện là page tạm), repo Supabase thật/schema/migration, Edge Functions. Đã có `.env.example`, routing, khung services/Supabase rỗng.
 - Kiểm chứng từ gói npm đã cài:
   - `zmp-ui` export `ZMPRouter`, `AnimationRoutes`, `Route`, `useNavigate`, `useLocation`, `useParams`, `useSearchParams`. KHÔNG export `Outlet`/`Routes`. `react-router-dom` (^6.3.0) chỉ là phụ thuộc gián tiếp của zmp-ui, không có trong `package.json` của ta -> không import trực tiếp (xem 2.3).
   - `zmp-sdk` 2.53.0 có `login`, `authorize`, `getAccessToken`, `getUserInfo`, `getLocation`, `getPhoneNumber`, `getSetting`, `nativeStorage`, `requestSendNotification`.
@@ -17,13 +17,13 @@ Phạm vi: chỉ cấu trúc và quy tắc phụ thuộc. KHÔNG thiết kế sc
 
 ## 1. Cây thư mục đích
 
-Chú thích: [đã có] đã tồn tại; [đang chờ] đã có kế hoạch trong core-ui-plan.md, dev chưa làm xong; [mới] thuộc tài liệu này; (chờ) cần điều kiện bên ngoài, chưa tạo ngay.
+Chú thích: [đã có] đã tồn tại; [đang chờ] đã có kế hoạch nhưng chưa làm (hiện không còn mục nào của core-ui); [mới] thuộc tài liệu này; (chờ) cần điều kiện bên ngoài, chưa tạo ngay.
 
 ```
 gymer-oi/
   app-config.json                      (chờ) [mới]  cần Mini App ID; do `zmp init`/PM sinh
   zmp-cli.json / cấu hình zmp-cli      (chờ) [mới]  tên file theo template, không tự đoán
-  .env.example                         [mới]  mẫu biến môi trường (không chứa khoá thật)
+  .env.example                         [đã có]  mẫu biến môi trường (không chứa khoá thật)
   eslint.config.js                     [đã có] -> bổ sung quy tắc ranh giới (mục 5)
   package.json, vite.config.ts, tsconfig.json   [đã có]
   docs/
@@ -32,61 +32,61 @@ gymer-oi/
     architecture.md, schema.md, rls.md (chờ) [mới]  việc riêng của sen1 (mục 8)
   supabase/                            [mới]  mục 3
     config.toml                        (chờ)  do `supabase init`
-    migrations/                        [mới]  <timestamp>_<verb>_<object>.sql
-    seed.sql                           [mới]  dữ liệu dev
-    functions/                         [mới]
-      _shared/                         [mới]  mã dùng chung giữa function
+    migrations/                        [đã có]  <timestamp>_<verb>_<object>.sql
+    seed.sql                           [đã có]  dữ liệu dev
+    functions/                         [đã có]
+      _shared/                         [đã có]  mã dùng chung giữa function
       <ten-function>/index.ts          (chờ)  vd: auth-zalo, resolve-location
-    tests/                             [mới]  pgTAP cho RLS, chống trùng lịch
+    tests/                             [đã có]  pgTAP cho RLS, chống trùng lịch
   src/
     main.tsx                           [đã có]
     app.tsx                            [đã có]  chỉ lắp AppProviders + AppRoutes
-    config/                            [mới]  env.ts (đọc + kiểm tra import.meta.env), index.ts
-    i18n/                              [mới]  vi.ts (chuỗi tiếng Việt), errors.ts (mã lỗi -> câu), index.ts
+    config/                            [đã có]  env.ts (đọc + kiểm tra import.meta.env), index.ts
+    i18n/                              [đã có]  vi.ts (chuỗi tiếng Việt), errors.ts (mã lỗi -> câu), index.ts
     types/
       domain.ts                        [đã có]  kiểu miền (Gymer, Slot, ...)
-      geo.ts                           [mới]    GeoPoint, RadiusKm (mục 6)
+      geo.ts                           [đã có]    GeoPoint, RadiusKm (mục 6)
     utils/                             [đã có]  cx, date, format (+ test cạnh code)
     styles/                            [đã có]  tokens.css, base.css, index.css
     components/ui/                     (UI thuần, props in / event out)
       layout/ schedule/ controls/      [đã có]
-      atoms/ feedback/ cards/          [đang chờ]
-      index.ts                         [đang chờ]  barrel tổng (T8 core-ui)
-    pages/gallery/                     [đang chờ]  chỉ dev; xem 2.3 vì sao giữ ở pages/
-    platform/                          [mới]  bọc zmp-sdk (mục 4)
-      ports.ts                         [mới]  AuthPort, LocationPort, StoragePort + GeoPoint, PlatformError
-      index.ts                         [mới]
-      fake/                            [mới]  bản giả cho test/dev trình duyệt
-      zmp/                             [mới]  bản thật dùng zmp-sdk (CHỈ thư mục này được import 'zmp-sdk')
-    services/                          [mới]  truy cập dữ liệu, KHÔNG React, KHÔNG zmp-ui/zmp-sdk
-      errors.ts                        [mới]  AppError + mã lỗi (NOT_FOUND, SLOT_TAKEN, ...)
-      repositories/                    [mới]  interface (cổng) theo miền: gymer, schedule, booking, request, profile
+      atoms/ feedback/ cards/          [đã có]
+      index.ts                         [đã có]  barrel tổng (T8 core-ui)
+    pages/gallery/                     [đã có]  chỉ dev (vào bằng URL /gallery); xem 2.3 vì sao giữ ở pages/
+    platform/                          [đã có]  bọc zmp-sdk (mục 4)
+      ports.ts                         [đã có]  AuthPort, LocationPort, StoragePort + GeoPoint, PlatformError
+      index.ts                         [đã có]
+      fake/                            [đã có]  bản giả cho test/dev trình duyệt
+      zmp/                             [đã có]  bản thật dùng zmp-sdk (CHỈ thư mục này được import 'zmp-sdk')
+    services/                          [đã có]  truy cập dữ liệu, KHÔNG React, KHÔNG zmp-ui/zmp-sdk
+      errors.ts                        [đã có]  AppError + mã lỗi (NOT_FOUND, SLOT_TAKEN, ...)
+      repositories/                    [đã có]  interface (cổng) theo miền: gymer, schedule, booking, request, profile
       supabase/                        (chờ)  client.ts, database.types.ts (sinh tự động), repo thật
       mock/                            (chờ)  repo giả dựa trên src/mocks
       mappers/                         (chờ)  DTO <-> domain (cần schema)
-      createServices.ts                [mới]  composition root: chọn mock/supabase theo env
-      index.ts                         [mới]
+      createServices.ts                [đã có]  composition root: chọn mock/supabase theo env
+      index.ts                         [đã có]
     mocks/                             [đã có]  dữ liệu thô; chỉ services/mock, gallery, test được import
-    providers/                         [mới]  gắn services/platform/session vào React
+    providers/                         [đã có]  gắn services/platform/session vào React
       ServicesProvider.tsx, PlatformProvider.tsx, AppProviders.tsx, index.ts
-    stores/                            [mới]  Zustand: trạng thái liên màn hình
+    stores/                            [đã có]  Zustand: trạng thái liên màn hình
       searchFilters.ts, bookingDraft.ts, index.ts
-    hooks/                             [mới]  hook dùng chung (useAsync, useServices, usePlatform)
-    features/                          [mới]  mã theo nghiệp vụ; mỗi feature tự chứa
+    hooks/                             [đã có]  hook dùng chung (useAsync, useServices, usePlatform)
+    features/                          [đã có]  mã theo nghiệp vụ; mỗi feature tự chứa
       user/
         search/            pages/SearchPage.tsx  components/  hooks/  index.ts
         gymer-detail/      pages/GymerDetailPage.tsx ...
         booking/           pages/BookingConfirmPage.tsx, BookingSuccessPage.tsx ...
       gymer/
         overview/  schedule/  requests/  profile/     (4 tab; mỗi tab: pages/ components/ hooks/ index.ts)
-        GymerTabsLayout.tsx            [mới]  khung TabBar bọc children (không dùng Outlet)
+        GymerTabsLayout.tsx            [đã có]  khung TabBar bọc children (không dùng Outlet)
       auth/                pages/RoleSelectPage.tsx (nếu cần), hooks/useSession.ts
-    routes/                            [mới]
-      paths.ts                         [mới]  hằng số đường dẫn + hàm dựng URL
-      index.tsx                        [mới]  <AppRoutes/>: ZMPRouter > AnimationRoutes > Route
+    routes/                            [đã có]
+      paths.ts                         [đã có]  hằng số đường dẫn + hàm dựng URL
+      index.tsx                        [đã có]  <AppRoutes/>: ZMPRouter > AnimationRoutes > Route
     test/
       setup.ts                         [đã có]
-      renderWithProviders.tsx          [mới]
+      renderWithProviders.tsx          [đã có]
       fakes/                           (chờ)  fake services dùng chung cho test feature
 ```
 

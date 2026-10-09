@@ -44,11 +44,13 @@
   overflow-wrap: anywhere;
 }
 
-/* Đã đặt: nền busy, chữ giờ gạch ngang (không chỉ dựa vào màu) */
+/* Đã đặt: nền busy, chữ giờ gạch ngang (không chỉ dựa vào màu).
+   Chữ dùng --gy-color-text thay muted: muted trên nền busy chỉ ~3.35:1 (light),
+   dưới ngưỡng 4.5:1 cho chữ thường. */
 .gy-slot--booked {
   border-color: var(--gy-color-busy);
   background: var(--gy-color-busy);
-  color: var(--gy-color-muted);
+  color: var(--gy-color-text);
   cursor: not-allowed;
 }
 

@@ -1,0 +1,102 @@
+/*
+ * Bố cục của trang thư viện giao diện (dev). Chỉ dùng biến var(--gy-*), không có màu hex.
+ */
+
+.gy-gallery {
+  padding-bottom: calc(var(--gy-space-6) + var(--gy-safe-bottom));
+}
+
+.gy-gallery__controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gy-space-3);
+  padding: var(--gy-space-4);
+}
+
+.gy-gallery__section {
+  margin-top: var(--gy-space-4);
+}
+
+.gy-gallery__stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gy-space-4);
+}
+
+.gy-gallery__sub {
+  margin: 0;
+  font-size: var(--gy-font-size-sm);
+  font-weight: 600;
+  color: var(--gy-color-muted);
+}
+
+.gy-gallery__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gy-space-2);
+}
+
+.gy-gallery__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--gy-space-3);
+}
+
+.gy-gallery__cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gy-space-1);
+  min-width: 0;
+  margin: 0;
+}
+
+.gy-gallery__caption {
+  font-size: var(--gy-font-size-xs);
+  color: var(--gy-color-muted);
+  word-break: break-word;
+}
+
+.gy-gallery__swatch {
+  height: 56px;
+  border-radius: var(--gy-radius-control);
+  border: 1px solid var(--gy-color-border);
+}
+
+.gy-gallery__frame {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--gy-color-border);
+  border-radius: var(--gy-radius-card);
+  background: var(--gy-color-bg);
+}
+
+/*
+ * Trong khung demo, thanh cố định được đưa về luồng thường để nằm đúng chỗ trong trang
+ * và không che phần còn lại của thư viện. Thanh đầu trang không cần chừa khoảng trên.
+ */
+.gy-gallery__frame .zaui-header {
+  position: relative;
+}
+
+.gy-gallery__frame .gy-app-header {
+  padding-top: 0;
+}
+
+.gy-gallery__frame .gy-bottom-bar {
+  position: relative;
+}
+
+.gy-gallery__frame .zaui-bottom-navigation-fixed {
+  position: relative;
+}
+
+.gy-gallery__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gy-space-3);
+  padding: var(--gy-space-3);
+  border: 1px solid var(--gy-color-border);
+  border-radius: var(--gy-radius-card);
+  background: var(--gy-color-card);
+}

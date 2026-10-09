@@ -1,0 +1,76 @@
+.gy-request-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gy-space-2);
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: var(--gy-space-3) var(--gy-space-4);
+  border: 1px solid var(--gy-color-border);
+  border-radius: var(--gy-radius-card);
+  background: var(--gy-color-card);
+  box-shadow: var(--gy-shadow-card);
+  color: var(--gy-color-text);
+  font-family: var(--gy-font-family);
+  font-size: var(--gy-font-size-md);
+}
+
+.gy-request-card--compact {
+  gap: var(--gy-space-1);
+  padding: var(--gy-space-2) var(--gy-space-3);
+}
+
+.gy-request-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gy-space-2);
+  min-width: 0;
+}
+
+.gy-request-card__name {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--gy-font-size-lg);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gy-request-card__time,
+.gy-request-card__goal,
+.gy-request-card__note {
+  margin: 0;
+  font-size: var(--gy-font-size-sm);
+  color: var(--gy-color-muted);
+}
+
+/* Mục tiêu và ghi chú cắt tối đa 2 dòng. */
+.gy-request-card__goal,
+.gy-request-card__note {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+.gy-request-card__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gy-space-2);
+}
+
+.gy-request-card__actions {
+  display: grid;
+  flex: 1 1 200px;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gy-space-2);
+  min-width: 0;
+}
+
+.gy-request-card__actions .gy-btn {
+  min-width: 0;
+}

@@ -12,6 +12,8 @@ export const PATHS = {
   gymerSchedule: '/gymer/schedule',
   gymerRequests: '/gymer/requests',
   gymerProfile: '/gymer/profile',
+  /** Thư viện giao diện, chỉ đăng ký khi chạy dev (xem routes/index.tsx). */
+  gallery: '/gallery',
 } as const;
 
 /** Đường dẫn trang chi tiết Gymer. */

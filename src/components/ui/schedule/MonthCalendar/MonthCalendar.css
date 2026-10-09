@@ -84,10 +84,12 @@
   line-height: 1.2;
 }
 
+/* Giá dùng --gy-color-text thay muted: muted nằm trên nền --open/--booked
+   sát hoặc dưới ngưỡng 4.5:1 cho chữ nhỏ. */
 .gy-cal__price {
   font-size: var(--gy-font-size-xs);
   line-height: 1.1;
-  color: var(--gy-color-muted);
+  color: var(--gy-color-text);
   white-space: nowrap;
 }
 

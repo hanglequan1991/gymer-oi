@@ -1,4 +1,4 @@
-Trạng thái: CHỜ APPROVE
+Trạng thái: đã được người dùng approve và thực thi xong (2026-10-09)
 
 # Plan: phần core-ui còn lại (atoms, feedback, cards, barrel, gallery, a11y)
 
@@ -335,4 +335,22 @@ Mỗi cuối đợt: PM chạy `npm run typecheck && npm run lint && npm test`; 
 
 Không có mốc nào cho dev tự commit/push; PM/người dùng quyết định commit.
 
-Trạng thái: chờ người dùng approve
+## 7. Kết quả và sai lệch so với plan
+
+- Không viết test mới theo quyết định của người dùng: bỏ T6 (test utils), bỏ `index.test.ts` (barrel), bỏ `a11y.test.tsx`.
+- Avatar một màu (token `--gy-avatar-bg`) thay cho 4 gradient.
+- Gallery chỉ vào bằng URL `/gallery` (chỉ dev), không có lối vào trong giao diện.
+- `--gy-color-muted` light đổi từ #6B7280 sang #66727A để đạt 4.5:1 trên bg.
+- RequestCard bỏ khoá ref nội bộ; component cha phải đặt `busy` khi đang xử lý.
+- `useToast` được ổn định bằng ref.
+- CSS slot booked và giá ô lịch đổi sang `--gy-color-text` để đạt contrast.
+
+## 8. Nợ / Quyết định còn mở
+
+- Màu sao (RatingStars) light: 2.15:1 trên card. Số điểm luôn hiện bằng chữ nên không mất thông tin; nếu cần nâng thì gợi ý #C27800.
+- Nền slot "busy" 1.47:1 so với card. Trạng thái truyền bằng gạch ngang chữ + `aria-disabled`, không chỉ bằng màu.
+- Gap 4px giữa các ô lịch: quy tắc 8px của plan chưa đạt; vẫn đạt WCAG 2.2 (2.5.8 target size).
+- PriceLabel dòng strike dùng `role="group"` (gợi ý nhẹ, chưa bắt buộc đổi).
+- Danh sách mục 5.2 (kiểm tay trên thiết bị) chưa ai xác minh; người dùng cần tự kiểm.
+
+Trạng thái: đã hoàn tất (approve, thực thi xong)
