@@ -1,0 +1,1 @@
+-- Dữ liệu dev, chạy khi `supabase db reset`. Chưa có dữ liệu mẫu.

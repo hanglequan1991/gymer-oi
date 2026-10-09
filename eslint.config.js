@@ -50,8 +50,6 @@ const SPECIAL_AREAS = [
   'src/hooks/**',
   'src/providers/**',
   'src/stores/**',
-  'src/routes/**',
-  'src/pages/**',
 ];
 
 export default tseslint.config(
@@ -83,8 +81,8 @@ export default tseslint.config(
   // Nền: mọi file trong src/ chỉ bị cấm import tương đối sâu.
   { files: ['src/**/*.{ts,tsx}'], rules: ban([], MSG_RELATIVE) },
 
-  // Phần còn lại của src/ (không thuộc vùng đặc biệt): cấm zmp-sdk.
-  // Chỉ src/platform/zmp được dùng zmp-sdk; routes và pages để trống theo tài liệu mục 5.2.
+  // Phần còn lại của src/ (không thuộc vùng đặc biệt, gồm cả routes và pages): cấm zmp-sdk.
+  // Chỉ src/platform/zmp được dùng zmp-sdk.
   { files: ['src/**/*.{ts,tsx}'], ignores: SPECIAL_AREAS, rules: ban([SDK], 'Chỉ src/platform/zmp được import zmp-sdk.') },
 
   // 1) UI thuần: không biết dữ liệu, nền tảng, feature. Test của UI có quy tắc riêng.
