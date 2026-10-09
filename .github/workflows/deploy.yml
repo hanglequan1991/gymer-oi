@@ -1,0 +1,202 @@
+# Deploy production: CI (gọi ci.yml) -> phát hiện thay đổi -> dry-run migration -> áp dụng migration -> edge functions.
+# Job zalo sẽ được thêm sau (task T7). Thứ tự các job CD: changes -> plan-migrate -> migrate -> functions.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+  # Chạy lại có chủ đích (ví dụ sau khi sửa lỗi, hoặc để kiểm checklist khi chưa có commit ngoài docs).
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Không hủy giữa chừng: hủy một migration đang chạy có thể để DB ở trạng thái nửa vời.
+# Một run đang chờ duyệt ở job migrate giữ group này; các run sau xếp hàng sau nó.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    # Gọi reusable workflow: không đặt timeout-minutes ở job này (cú pháp GitHub không hỗ trợ
+    # với job gọi `uses`); timeout được đặt trong ci.yml.
+    uses: ./.github/workflows/ci.yml
+
+  changes:
+    name: Phát hiện migration và function
+    needs: ci
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      has_migrations: ${{ steps.detect.outputs.has_migrations }}
+      has_functions: ${{ steps.detect.outputs.has_functions }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Phát hiện migration và edge function
+        id: detect
+        run: bash scripts/ci/detect-changes.sh
+
+  plan-migrate:
+    name: Dry-run migration (production)
+    needs: changes
+    if: ${{ needs.changes.outputs.has_migrations == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    # Không có reviewer: chỉ đọc trạng thái (dry-run), không thay đổi DB. Secrets đặt ở environment này.
+    environment: production-deploy
+    outputs:
+      pending: ${{ steps.pending.outputs.pending }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Cài Supabase CLI
+        uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.120.0
+
+      - name: Dry-run migration
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+        run: |
+          set -euo pipefail
+          : "${SUPABASE_PROJECT_REF:?Thiếu variable SUPABASE_PROJECT_REF: khai báo ở Repository variables}"
+          supabase link --project-ref "$SUPABASE_PROJECT_REF"
+          supabase db push --dry-run --yes 2>&1 | tee "$RUNNER_TEMP/dry-run.txt"
+
+      - name: Xác định migration đang chờ
+        id: pending
+        run: |
+          set -euo pipefail
+          # Fail-safe: chỉ coi là không có migration chờ khi dry-run báo "up to date" (không phân biệt hoa thường).
+          # Mọi trường hợp khác là chờ (hỏi duyệt thừa còn hơn bỏ sót migration).
+          if grep -qi 'up to date' "$RUNNER_TEMP/dry-run.txt"; then
+            pending=false
+          else
+            pending=true
+          fi
+          echo "Migration đang chờ: $pending"
+          echo "pending=$pending" >> "$GITHUB_OUTPUT"
+
+      - name: Quét migration chờ (cảnh báo)
+        if: ${{ steps.pending.outputs.pending == 'true' }}
+        run: |
+          set -euo pipefail
+          # Lấy tên file migration từ output dry-run; chỉ quét những file thực sự có trong thư mục.
+          names="$(grep -oE '[0-9]{14}_[A-Za-z0-9_]+\.sql' "$RUNNER_TEMP/dry-run.txt" | sort -u || true)"
+          args=()
+          if [ -n "$names" ]; then
+            while IFS= read -r n; do
+              if [ -f "supabase/migrations/$n" ]; then
+                args+=("supabase/migrations/$n")
+              fi
+            done <<< "$names"
+          fi
+          if [ "${#args[@]}" -gt 0 ]; then
+            bash scripts/ci/scan-migrations.sh "${args[@]}" | tee "$RUNNER_TEMP/scan.txt"
+          else
+            # Không trích được tên migration nào: quét toàn bộ thư mục (script tự ghi rõ điều này).
+            bash scripts/ci/scan-migrations.sh | tee "$RUNNER_TEMP/scan.txt"
+          fi
+
+      - name: Ghi kết quả vào summary
+        if: always()
+        run: |
+          {
+            echo "## Dry-run migration (production)"
+            echo '```'
+            if [ -f "$RUNNER_TEMP/dry-run.txt" ]; then cat "$RUNNER_TEMP/dry-run.txt"; else echo "(không có output)"; fi
+            echo '```'
+            echo "## Quét migration (cảnh báo, không chặn)"
+            echo '```'
+            if [ -f "$RUNNER_TEMP/scan.txt" ]; then cat "$RUNNER_TEMP/scan.txt"; else echo "(không chạy)"; fi
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  migrate:
+    name: Áp dụng migration (production)
+    needs: [changes, plan-migrate]
+    # Chỉ chạy khi dry-run thành công VÀ báo có migration đang chờ. Chỉ lúc này mới có yêu cầu duyệt.
+    # Người duyệt (environment production) đọc summary của plan-migrate trước khi duyệt.
+    if: ${{ needs.plan-migrate.result == 'success' && needs.plan-migrate.outputs.pending == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Cài Supabase CLI
+        uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.120.0
+
+      - name: Liên kết project và áp dụng migration
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+        run: |
+          set -euo pipefail
+          : "${SUPABASE_PROJECT_REF:?Thiếu variable SUPABASE_PROJECT_REF: khai báo ở Repository variables}"
+          supabase link --project-ref "$SUPABASE_PROJECT_REF"
+          supabase db push --yes
+
+  functions:
+    name: Deploy edge functions
+    needs: [changes, plan-migrate, migrate]
+    # !cancelled(): tắt hành vi mặc định "bỏ qua nếu job phụ thuộc không success", để tự kiểm soát điều kiện.
+    # Khác always(): khi workflow bị Cancel thì job này không chạy, kể cả khi chưa có migration.
+    # Chạy khi: changes thành công, có function, và plan-migrate lẫn migrate đều success hoặc skipped.
+    # plan-migrate hoặc migrate failure/cancelled (kể cả bị từ chối duyệt): không chạy,
+    # vì schema có thể chưa khớp với code function mới.
+    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.changes.outputs.has_functions == 'true' && contains(fromJSON('["success","skipped"]'), needs.plan-migrate.result) && contains(fromJSON('["success","skipped"]'), needs.migrate.result) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: production-deploy
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Cài Supabase CLI
+        uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.120.0
+
+      - name: Deploy các function (bỏ thư mục bắt đầu bằng _)
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+        run: |
+          set -euo pipefail
+          : "${SUPABASE_PROJECT_REF:?Thiếu variable SUPABASE_PROJECT_REF: khai báo ở Repository variables}"
+          shopt -s nullglob
+          deployed=0
+          for dir in supabase/functions/*/; do
+            name="$(basename "$dir")"
+            case "$name" in
+              _*) continue ;;
+            esac
+            echo "Deploy function: $name"
+            supabase functions deploy "$name" --project-ref "$SUPABASE_PROJECT_REF"
+            deployed=$((deployed + 1))
+          done
+          if [ "$deployed" -eq 0 ]; then
+            echo "Chưa có edge function nào trong supabase/functions/ để deploy; bỏ qua."
+          fi

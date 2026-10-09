@@ -1,0 +1,63 @@
+# CI dùng chung: chạy trên pull_request và được gọi từ deploy.yml qua workflow_call
+# (deploy.yml gọi CI trên mỗi push vào main, nên workflow này không tự lắng nghe push).
+# Không dùng secrets; build dùng VITE_DATA_SOURCE=mock.
+name: CI
+
+on:
+  pull_request:
+  workflow_call:
+
+# Quyền tối thiểu. Workflow được gọi qua workflow_call không vượt quyền của caller.
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    # Lựa chọn concurrency:
+    # - pull_request: một group theo ref, hủy run cũ khi có push mới vào PR.
+    # - Các trường hợp khác (được gọi qua workflow_call từ deploy.yml):
+    #   group riêng theo run_id và không hủy, để không tranh chấp với group
+    #   deploy-production của job CD và không hủy giữa chừng một deploy.
+    concurrency:
+      group: ${{ github.event_name == 'pull_request' && format('ci-{0}', github.ref) || format('ci-run-{0}', github.run_id) }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build (mock data)
+        env:
+          VITE_DATA_SOURCE: mock
+        run: npm run build
+
+      - name: Check dist has no service_role key
+        run: |
+          test -d dist || { echo "dist/ không tồn tại sau build"; exit 1; }
+          if grep -rl 'service_role' dist; then
+            echo "Phát hiện chuỗi service_role trong dist/. Dừng build."
+            exit 1
+          fi
+          echo "dist/ không chứa service_role."

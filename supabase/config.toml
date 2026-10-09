@@ -1,0 +1,10 @@
+# Cấu hình Supabase CLI tối thiểu cho dự án Gymer ơi.
+# Không đặt giá trị bí mật ở file này (khóa API, mật khẩu DB, access token).
+# Các bí mật đặt qua GitHub Environment hoặc `supabase secrets set`.
+
+# Tên dự án cục bộ dùng cho Supabase CLI.
+project_id = "gymer-oi"
+
+[db]
+# Đã xác nhận qua Supabase API ngày 2026-10-09: project vbncctoffwenbnnfvwfi chạy Postgres 17.
+major_version = 17
