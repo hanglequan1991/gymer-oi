@@ -1,0 +1,27 @@
+.gy-price-input {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gy-space-1);
+}
+
+.gy-price-input__label {
+  color: var(--gy-color-text);
+  font-size: var(--gy-font-size-md);
+  font-weight: 500;
+}
+
+.gy-price-input .zaui-input-affix-wrapper {
+  min-height: var(--gy-touch-min);
+  border-radius: var(--gy-radius-control);
+}
+
+.gy-price-input__unit {
+  color: var(--gy-color-muted);
+  font-size: var(--gy-font-size-sm);
+}
+
+.gy-price-input__error {
+  margin: 0;
+  color: var(--gy-color-danger);
+  font-size: var(--gy-font-size-sm);
+}

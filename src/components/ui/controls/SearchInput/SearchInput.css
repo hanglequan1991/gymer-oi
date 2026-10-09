@@ -1,0 +1,8 @@
+.gy-search-input.zaui-input-affix-wrapper {
+  min-height: var(--gy-touch-min);
+  border-radius: var(--gy-radius-control);
+}
+
+.gy-search-input__icon {
+  color: var(--gy-color-muted);
+}

@@ -1,0 +1,4 @@
+/* Vùng chạm tối thiểu cho từng mục tab (hàng con trực tiếp của thanh). */
+.gy-tab-bar > * {
+  min-height: var(--gy-touch-min);
+}

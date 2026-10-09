@@ -1,0 +1,63 @@
+/* Chú thích lịch. Chỉ dùng biến --gy-*; dark mode đổi qua token. */
+
+.gy-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gy-space-2) var(--gy-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--gy-color-muted);
+  font-size: var(--gy-font-size-xs);
+}
+
+.gy-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gy-space-1);
+  min-height: 24px;
+}
+
+.gy-legend__swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  border-radius: 4px;
+  border: 1px solid var(--gy-color-border);
+  background: var(--gy-color-card);
+}
+
+.gy-legend__swatch--ok {
+  border: 2px solid var(--gy-color-ok);
+}
+
+.gy-legend__swatch--busy {
+  background: var(--gy-color-busy);
+  border-color: var(--gy-color-busy);
+}
+
+.gy-legend__swatch--selected {
+  background: var(--gy-color-primary);
+  border-color: var(--gy-color-primary);
+}
+
+.gy-legend__swatch--open {
+  background: var(--gy-color-ok-soft);
+  border-color: var(--gy-color-ok);
+}
+
+.gy-legend__swatch--booked {
+  background: var(--gy-color-primary-soft);
+  border-color: var(--gy-color-primary);
+}
+
+.gy-legend__swatch--closed {
+  border-style: dashed;
+  border-color: var(--gy-color-muted);
+  background: var(--gy-color-bg);
+}
+
+.gy-legend__label {
+  line-height: 1.2;
+}

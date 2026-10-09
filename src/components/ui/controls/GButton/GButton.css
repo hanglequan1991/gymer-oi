@@ -1,0 +1,11 @@
+/*
+ * Ghi đè bo góc của zmp-ui (.zaui-btn mặc định 48px).
+ * Dùng selector kép .gy-btn.zaui-btn để có độ ưu tiên cao hơn mà không cần !important.
+ */
+.gy-btn.zaui-btn {
+  border-radius: var(--gy-radius-control);
+  min-height: var(--gy-touch-min);
+  height: auto;
+  font-family: var(--gy-font-family);
+  font-size: var(--gy-font-size-md);
+}

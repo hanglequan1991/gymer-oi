@@ -1,0 +1,61 @@
+/* Reset nhỏ, font và helper dùng chung. Không chứa màu hex. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--gy-font-family);
+  font-size: var(--gy-font-size-md);
+  color: var(--gy-color-text);
+  background-color: var(--gy-color-bg);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+
+/* Vòng focus rõ cho bàn phím và trợ năng */
+:focus-visible {
+  outline: 2px solid var(--gy-color-primary);
+  outline-offset: 2px;
+}
+
+/* Cuộn ngang, ẩn thanh cuộn (dùng cho dãy chip, dãy ngày) */
+.gy-scroll-x {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.gy-scroll-x::-webkit-scrollbar {
+  display: none;
+}
+
+/* Ẩn nội dung nhưng vẫn đọc được cho trình đọc màn hình */
+.gy-visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Chừa chỗ cho thanh dưới trên thiết bị có safe area */
+.gy-safe-bottom {
+  padding-bottom: var(--gy-safe-bottom);
+}

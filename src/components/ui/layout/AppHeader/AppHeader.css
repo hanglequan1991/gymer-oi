@@ -1,0 +1,20 @@
+/* Chiều cao Header ZaUI: 44px + safe-area trên. Đồng bộ với .zaui-header. */
+.gy-app-header {
+  padding-top: calc(var(--zaui-safe-area-inset-top, 0px) + 44px);
+  color: var(--gy-color-text);
+}
+
+.gy-app-header--primary {
+  background: var(--gy-color-primary);
+  color: var(--gy-color-on-primary);
+}
+
+.gy-app-header__below {
+  padding: 0 var(--gy-space-3) var(--gy-space-3);
+  font-size: var(--gy-font-size-sm);
+  color: inherit;
+}
+
+.gy-app-header:not(.gy-app-header--primary) .gy-app-header__below {
+  color: var(--gy-color-text);
+}

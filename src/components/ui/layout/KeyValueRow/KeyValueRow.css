@@ -1,0 +1,40 @@
+.gy-kv {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--gy-space-3);
+  padding: var(--gy-space-2) 0;
+  font-size: var(--gy-font-size-md);
+}
+
+.gy-kv__label {
+  flex: 0 1 auto;
+  min-width: 0;
+  color: var(--gy-color-muted);
+}
+
+.gy-kv__value {
+  margin-left: auto;
+  min-width: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+  color: var(--gy-color-text);
+}
+
+.gy-kv--emphasize .gy-kv__value {
+  font-weight: 600;
+}
+
+.gy-kv__value--strike {
+  text-decoration: line-through;
+  color: var(--gy-color-muted);
+}
+
+/* Reset margin mặc định của dl/dt/dd. */
+.gy-kv-list {
+  margin: 0;
+}
+
+.gy-kv-list dd {
+  margin: 0 0 0 auto;
+}

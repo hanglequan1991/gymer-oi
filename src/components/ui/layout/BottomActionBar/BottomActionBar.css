@@ -1,0 +1,32 @@
+/* Tổng chiều cao = 72px nội dung + safe-area dưới (padding-bottom). Xem BOTTOM_ACTION_BAR_HEIGHT. */
+.gy-bottom-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  box-sizing: border-box;
+  height: calc(72px + var(--gy-safe-bottom));
+  padding: 0 var(--gy-space-4) var(--gy-safe-bottom);
+  display: flex;
+  align-items: center;
+  gap: var(--gy-space-3);
+  background: var(--gy-color-card);
+  border-top: 1px solid var(--gy-color-border);
+}
+
+.gy-bottom-bar__content {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--gy-space-2);
+  font-size: var(--gy-font-size-md);
+  color: var(--gy-color-text);
+}
+
+.gy-bottom-bar__action {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+}
