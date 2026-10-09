@@ -1,0 +1,76 @@
+/* Lưới và ô khung giờ. Chỉ dùng biến --gy-*; dark mode đổi qua token. */
+
+.gy-slot-grid {
+  display: grid;
+  gap: var(--gy-space-2);
+}
+
+.gy-slot-grid--cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.gy-slot-grid--cols-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.gy-slot {
+  min-height: var(--gy-touch-min);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: var(--gy-space-1) var(--gy-space-2);
+  border: 1px solid var(--gy-color-ok);
+  border-radius: var(--gy-radius-slot);
+  background: var(--gy-color-card);
+  color: var(--gy-color-text);
+  font-family: inherit;
+  font-size: var(--gy-font-size-sm);
+  cursor: pointer;
+  text-align: center;
+}
+
+.gy-slot__time {
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.gy-slot__name,
+.gy-slot__tag {
+  font-size: var(--gy-font-size-xs);
+  color: var(--gy-color-muted);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+/* Đã đặt: nền busy, chữ giờ gạch ngang (không chỉ dựa vào màu) */
+.gy-slot--booked {
+  border-color: var(--gy-color-busy);
+  background: var(--gy-color-busy);
+  color: var(--gy-color-muted);
+  cursor: not-allowed;
+}
+
+.gy-slot--booked .gy-slot__time {
+  text-decoration: line-through;
+}
+
+/* Đã đóng: viền đứt, mờ nhẹ */
+.gy-slot--closed {
+  border-style: dashed;
+  border-color: var(--gy-color-muted);
+  color: var(--gy-color-muted);
+}
+
+/* Đang chọn: nền primary, chữ trắng, viền đậm */
+.gy-slot--selected {
+  background: var(--gy-color-primary);
+  border-color: var(--gy-color-primary);
+  color: var(--gy-color-on-primary);
+}
+
+.gy-slot--selected .gy-slot__name,
+.gy-slot--selected .gy-slot__tag {
+  color: var(--gy-color-on-primary);
+}

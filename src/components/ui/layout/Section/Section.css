@@ -1,0 +1,44 @@
+.gy-section {
+  background: var(--gy-color-card);
+  border: 1px solid var(--gy-color-border);
+  border-radius: var(--gy-radius-card);
+  box-shadow: var(--gy-shadow-card);
+  overflow: hidden;
+}
+
+.gy-section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gy-space-2);
+  padding: var(--gy-space-1) var(--gy-space-2) 0 var(--gy-space-4);
+}
+
+.gy-section__title {
+  margin: 0;
+  font-size: var(--gy-font-size-lg);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--gy-color-text);
+}
+
+/* Vùng chạm tối thiểu 44px; chữ link dùng màu primary. */
+.gy-section__action {
+  appearance: none;
+  min-height: var(--gy-touch-min);
+  min-width: var(--gy-touch-min);
+  padding: 0 var(--gy-space-2);
+  margin: 0;
+  border: 0;
+  border-radius: var(--gy-radius-control);
+  background: transparent;
+  font-family: inherit;
+  font-size: var(--gy-font-size-md);
+  font-weight: 500;
+  color: var(--gy-color-primary);
+  cursor: pointer;
+}
+
+.gy-section__body--padded {
+  padding: var(--gy-space-4);
+}

@@ -1,0 +1,87 @@
+/*
+ * Design tokens cho Gymer ơi (theo docs/core-ui-plan.md, mục 3).
+ * - Light: khai báo ở :root.
+ * - Dark: khai báo ở [zaui-theme="dark"]; zmp-ui App gắn attribute này lên <body>.
+ * - Component KHÔNG dùng hex trực tiếp, chỉ dùng var(--gy-*).
+ * - File này được import SAU zmp-ui/zaui.css để override các biến --zaui-*.
+ */
+
+:root {
+  /* Màu */
+  --gy-color-primary: #0068FF;
+  --gy-color-on-primary: #FFFFFF;
+  --gy-color-primary-soft: #E6F0FF;
+  --gy-color-bg: #F4F6F9;
+  --gy-color-card: #FFFFFF;
+  --gy-color-text: #1A1D21;
+  --gy-color-muted: #6B7280;
+  --gy-color-border: #E5E7EB;
+  --gy-color-ok: #16A34A;
+  --gy-color-ok-text: #15803D;
+  --gy-color-ok-soft: #DCFCE7;
+  --gy-color-warn: #B45309;
+  --gy-color-warn-soft: #FEF3C7;
+  --gy-color-danger: #DC2626;
+  --gy-color-busy: #D1D5DB;
+  --gy-color-star: #F59E0B;
+
+  /* Bo góc */
+  --gy-radius-card: 14px;
+  --gy-radius-control: 12px;
+  --gy-radius-chip: 999px;
+  --gy-radius-slot: 10px;
+
+  /* Khoảng cách */
+  --gy-space-1: 4px;
+  --gy-space-2: 8px;
+  --gy-space-3: 12px;
+  --gy-space-4: 16px;
+  --gy-space-5: 20px;
+  --gy-space-6: 24px;
+
+  /* Kích thước tối thiểu vùng chạm */
+  --gy-touch-min: 44px;
+
+  /* Chữ */
+  --gy-font-family: -apple-system, "Roboto", "Segoe UI", sans-serif;
+  --gy-font-size-xs: 12px;
+  --gy-font-size-sm: 13px;
+  --gy-font-size-md: 15px;
+  --gy-font-size-lg: 17px;
+  --gy-font-size-xl: 22px;
+
+  /* Bóng và safe area */
+  --gy-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --gy-safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* Map sang biến của zmp-ui (chỉ các biến đã kiểm tra tồn tại trong zaui.css) */
+  --zaui-light-color-primary: var(--gy-color-primary);
+  --zaui-light-body-background-color: var(--gy-color-bg);
+  --zaui-light-text-color: var(--gy-color-text);
+}
+
+[zaui-theme="dark"] {
+  --gy-color-primary: #0068FF;
+  --gy-color-on-primary: #FFFFFF;
+  --gy-color-primary-soft: #14233D;
+  --gy-color-bg: #0F1115;
+  --gy-color-card: #181B21;
+  --gy-color-text: #F3F4F6;
+  --gy-color-muted: #9CA3AF;
+  --gy-color-border: #2A2F38;
+  --gy-color-ok: #16A34A;
+  --gy-color-ok-text: #4ADE80;
+  --gy-color-ok-soft: #0F2A1A;
+  --gy-color-warn: #FBBF24;
+  --gy-color-warn-soft: #2B2110;
+  --gy-color-danger: #F87171;
+  --gy-color-busy: #3A404A;
+  --gy-color-star: #F59E0B;
+
+  --gy-shadow-card: none;
+
+  /* Map sang biến dark của zmp-ui */
+  --zaui-dark-color-primary: var(--gy-color-primary);
+  --zaui-dark-body-background-color: var(--gy-color-bg);
+  --zaui-dark-text-color: var(--gy-color-text);
+}

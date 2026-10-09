@@ -1,0 +1,126 @@
+/* Lịch tháng. Chỉ dùng biến --gy-*; dark mode đổi qua token, không có hex. */
+
+.gy-cal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gy-space-2);
+  background: var(--gy-color-card);
+  border-radius: var(--gy-radius-card);
+  box-shadow: var(--gy-shadow-card);
+  padding: var(--gy-space-3);
+  color: var(--gy-color-text);
+}
+
+.gy-cal__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gy-space-2);
+}
+
+.gy-cal__nav-btn {
+  flex: 0 0 var(--gy-touch-min);
+  width: var(--gy-touch-min);
+  height: var(--gy-touch-min);
+  border: 1px solid var(--gy-color-border);
+  border-radius: var(--gy-radius-control);
+  background: var(--gy-color-card);
+  color: var(--gy-color-text);
+  font-size: var(--gy-font-size-xl);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.gy-cal__title {
+  font-size: var(--gy-font-size-lg);
+  font-weight: 600;
+  text-align: center;
+}
+
+.gy-cal__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gy-cal__row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.gy-cal__wd {
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--gy-font-size-xs);
+  color: var(--gy-color-muted);
+}
+
+.gy-cal__blank {
+  min-height: var(--gy-touch-min);
+}
+
+.gy-cal__day {
+  min-height: var(--gy-touch-min);
+  min-width: var(--gy-touch-min);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 2px 0;
+  border: 1px solid var(--gy-color-border);
+  border-radius: var(--gy-radius-slot);
+  background: var(--gy-color-card);
+  color: var(--gy-color-text);
+  font-size: var(--gy-font-size-sm);
+  cursor: pointer;
+}
+
+.gy-cal__num {
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.gy-cal__price {
+  font-size: var(--gy-font-size-xs);
+  line-height: 1.1;
+  color: var(--gy-color-muted);
+  white-space: nowrap;
+}
+
+.gy-cal__day--today {
+  border-color: var(--gy-color-primary);
+}
+
+/* Marker (variant gymer) */
+.gy-cal__day--open {
+  background: var(--gy-color-ok-soft);
+}
+
+.gy-cal__day--booked {
+  background: var(--gy-color-primary-soft);
+}
+
+/* Ngày quá khứ: mờ, không chạm được (JS chặn click, aria-disabled báo cho AT) */
+.gy-cal__day--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.gy-cal__day--disabled .gy-cal__price {
+  color: var(--gy-color-muted);
+}
+
+/* Ngày chọn: nền primary, chữ trắng. Đặt sau marker để ghi đè. */
+.gy-cal__day--selected {
+  background: var(--gy-color-primary);
+  border-color: var(--gy-color-primary);
+  color: var(--gy-color-on-primary);
+}
+
+.gy-cal__day--selected .gy-cal__price {
+  color: var(--gy-color-on-primary);
+}

@@ -1,0 +1,41 @@
+.gy-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gy-space-1);
+}
+
+.gy-field__label {
+  color: var(--gy-color-text);
+  font-size: var(--gy-font-size-md);
+  font-weight: 500;
+}
+
+.gy-field__optional {
+  color: var(--gy-color-muted);
+  font-size: var(--gy-font-size-sm);
+  font-weight: 400;
+}
+
+.gy-field__helper,
+.gy-field__error {
+  margin: 0;
+  font-size: var(--gy-font-size-sm);
+}
+
+.gy-field__helper {
+  color: var(--gy-color-muted);
+}
+
+.gy-field__error {
+  color: var(--gy-color-danger);
+}
+
+.gy-field .zaui-input-affix-wrapper,
+.gy-field .zaui-input-textarea,
+.gy-field .zaui-input {
+  border-radius: var(--gy-radius-control);
+}
+
+.gy-field .zaui-input-affix-wrapper {
+  min-height: var(--gy-touch-min);
+}
