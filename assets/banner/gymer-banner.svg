@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <!-- Banner ngang 1200x630. Nội dung chính nằm trong vùng an toàn ~85% (x 90..1110, y 47..583). -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0068FF"/>
+      <stop offset="1" stop-color="#0052CC"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Nền xanh Zalo, gradient nhẹ cùng họ màu -->
+  <rect x="0" y="0" width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Họa tiết trang trí mờ, màu #E6F0FF -->
+  <circle cx="1060" cy="110" r="260" fill="#E6F0FF" fill-opacity="0.08"/>
+  <circle cx="1130" cy="560" r="170" fill="#E6F0FF" fill-opacity="0.06"/>
+
+  <!-- Biểu tượng ghim + tạ đòn, lấy từ gymer-icon.svg (scale 0.45) -->
+  <g transform="translate(70 94) scale(0.45)">
+    <path fill="#FFFFFF" d="M512 830 C512 830 282 600 282 400 A230 230 0 1 1 742 400 C742 600 512 830 512 830 Z"/>
+    <g fill="#0068FF">
+      <rect x="346" y="330" width="44" height="140" rx="14"/>
+      <rect x="396" y="352" width="20" height="96" rx="10"/>
+      <rect x="412" y="388" width="200" height="24" rx="12"/>
+      <rect x="608" y="352" width="20" height="96" rx="10"/>
+      <rect x="634" y="330" width="44" height="140" rx="14"/>
+    </g>
+    <circle cx="512" cy="880" r="26" fill="#E6F0FF"/>
+  </g>
+
+  <!-- Khối chữ bên phải -->
+  <text x="470" y="300" font-family="Arial, Helvetica, sans-serif" font-size="104" font-weight="700" fill="#FFFFFF">Gymer ơi</text>
+  <rect x="470" y="330" width="90" height="8" rx="4" fill="#E6F0FF"/>
+  <text x="470" y="390" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="400" fill="#E6F0FF">Tìm Gymer quanh bạn,</text>
+  <text x="470" y="436" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="400" fill="#E6F0FF">tập luyện khoa học</text>
+</svg>
