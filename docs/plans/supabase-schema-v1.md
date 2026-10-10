@@ -1,6 +1,8 @@
-Trạng thái: CHỜ APPROVE
+Trạng thái: ĐÃ APPROVE (người dùng, 2026-10-10)
 
 # Plan: schema Supabase v1 (migration đầu tiên)
+
+Phạm vi approve: TOÀN BỘ plan, thực thi theo 4 đợt merge (A: M1 là phép thử pipeline; B: bảng; C: policy; D: RPC). Mỗi đợt chỉ merge sau khi người dùng đọc dry-run và duyệt job `migrate`. Mọi thay đổi plan sau đây (nếu có) phải đưa trạng thái về `CHỜ APPROVE`.
 
 Tác giả: sen1. Ngày: 2026-10-10. Chỉ là tài liệu; chưa viết migration thật, chưa commit/push.
 Tham chiếu: `docs/supabase-migrations.md`, `docs/ci-cd-setup.md`, `docs/project-structure.md` (mục 3), `src/types/domain.ts`, `src/services/repositories/*.ts`, `src/mocks/*`.
@@ -17,14 +19,16 @@ Giả định (sai thì plan đổi):
 - Q1. Bỏ gói 10 buổi (khách và Gymer tự thương lượng ngoài app; không có cột, không có dòng giá này trong app). Các mục còn lại của Q1 người dùng không phản đối nên coi là ĐÃ ĐƯỢC XÁC NHẬN NGẦM (người dùng trả lời 2026-10-10): cắt khỏi v1 áp dụng hàng loạt, chọn thời lượng buổi (cố định 60 phút), upload file chứng chỉ, upload ảnh đại diện (dùng ảnh Zalo), sửa/xoá đánh giá (mục 2.8).
 - Q2. Gymer dạy ở phòng tập công cộng. Giữ làm tròn toạ độ 3 chữ số (~110 m); "điểm hoạt động" là phòng tập (mục 2.3). Rủi ro Gymer nhập nhầm nhà riêng làm phòng tập: người dùng chấp nhận, "người dùng phải tự verify"; không thêm cơ chế kiểm duyệt (người dùng trả lời 2026-10-10).
 - Q3. KHÔNG cho xem danh sách Gymer trước khi đăng nhập: `anon` không đọc gì.
-- Q4. Huỷ lịch, ĐÃ ĐƠN GIẢN HOÁ (người dùng trả lời 2026-10-10): khách huỷ được khi `starts_at > now()`; Gymer huỷ được mọi lúc; quy tắc ở mục 2.4A. Q12 (Gymer huỷ buổi `confirmed`) = ĐƯỢC, đã đóng.
+- Q4. Huỷ lịch (người dùng trả lời 2026-10-10, bản cuối thắng): MỘT quy tắc cho cả khách và Gymer: chỉ huỷ được khi `starts_at > now()` (giờ server), cho cả `pending` và `confirmed`. Không ai huỷ được booking đã bắt đầu hoặc đã qua. Q12 (Gymer huỷ buổi `confirmed`) = ĐƯỢC, theo cùng quy tắc, đã đóng. Quy tắc ở mục 2.4A.
 - Q8. KHÔNG xác minh chứng chỉ ở v1 (làm sau). Người dùng ĐỒNG Ý phương án "tự khai" (2026-10-10): Gymer tự nhập tên chứng chỉ, nhãn "Tự khai", KHÔNG tick, KHÔNG chữ "đã xác minh". Mục chứng chỉ đã đóng; việc UI/mock cần đổi ở mục 2.7 và T10.
 - Q7. Khớp Q8: hồ sơ công khai hiện tên chứng chỉ tự khai, gắn nhãn "Tự khai, chưa xác minh". Không có cờ xác minh. (Khác bản đầu của yêu cầu 5 "chứng chỉ chỉ owner + cờ xác minh công khai": không còn xác minh nên cờ không có nghĩa.)
 - Q11. Region Singapore (`ap-southeast-1`) được người dùng chấp nhận. Dữ liệu vẫn nằm ngoài Việt Nam; xem cảnh báo mục 2.9.
 - Q5, Q6, Q9, Q10: người dùng không đổi, giữ mặc định: Q5 đặt sau hiện tại ít nhất 2 giờ và nhiều nhất 60 ngày; Q6 Gymer tối thiểu 18 tuổi (trigger), khách không thu tuổi; Q9 hiện tên người đánh giá như tên Zalo của họ; Q10 không có luồng xoá tài khoản, xử lý thủ công theo yêu cầu.
 
-Còn mở (một câu thật sự cần người dùng quyết, phát sinh từ quy tắc huỷ mới):
-- Q13. Gymer huỷ được booking trong quá khứ dễ bị lạm dụng để xoá dấu vết buổi tập hoặc chặn đánh giá (mục 2.4A, "Hệ quả lên đánh giá"). Chọn một: (a) KHUYẾN NGHỊ: giữ nguyên quy tắc thời gian, nhưng Gymer KHÔNG huỷ được booking đã có đánh giá (`HAS_REVIEW`), không tạo đánh giá mới cho booking `cancelled`, và ghi `cancelled_by`/`cancelled_at` để khách thấy "Gymer đã huỷ"; (b) đúng nguyên văn quy tắc, không chặn `HAS_REVIEW` (Gymer huỷ được cả booking đã có đánh giá; đánh giá vẫn giữ); (c) Gymer chỉ huỷ được khi `ends_at > now()` (trái quyết định hiện tại của người dùng, chỉ nêu để so sánh). Mặc định nếu người dùng không trả lời: (a). (a) và (b) đều KHÔNG chặn việc Gymer huỷ buổi quá khứ TRƯỚC khi khách kịp đánh giá; lỗ hổng này chỉ giảm nhờ lịch sử `cancelled_by`.
+- Q13 ĐÃ ĐÓNG (người dùng trả lời 2026-10-10): áp dụng chung cho Gymer và khách như Q4 ở trên (tương đương phương án (c) cũ nhưng ranh giới là `starts_at`, không phải `ends_at`). Thay quyết định trước đó "Gymer huỷ mọi lúc".
+- Rủi ro khách huỷ phút chót: người dùng bỏ qua, ghi là rủi ro chấp nhận (R14); không phạt, không cửa sổ tối thiểu.
+
+Không còn câu hỏi mở nào cần người dùng trả lời. Điểm chưa chắc về kỹ thuật (spike S1/S2, hành vi thật của dry-run, extension trên hosted) nằm ở mục 2.1 và mục 6.
 
 ## 1. Mục tiêu và phạm vi
 
@@ -152,27 +156,23 @@ Thời gian:
 - T7/CN: `extract(isodow from day) in (6, 7)`; tính trên `date` nên không dính múi giờ.
 - Giá: `create_booking` tính ở server: `day_overrides.price_vnd` nếu có, không thì `price_weekend_vnd` (T7/CN) hoặc `price_weekday_vnd`; ghi vào `bookings.price_vnd` (integer VND, `check (>= 0)`). Client gửi `p_expected_price`; lệch thì ném `PRICE_CHANGED` để khách thấy giá mới trước khi xác nhận lại. Sau đó giá Gymer đổi không ảnh hưởng booking đã tạo.
 
-### 2.4A Huỷ lịch (Q4, Q12: người dùng chốt đơn giản hoá, 2026-10-10)
+### 2.4A Huỷ lịch (Q4/Q12/Q13: người dùng chốt, bản cuối 2026-10-10)
 
-Một RPC `cancel_booking(p_booking_id uuid)`; vai trò của người gọi được xác định ở server (`auth.uid()`), không tin client. Cột thời gian bắt đầu trong plan tên `starts_at` (người dùng ghi `start_at`; cùng ý, kiểu `timestamptz`, so với `now()` của server).
-- Khách (`customer_id = auth.uid()`): huỷ được khi `status in ('pending','confirmed')` VÀ `starts_at > now()`. Booking đã bắt đầu hoặc đã qua: `ALREADY_STARTED` (tạm map `FORBIDDEN`). Không có cửa sổ tối thiểu (bỏ quy tắc 2 giờ).
-- Gymer (`gymer_id = auth.uid()`): huỷ được ở mọi thời điểm, kể cả quá khứ và đang diễn ra, không kiểm thời gian (với các ràng buộc ở Q13 nếu người dùng chọn (a)).
-- Cả hai: chỉ từ `pending` hoặc `confirmed` sang `cancelled`; trạng thái khác (`rejected`, `cancelled`, `expired`) là `FORBIDDEN`; người khác là `FORBIDDEN`/`NOT_FOUND`. Ghi `cancelled_at = now()`, `cancelled_by = auth.uid()` (hai cột mới trên `bookings`, ràng buộc `(status = 'cancelled') = (cancelled_at is not null)`).
-- Không có UPDATE trực tiếp trên `bookings` cho client: huỷ chỉ qua RPC (SECURITY DEFINER, quyền kiểm trong thân hàm).
-Hệ quả chắc chắn:
-- Khung giờ trống lại NGAY: ràng buộc loại trừ chỉ tính `pending`/`confirmed`; `get_day_slots` trả `available` (trừ khi Gymer tự đóng khung).
-- Gymer MẤT quyền đọc ghi chú sức khoẻ ngay khi `cancelled` (policy chỉ cho `pending`/`confirmed`), kể cả khi chính Gymer huỷ. Khách vẫn đọc ghi chú của mình. Hàng booking giữ lại làm lịch sử, không xoá.
-- Không có thông báo đẩy ở v1: bên kia chỉ thấy khi mở app. Mapper hiển thị "Đã huỷ" kèm ai huỷ.
-
-Hệ quả lên đánh giá (nói thẳng, cần Q13):
-- `create_review` yêu cầu `status = 'confirmed'` và `ends_at < now()`. Gymer huỷ booking đã qua sẽ làm khách MẤT khả năng đánh giá buổi đó (booking thành `cancelled`), và nếu đã có đánh giá thì hàng `reviews` vẫn còn (khoá ngoại tới booking giữ nguyên), `rating_avg` không đổi vì trigger chỉ chạy khi `reviews` đổi. Nghĩa là: đánh giá đã có KHÔNG bị xoá theo, nhưng "buổi đã xảy ra" có thể bị đổi thành "đã huỷ", làm đánh giá mất bằng chứng buổi tập, và Gymer có thể huỷ trước khi khách kịp đánh giá để né đánh giá xấu.
-- Đề xuất đơn giản và an toàn nhất (Q13 phương án a): `create_review` không nhận booking `cancelled` (đã có sẵn do yêu cầu `confirmed`); `cancel_booking` do Gymer gọi bị chặn bằng `HAS_REVIEW` khi booking đã có đánh giá; lưu `cancelled_by` để khách và người duyệt thấy ai huỷ. Không giải quyết được trường hợp Gymer huỷ buổi quá khứ trước khi khách đánh giá: muốn chặn hẳn phải hạn chế Gymer theo `ends_at` (phương án c), trái quyết định hiện tại. Nói thẳng đây là lỗ hổng còn lại.
-
-Rủi ro chấp nhận (không cơ chế phạt ở v1):
-- Khách huỷ `confirmed` sát giờ hoặc phút chót (chỉ cần `starts_at > now()`): Gymer có thể bị bỏ trống khung mà không kịp biết (không có push). Chấp nhận.
-- Khách đặt rồi huỷ liên tục làm nhiễu lịch Gymer; giới hạn 3 `pending` chỉ chặn một phần. Chấp nhận.
-
-Ảnh hưởng thống kê phía Gymer: các số "buổi tuần này", "buổi hôm nay" chỉ đếm `status = 'confirmed'`; "yêu cầu mới/chờ duyệt" chỉ đếm `pending` chưa hết hạn; `cancelled`, `expired`, `rejected` không đếm. Nếu Gymer huỷ buổi quá khứ thì số buổi tuần này giảm theo (đúng ý, nhưng lịch sử thống kê của tuần đã qua bị thay đổi sau khi xảy ra). Các số này tính bằng truy vấn ở tầng repository, không có bảng thống kê riêng ở v1.
+Một RPC `cancel_booking(p_booking_id uuid)`, MỘT quy tắc cho cả hai vai. Người gọi là chủ booking (`customer_id = auth.uid()` hoặc `gymer_id = auth.uid()`), xác định ở server. Cột thời gian bắt đầu trong plan tên `starts_at` (người dùng ghi `start_at`; cùng ý, kiểu `timestamptz`, so với `now()` của server).
+- Điều kiện: `status in ('pending','confirmed')` VÀ `starts_at > now()`. Ngược lại: booking đã bắt đầu/đã qua => `ALREADY_STARTED` (cả hai vai; tạm map `FORBIDDEN` ở tầng services); trạng thái khác (`rejected`, `cancelled`, `expired`) hoặc người lạ => `FORBIDDEN`.
+- Kết quả: `status = 'cancelled'`, `cancelled_at = now()`, `cancelled_by = auth.uid()` (hai cột trên `bookings`, ràng buộc `(status = 'cancelled') = (cancelled_at is not null)`).
+- Không có UPDATE trực tiếp trên `bookings` cho client (không policy `update`, không `grant update`): huỷ chỉ qua RPC SECURITY DEFINER, kiểm quyền trong thân hàm, khoá hàng `for update` để hai lần huỷ/xác nhận đồng thời không chồng nhau. Không có cửa sổ giờ tối thiểu và không có hằng số "2 giờ".
+- Lịch sử buổi đã qua giờ bất biến: không RPC nào chuyển trạng thái booking có `starts_at <= now()` ngoại trừ việc lười chuyển `pending` quá hạn sang `expired` (pending chưa từng được xác nhận). `respond_booking` trên booking đã quá `expires_at` (= `least(created_at + 24h, starts_at)`) cũng không xác nhận được. Thay đổi bởi admin ngoài app (dashboard) nằm ngoài quy tắc này.
+Hệ quả:
+- Khung giờ trống lại NGAY khi sang `cancelled` (ràng buộc loại trừ chỉ tính `pending`/`confirmed`); `get_day_slots` trả `available` (trừ khi Gymer tự đóng khung).
+- Gymer MẤT quyền đọc ghi chú sức khoẻ ngay khi `cancelled` (policy chỉ cho `pending`/`confirmed`), kể cả khi chính Gymer huỷ. Khách vẫn đọc ghi chú của mình. Hàng booking giữ lại làm lịch sử.
+- Đánh giá: `create_review` yêu cầu `confirmed` và `ends_at < now()`. Vì không booking nào đã qua giờ huỷ được, booking có đánh giá không bao giờ bị huỷ; không cần mã `HAS_REVIEW` và không có đường nào "xoá dấu vết buổi tập sau đánh giá xấu" trong app. `rating_avg` không bị ảnh hưởng bởi huỷ lịch.
+- Thống kê phía Gymer: "buổi tuần này", "buổi hôm nay" chỉ đếm `status = 'confirmed'`; "yêu cầu mới/chờ duyệt" chỉ đếm `pending` chưa hết hạn; `cancelled`, `expired`, `rejected` không đếm. Buổi đã qua giờ không đổi nên thống kê quá khứ ổn định. Các số này tính bằng truy vấn ở tầng repository, không có bảng thống kê riêng ở v1.
+- Không có thông báo đẩy ở v1: bên kia chỉ thấy khi mở app. Mapper hiển thị "Đã huỷ" kèm ai huỷ (`cancelled_by`).
+Rủi ro chấp nhận (người dùng bỏ qua, không phạt, không cửa sổ tối thiểu):
+- Khách huỷ `confirmed` phút chót (miễn là `starts_at > now()`): Gymer có thể bỏ trống khung mà không kịp biết.
+- Gymer huỷ sát giờ ảnh hưởng khách tương tự.
+- Đặt rồi huỷ liên tục gây nhiễu lịch; giới hạn 3 `pending` chỉ chặn một phần.
 
 ### 2.5 RLS, quyền, SECURITY DEFINER
 
@@ -218,11 +218,11 @@ RPC SECURITY DEFINER (mỗi cái kèm lý do trong comment):
 - `search_gymers`, `get_day_slots`, `get_month_calendar`: cần đọc bảng mà client bị chặn (toạ độ, ngoại lệ lịch, booking của người khác để tính khung bận), chỉ trả dữ liệu công khai/đã lọc. `get_day_slots` chỉ trả `booked_by` (tên khách) khi người gọi chính là Gymer đó.
 - `create_booking`, `respond_booking`, `cancel_booking`, `create_review`: kiểm điều kiện nghiệp vụ và ghi vào bảng mà client không có quyền ghi.
 - Trigger `private.recompute_rating` (sau thay đổi `reviews`): cập nhật cột client không được ghi.
-Lỗi nghiệp vụ ném bằng `raise exception 'MÃ'` (ví dụ `SLOT_TAKEN`, `SLOT_NOT_OPEN`, `PRICE_CHANGED`, `FORBIDDEN`, `NOT_FOUND`, `BOOKING_EXPIRED`, `LIMIT_REACHED`, `ALREADY_STARTED`, `HAS_REVIEW`, `VALIDATION`); mapper ở tầng services chuyển sang `AppError`. Khớp `ErrorCode` hiện có, các mã mới (`PRICE_CHANGED`, `SLOT_NOT_OPEN`, `ALREADY_STARTED`, `HAS_REVIEW`) tạm map về `VALIDATION`/`SLOT_TAKEN`/`FORBIDDEN` (mục 5).
+Lỗi nghiệp vụ ném bằng `raise exception 'MÃ'` (ví dụ `SLOT_TAKEN`, `SLOT_NOT_OPEN`, `PRICE_CHANGED`, `FORBIDDEN`, `NOT_FOUND`, `BOOKING_EXPIRED`, `LIMIT_REACHED`, `ALREADY_STARTED`, `VALIDATION`); mapper ở tầng services chuyển sang `AppError`. Khớp `ErrorCode` hiện có, các mã mới (`PRICE_CHANGED`, `SLOT_NOT_OPEN`, `ALREADY_STARTED`) tạm map về `VALIDATION`/`SLOT_TAKEN`/`FORBIDDEN` (mục 5).
 
 ### 2.6 Đánh giá
 
-- Chỉ cho đánh giá sau buổi đã xong: booking của chính khách, `status = 'confirmed'`, `ends_at < now()`, mỗi booking một đánh giá (`unique (booking_id)`). Không có trạng thái `completed` lưu trữ: "đã xong" = `confirmed` và đã qua `ends_at` (suy ra, không cần cron). Hệ quả: không có cách ghi nhận Gymer vắng mặt; khách vẫn đánh giá được. Chấp nhận ở v1.
+- Chỉ cho đánh giá sau buổi đã xong: booking của chính khách, `status = 'confirmed'`, `ends_at < now()`, mỗi booking một đánh giá (`unique (booking_id)`). Không có trạng thái `completed` lưu trữ: "đã xong" = `confirmed` và đã qua `ends_at` (suy ra, không cần cron). Hệ quả: không có cách ghi nhận Gymer vắng mặt; khách vẫn đánh giá được. Chấp nhận ở v1. Booking đã qua giờ không huỷ được (2.4A) nên đánh giá luôn gắn với một buổi `confirmed` bất biến.
 - Rating lưu denormalized: `gymer_profiles.rating_avg numeric(3,2)`, `rating_count int`, cập nhật bằng trigger sau insert/update/delete trên `reviews` (tính lại bằng aggregate theo Gymer). Lý do: bộ lọc "từ 4★" và thẻ danh sách cần giá trị này cho mọi dòng mỗi lần tìm; tính động phải join + group mỗi lần tìm. Cái giá: trigger là thêm một chỗ có thể sai, cần test; ghi lại đánh giá 0 lượt = `rating_avg 0, rating_count 0` (UI phải hiển thị "chưa có đánh giá", không hiện "0.0").
 - `reviews.author_name` chụp tên tại thời điểm đánh giá (tránh mở `profiles` cho công chúng). Mapper dựng `dateLabel` từ `created_at`.
 - v1 không sửa/xoá đánh giá (không có policy ghi); admin xử lý qua dashboard.
@@ -255,7 +255,7 @@ Loại: giữ trạng thái xác minh thủ công "dựa trên niềm tin" (ngư
 | Sửa/xoá đánh giá | Cắt | | Policy + trigger đã sẵn sàng tính lại |
 | Sửa mẫu giờ mở theo thứ trong tuần | Cắt (mẫu giống nhau mọi ngày, đóng/mở bằng ngoại lệ) | Mockup không có màn sửa mẫu | Thêm cột `weekday` (expand) |
 | Huỷ lịch bởi khách | GIỮ (người dùng chốt Q4, `starts_at > now()`) | Quy tắc mục 2.4A | |
-| Gymer huỷ booking (cả đã xác nhận, cả quá khứ) | GIỮ (người dùng chốt Q12 = được) | Mockup không có; cùng RPC `cancel_booking`; xem Q13 | |
+| Gymer huỷ booking (cả đã xác nhận) | GIỮ (Q12 = được), cùng quy tắc `starts_at > now()` với khách | Mockup không có; cùng RPC `cancel_booking` (2.4A) | |
 | Xoá tài khoản tự phục vụ | Cắt (Q10) | Cần quy tắc giữ lịch sử | |
 
 ### 2.9 Dữ liệu cá nhân
@@ -343,6 +343,8 @@ Mỗi lần merge `main` có migration chờ thì pipeline dry-run rồi chờ d
 | C | M6–M7 | Quyền | Chạy bộ test RLS cục bộ đã xanh trước; kiểm `\dp` |
 | D | M8–M9 | RPC | Gọi thử qua dashboard bằng role `authenticated` giả (nếu có thể); advisor "function search_path mutable" không báo |
 
+Quy tắc chung: MỖI đợt chỉ merge vào `main` sau khi người dùng đọc dry-run (job `plan-migrate`) và duyệt job `migrate`; PM không merge đợt kế tiếp khi chưa có kết quả đợt trước.
+
 Đợt A đáng kể vì nó kiểm các giả định chưa từng chạy ở repo này: dry-run in gì; có đọc được cụm "up to date" ở lần dry-run kế tiếp không; job `migrate` có chờ duyệt đúng; `--yes` hoạt động; secrets đúng. Nếu A lỗi, lỗi thuộc về pipeline, không lẫn với lỗi SQL nghiệp vụ.
 
 ### 3.2 Hướng dẫn người duyệt đọc dry-run và migration
@@ -360,7 +362,7 @@ Danh sách kiểm cho từng đợt:
 8. Trước đợt C: xác nhận đã có kết quả test cục bộ (báo cáo của dev kèm đầu ra) và Supabase có bật backup/PITR (database trống nên rủi ro mất dữ liệu thấp, nhưng nên giữ thói quen theo `docs/supabase-migrations.md`).
 9. Không có dấu vết xác minh chứng chỉ: grep `certificate_status`, `is_certified`, `verified` trong `supabase/migrations/` => kỳ vọng không có. Đợt B/C: `certificates` chỉ có `id`, `gymer_id`, `name` (+ cột thời gian).
 10. Đợt C: grep policy có `anon` => không có (Q3); mọi `grant select` cho `authenticated` đúng ma trận 2.5; policy ghi chú sức khoẻ chỉ cho Gymer khi `pending`/`confirmed`.
-11. Đợt D: `cancel_booking` đúng 2.4A: vai khách có điều kiện `starts_at > now()`, vai Gymer không kiểm thời gian (và `HAS_REVIEW` nếu Q13 = a); không có hằng số "2 giờ" nào trong huỷ lịch; chỉ chuyển từ `pending`/`confirmed`; set `cancelled_at`, `cancelled_by`; không có RPC nào trả lat/lng. Đợt B: `bookings` có `cancelled_at`, `cancelled_by` và check nhất quán.
+11. Đợt D: `cancel_booking` đúng 2.4A: MỘT điều kiện `starts_at > now()` cho cả hai vai, không nhánh riêng theo vai về thời gian, không hằng số "2 giờ", không `HAS_REVIEW`; chỉ chuyển từ `pending`/`confirmed`; set `cancelled_at`, `cancelled_by`; khoá hàng; không có `grant update`/policy `update` trên `bookings`; không RPC nào trả lat/lng. Đợt B: `bookings` có `cancelled_at`, `cancelled_by` và check nhất quán.
 
 ## 4. Rủi ro và cách giảm
 
@@ -377,8 +379,8 @@ Danh sách kiểm cho từng đợt:
 | R9 | `unaccent`/"đ", haversine tại cực, kết quả rỗng sai | Thấp | Ca test cụ thể |
 | R10 | Mô hình lịch suy ra sai (đặc biệt ngày T7/CN, ranh giới nửa đêm, múi giờ) | Trung bình | Test với `timezone = 'UTC'` và `'Asia/Ho_Chi_Minh'`; giờ chẵn 19:00 VN = 12:00 UTC cùng ngày; 07:00 VN = 00:00 UTC cùng ngày; không có giờ nào vượt ngày |
 | R11 | Pháp lý/riêng tư (mục 2.9) | Cao (ngoài kỹ thuật) | Người dùng tìm tư vấn pháp lý trước khi có người dùng thật; chặn `is_listed` cho đến khi có chính sách |
-| R14 | Huỷ phút chót của khách, không cửa sổ tối thiểu | Thấp-TB | Người dùng chấp nhận (2.4A); không phạt ở v1; có `cancelled_by/at` để sau này thống kê |
-| R15 | Gymer huỷ buổi quá khứ để né/xoá đánh giá | Trung bình | Q13: `HAS_REVIEW`, không đánh giá cho booking `cancelled`, ghi `cancelled_by`; lỗ hổng "huỷ trước khi khách đánh giá" còn lại nếu không chọn (c) |
+| R14 | Huỷ phút chót (khách hoặc Gymer), không cửa sổ tối thiểu | Thấp-TB | Người dùng bỏ qua, CHẤP NHẬN (2.4A); không phạt ở v1; `cancelled_by/at` để sau này thống kê |
+| R15 | Lịch sử buổi đã qua bị sửa trong app | Thấp | Không ai huỷ được booking `starts_at <= now()` (2.4A); không UPDATE trực tiếp; test; admin sửa qua dashboard nằm ngoài app và không bị chặn |
 | R13 | Hiển thị chứng chỉ tự khai bị hiểu là đã xác minh, hoặc khai gian | Trung bình | Mục 2.7: không huy hiệu/tick xanh, nhãn "Tự khai", tiêu đề rõ; T10 bỏ `certified`/`verified`; cập nhật mockup trong Project; người duyệt UI kiểm khi nối dữ liệu thật |
 | R12 | `database.types.ts` lệch schema | Trung bình | Sinh bằng công cụ (mục 5, T9), không viết tay; kiểm typecheck |
 
@@ -398,9 +400,9 @@ Xác minh: nếu supabase/tests/local/run.sh đã có thì chạy nó và đưa 
 
 | Đợt viết | Task | Dev | Phụ thuộc | Song song với |
 |---|---|---|---|---|
-| 1 | T1 Migration M1 | dev1 | — | T2, T3 |
-| 1 | T2 Migration M2 | dev2 | — (tên bảng theo 2A) | T1, T3 |
-| 1 | T3 Bộ chạy thử Postgres cục bộ + shim | dev3 | — | T1, T2 |
+| 1 (ĐỢT A) | T1 Migration M1 | dev1 | — | T3 (T3 chạy kiểm M1 sau khi T1 xong) |
+| 1B (Đợt B, CHƯA giao ở Đợt A) | T2 Migration M2 | dev2 | Đợt A đã áp dụng | — |
+| 1 (ĐỢT A) | T3 Bộ chạy thử Postgres cục bộ + shim | dev3 | — (nạp M1 khi có) | T1 |
 | 2 | T4 Migration M3 + M4 | dev1 | T1 (enum), T3 để chạy thử | T5, T6 |
 | 2 | T5 Migration M5 + M6 | dev2 | T2, T3 | T4, T6 |
 | 2 | T6 Migration M7 + test RLS | dev3 | T2, T4 (tên cột bookings), T3 | T4, T5 |
@@ -414,12 +416,46 @@ Xác minh: nếu supabase/tests/local/run.sh đã có thì chạy nó và đưa 
 
 ---
 
-### T1 — Migration M1 (dev1, đợt 1)
-- Mục tiêu: file phép thử pipeline nhỏ nhất.
-- File được phép: tạo `supabase/migrations/20261010100000_init_extensions_enums_private.sql`.
-- Nội dung: `create extension if not exists btree_gist with schema extensions;` và `unaccent` (cùng cách); `create schema if not exists private;` (không grant gì cho client); 2 enum (`gender`, `booking_status`) ở mục 2A bọc DO-exception; comment đầu file nêu mục đích và "không có bảng, không dữ liệu".
-- Hoàn thành: file đúng tên/định dạng; chạy trong harness (T3) hai lần liên tiếp không lỗi; `bash scripts/ci/scan-migrations.sh supabase/migrations/20261010100000_init_extensions_enums_private.sql` ra 0 cảnh báo. Nếu T3 chưa có: chỉ báo "chưa chạy được".
-- Phụ thuộc: không.
+### T1 — Migration M1 (dev1, ĐỢT A)
+- Mục tiêu: ghi file migration M1 đúng NGUYÊN VĂN bên dưới. Đây là phép thử pipeline đầu tiên; không thiết kế, không thêm bớt, không sửa tên file.
+- File được phép: tạo đúng một file `supabase/migrations/20261010100000_init_extensions_enums_private.sql` với nội dung CHÍNH XÁC (chép nguyên, kể cả comment):
+
+```sql
+-- M1: extension, schema private, enum dùng chung.
+-- Không có bảng, không có dữ liệu. Phép thử pipeline nhỏ nhất.
+
+-- Extension nằm ở schema extensions (đã có sẵn trên Supabase).
+create extension if not exists btree_gist with schema extensions;
+create extension if not exists unaccent with schema extensions;
+
+-- Schema cho hàm nội bộ (trigger, helper). Không cho client truy cập.
+create schema if not exists private;
+revoke all on schema private from public, anon, authenticated;
+
+-- Enum giới tính (khớp Gender trong src/types/domain.ts).
+do $$
+begin
+  create type public.gender as enum ('female', 'male');
+exception when duplicate_object then
+  null;
+end $$;
+
+-- Enum trạng thái đặt lịch.
+do $$
+begin
+  create type public.booking_status as enum ('pending', 'confirmed', 'rejected', 'cancelled', 'expired');
+exception when duplicate_object then
+  null;
+end $$;
+```
+
+- Dừng và báo lại (đừng tự sửa) nếu: thư mục `supabase/migrations/` đã có file migration khác; tên file trùng một file đã có; bạn thấy SQL cần chỉnh mới chạy được.
+- Cách kiểm tra (chạy từ `/home/claude/gymer-oi`; đều khả thi ở môi trường này, không cần Docker/Supabase CLI):
+  1. `bash scripts/ci/scan-migrations.sh supabase/migrations/20261010100000_init_extensions_enums_private.sql` => phải in "không thấy mẫu nguy hiểm".
+  2. Nếu `supabase/tests/local/run.sh` đã có (T3): `bash supabase/tests/local/run.sh` => phải thấy `OK: ... (lần 1)`, `OK: ... (lần 2)`, `XONG: tất cả đạt.`. Nếu chưa có: báo "chưa chạy được SQL", KHÔNG khẳng định SQL đúng.
+  3. `git status --short` chỉ có đúng file mới này.
+- Tiêu chí hoàn thành: file giống từng ký tự; ba lệnh trên có kết quả như nêu; báo cáo dán đầu ra thật.
+- Phụ thuộc: không. Không commit, không push.
 
 ### T2 — Migration M2 (dev2, đợt 1)
 - File được phép: tạo `supabase/migrations/20261010100100_core_profile_tables.sql`.
@@ -427,14 +463,135 @@ Xác minh: nếu supabase/tests/local/run.sh đã có thì chạy nó và đưa 
 - Hoàn thành: áp trong harness sau M1 hai lần không lỗi; `\d` các bảng đúng cột; mọi bảng `relrowsecurity = true`; `anon`/`authenticated` không có quyền trên bất kỳ bảng nào (truy vấn `information_schema.role_table_grants` ra rỗng); scan 0 cảnh báo.
 - Phụ thuộc: M1 (enum `gender`) chỉ khi chạy thử.
 
-### T3 — Harness Postgres cục bộ + shim Supabase (dev3, đợt 1)
-- Mục tiêu: chạy được mọi migration và test SQL trên Postgres 16 cục bộ, vì không có Docker daemon/CLI (mục 6).
-- File được phép (tạo mới): `supabase/tests/local/shim_supabase.sql`, `supabase/tests/local/run.sh`, `supabase/tests/local/README.md`. (Chỉ dùng cho test, KHÔNG nằm trong `supabase/migrations/`.)
-- `shim_supabase.sql`: tạo role `anon`, `authenticated`, `service_role` (NOLOGIN); `create schema extensions`, `auth`; bảng tối thiểu `auth.users(id uuid pk default gen_random_uuid(), email text)`; hàm `auth.uid()` đọc `current_setting('request.jwt.claim.sub', true)::uuid` (null nếu rỗng); mô phỏng default privileges kiểu Supabase cho bảng mới ở `public` (cấp ALL cho anon/authenticated/service_role) để kiểm tra revoke thật sự có tác dụng; `service_role` có `bypassrls`.
-- `run.sh`: (1) dựng cụm Postgres tạm trong thư mục do user `postgres` sở hữu (root không chạy được `postgres`; dùng `runuser -u postgres --`, binary ở `/usr/lib/postgresql/16/bin`, dữ liệu ở thư mục tạm riêng, cổng không mặc định, socket trong thư mục tạm); (2) tạo DB trống, nạp shim; (3) áp lần lượt `supabase/migrations/*.sql` theo thứ tự tên, mỗi file hai lần (kiểm idempotent), dừng ở lỗi đầu tiên với tên file; (4) chạy mọi `supabase/tests/local/cases/*.sql` theo thứ tự (mỗi file dùng `do $$ ... assert/raise exception ... $$` hoặc `\set ON_ERROR_STOP on`); (5) luôn dừng và xoá cụm tạm khi xong (trap EXIT). Thoát khác 0 nếu có lỗi. Thư mục `cases/` có thể rỗng ban đầu và vẫn phải pass.
-- `README.md`: cách chạy, giới hạn (PG16 không phải PG17; shim không phải Supabase thật), danh sách điều KHÔNG kiểm được.
-- Hoàn thành: dev chạy `bash supabase/tests/local/run.sh` với thư mục migrations rỗng (chỉ `.gitkeep`) và với M1 (nếu đã có); dán đầu ra thật. Nếu không khởi động được Postgres (quyền, cổng...), báo nguyên văn lỗi, KHÔNG sửa thành "giả vờ pass".
-- Phụ thuộc: không. Lưu ý quyền: thư mục scratchpad của sen1 không dùng được cho `postgres`; dùng `mktemp -d` rồi `chown postgres`.
+### T3 — Harness Postgres cục bộ + shim Supabase (dev3, ĐỢT A)
+- Mục tiêu: chạy migration và test SQL trên Postgres 16 tạm vì không có Docker daemon/Supabase CLI. Chép NGUYÊN VĂN các file bên dưới (sen1 đã chạy thử bản này, mục 6). Không thiết kế lại, không đổi tên, không thêm tính năng.
+- File được phép (tạo mới): `supabase/tests/local/shim_supabase.sql`, `supabase/tests/local/run.sh`, `supabase/tests/local/README.md`, `supabase/tests/local/cases/00_m1_smoke.sql`. Không đụng `supabase/migrations/`. Sau khi tạo: `chmod +x supabase/tests/local/run.sh`.
+
+`supabase/tests/local/shim_supabase.sql`:
+```sql
+-- Shim tối thiểu mô phỏng Supabase trên Postgres thường. CHỈ dùng cho test cục bộ, không phải migration.
+do $$ begin
+  if not exists (select 1 from pg_roles where rolname = 'anon') then create role anon nologin; end if;
+  if not exists (select 1 from pg_roles where rolname = 'authenticated') then create role authenticated nologin; end if;
+  if not exists (select 1 from pg_roles where rolname = 'service_role') then create role service_role nologin bypassrls; end if;
+end $$;
+
+create schema if not exists extensions;
+grant usage on schema extensions to anon, authenticated, service_role;
+
+create schema if not exists auth;
+grant usage on schema auth to anon, authenticated, service_role;
+create table if not exists auth.users (
+  id uuid primary key default gen_random_uuid(),
+  email text
+);
+
+-- auth.uid() đọc từ cài đặt phiên: set local request.jwt.claim.sub = '<uuid>'.
+create or replace function auth.uid() returns uuid
+language sql stable
+as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+grant execute on function auth.uid() to anon, authenticated, service_role;
+
+-- Mô phỏng default privileges của Supabase: đối tượng mới ở schema public được cấp rộng.
+grant usage on schema public to anon, authenticated, service_role;
+alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
+alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
+```
+
+`supabase/tests/local/run.sh`:
+```bash
+#!/usr/bin/env bash
+# Chạy migration + test SQL trên Postgres 16 tạm. Xem README.md. KHÔNG đụng production.
+set -euo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$HERE/../../.." && pwd)"
+PGBIN="${PGBIN:-/usr/lib/postgresql/16/bin}"
+PORT="${PG_TEST_PORT:-54329}"
+DB=gymer_test
+
+[ -x "$PGBIN/initdb" ] || { echo "LỖI: không thấy $PGBIN/initdb (đặt PGBIN nếu khác)."; exit 2; }
+
+WORK="$(mktemp -d /var/tmp/gymer-pgtest.XXXXXX)"
+RUN=()
+if [ "$(id -u)" = "0" ]; then
+  # root không chạy được postgres: dùng user postgres, thư mục tạm phải thuộc user đó.
+  chown postgres "$WORK"
+  RUN=(runuser -u postgres --)
+fi
+
+cleanup() {
+  "${RUN[@]}" "$PGBIN/pg_ctl" -D "$WORK/data" -m immediate stop >/dev/null 2>&1 || true
+  rm -rf "$WORK"
+}
+trap cleanup EXIT
+
+"${RUN[@]}" "$PGBIN/initdb" -D "$WORK/data" -A trust -U postgres -E UTF8 --locale=C.UTF-8 --no-sync >"$WORK/initdb.log" 2>&1 \
+  || { echo "LỖI initdb:"; tail -20 "$WORK/initdb.log"; exit 3; }
+"${RUN[@]}" "$PGBIN/pg_ctl" -D "$WORK/data" -w -l "$WORK/server.log" \
+  -o "-c listen_addresses='' -c unix_socket_directories=$WORK -p $PORT" start >/dev/null \
+  || { echo "LỖI khởi động Postgres:"; tail -20 "$WORK/server.log"; exit 4; }
+
+psql_run() { "${RUN[@]}" "$PGBIN/psql" -h "$WORK" -p "$PORT" -U postgres -d "$DB" -X -q -v ON_ERROR_STOP=1 "$@"; }
+"${RUN[@]}" "$PGBIN/createdb" -h "$WORK" -p "$PORT" -U postgres "$DB"
+echo "Postgres: $(psql_run -At -c 'select version()')"
+
+psql_run < "$HERE/shim_supabase.sql"
+echo "OK: shim_supabase.sql"
+
+shopt -s nullglob
+for f in "$ROOT"/supabase/migrations/*.sql; do
+  for pass in 1 2; do
+    # -1: mỗi file một giao dịch, giống supabase db push.
+    psql_run -1 < "$f" || { echo "THẤT BẠI: $(basename "$f") (lần $pass)"; exit 1; }
+    echo "OK: $(basename "$f") (lần $pass)"
+  done
+done
+for f in "$HERE"/cases/*.sql; do
+  psql_run < "$f" || { echo "THẤT BẠI test: $(basename "$f")"; exit 1; }
+  echo "OK test: $(basename "$f")"
+done
+echo "XONG: tất cả đạt."
+```
+
+`supabase/tests/local/cases/00_m1_smoke.sql`:
+```sql
+do $$
+begin
+  assert (select count(*) from pg_extension where extname in ('btree_gist','unaccent')) = 2, 'thiếu extension';
+  assert (select count(*) from pg_namespace where nspname = 'private') = 1, 'thiếu schema private';
+  assert (select count(*) from pg_type t join pg_namespace n on n.oid = t.typnamespace
+          where n.nspname = 'public' and t.typname in ('gender','booking_status')) = 2, 'thiếu enum';
+  assert (select array_agg(e.enumlabel::text order by e.enumsortorder) from pg_enum e join pg_type t on t.oid = e.enumtypid
+          where t.typname = 'booking_status') = array['pending','confirmed','rejected','cancelled','expired'], 'sai nhãn booking_status';
+  assert not has_schema_privilege('authenticated', 'private', 'usage'), 'authenticated không được dùng schema private';
+  assert not has_schema_privilege('anon', 'private', 'usage'), 'anon không được dùng schema private';
+  raise notice 'unaccent(Đức Hà) = %', extensions.unaccent('Đức Hà');
+end $$;
+```
+
+`supabase/tests/local/README.md` (nội dung đúng như khối sau, không kể dòng rào):
+```
+# Test cục bộ cho migration
+
+Chạy: `bash supabase/tests/local/run.sh` (từ gốc repo).
+
+Làm gì: dựng Postgres 16 tạm (thư mục /var/tmp/gymer-pgtest.*, chỉ socket, cổng 54329 hoặc PG_TEST_PORT), nạp shim_supabase.sql, áp từng file trong supabase/migrations/ theo thứ tự (mỗi file hai lần, mỗi lần một giao dịch), rồi chạy cases/*.sql. Tự dọn khi xong.
+Chạy bằng root thì tự dùng user postgres (runuser). Cần binary ở /usr/lib/postgresql/16/bin (đổi bằng biến PGBIN).
+
+Giới hạn (nói thẳng): đây là Postgres 16, KHÔNG phải 17; shim chỉ mô phỏng role anon/authenticated/service_role, auth.uid() và default privileges, KHÔNG phải Supabase thật. Không kiểm được: output thật của `supabase db push --dry-run`, extension trên hosted, PostgREST/RPC qua API, edge function, quyền của role migration trên hosted.
+Test case: thêm file *.sql vào cases/, dùng do $$ ... assert ... $$; lỗi => run.sh dừng với mã khác 0.
+```
+
+- Dừng và báo lại (đừng tự sửa) nếu: `run.sh` báo lỗi khởi động Postgres (dán nguyên văn dòng `LỖI ...` và 20 dòng log); `/usr/lib/postgresql/16/bin/initdb` không có; cổng 54329 bận (có thể đặt `PG_TEST_PORT` khác để chạy thử, rồi báo); bạn muốn đổi nội dung file.
+- Cách kiểm tra (từ `/home/claude/gymer-oi`):
+  1. Nếu T1 chưa xong (chưa có file M1): bỏ tạm `cases/00_m1_smoke.sql` ra ngoài thư mục (hoặc chạy sau khi T1 xong), chạy `bash supabase/tests/local/run.sh` => thấy `Postgres: PostgreSQL 16...`, `OK: shim_supabase.sql`, `XONG: tất cả đạt.`; trả file về chỗ cũ.
+  2. Khi M1 đã có (T1 xong): `bash supabase/tests/local/run.sh; echo EXIT=$?` => thấy `OK: 20261010100000_init_extensions_enums_private.sql (lần 1)` và `(lần 2)`, `OK test: 00_m1_smoke.sql`, `XONG: tất cả đạt.`, `EXIT=0`.
+  3. `ls /var/tmp | grep gymer-pgtest` => rỗng (đã dọn).
+  4. `git status --short` chỉ có các file thuộc T3 (+ file của T1 nếu đã có).
+- Tiêu chí hoàn thành: các file giống nguyên văn; bước 2 và 3 đạt; báo cáo dán đầu ra thật của bước 2.
+- Phụ thuộc: bước kiểm 2 cần T1 xong. Không commit, không push.
 
 ### T4 — Migration M3 + M4 (dev1, đợt 2)
 - File được phép: tạo `supabase/migrations/20261010100200_schedule_tables.sql`, `supabase/migrations/20261010100300_booking_tables.sql`.
@@ -468,7 +625,7 @@ Xác minh: nếu supabase/tests/local/run.sh đã có thì chạy nó và đưa 
 - Nội dung:
   - `create_booking(p_gymer_id uuid, p_starts_at timestamptz, p_goal text, p_health_note text, p_expected_price int) returns uuid`: kiểm đã đăng nhập; Gymer `is_listed` và `accepts_requests`; không tự đặt; thời điểm hợp lệ (mặc định sau hiện tại >= 2 giờ, <= 60 ngày; Q5); khung đang mở theo 2.4 (giờ VN); lấy advisory lock theo Gymer; chuyển `pending` quá hạn chồng khung sang `expired`; giới hạn 3 `pending`/khách (`LIMIT_REACHED`); tính giá ở server, lệch `p_expected_price` => `PRICE_CHANGED`; chèn `bookings` (`ends_at = starts_at + 60 phút`, `expires_at = least(now() + 24h, starts_at)`) và `booking_health_notes` nếu có ghi chú; bắt `exclusion_violation` => `SLOT_TAKEN`.
   - `respond_booking(p_booking_id uuid, p_decision text)`: chỉ Gymer của booking; chỉ từ `pending` chưa hết hạn (quá hạn => `BOOKING_EXPIRED` và chuyển `expired`); `p_decision` thuộc `confirmed|rejected`.
-  - `cancel_booking(p_booking_id uuid)`: đúng mục 2.4A. Xác định vai bằng `auth.uid()` so với `customer_id`/`gymer_id` của booking (khoá hàng `for update`); khách: `pending|confirmed` và `starts_at > now()` nếu không `ALREADY_STARTED`; Gymer: `pending|confirmed`, không kiểm thời gian; nếu Q13 = (a) thêm: Gymer gọi khi booking đã có hàng trong `reviews` => `HAS_REVIEW`. Set `status='cancelled'`, `cancelled_at=now()`, `cancelled_by=auth.uid()`. Trạng thái khác hoặc người lạ => `FORBIDDEN`. Không có hằng số cửa sổ giờ.
+  - `cancel_booking(p_booking_id uuid)`: đúng mục 2.4A. Khoá hàng booking `for update`; xác định người gọi là `customer_id` hoặc `gymer_id` (nếu không phải => `FORBIDDEN`); điều kiện duy nhất cho cả hai vai: `status in ('pending','confirmed')` và `starts_at > now()`, nếu `starts_at <= now()` => `ALREADY_STARTED`, trạng thái khác => `FORBIDDEN`. Set `status='cancelled'`, `cancelled_at=now()`, `cancelled_by=auth.uid()`. Không có hằng số cửa sổ giờ, không kiểm `reviews`.
   - `create_review(p_booking_id uuid, p_rating int, p_body text) returns uuid`: chỉ khách của booking, `confirmed` và `ends_at < now()`, chưa có đánh giá; chụp `author_name` từ `profiles.display_name`.
   - Trigger BEFORE INSERT/UPDATE trên `gymer_day_overrides` và `gymer_slot_overrides` (đặt `is_open = false`): nếu có booking `pending|confirmed` giữ khung/ngày đó => `SLOT_HAS_BOOKING`; dùng cùng advisory lock.
   - Mã lỗi đúng danh sách 2.5, ném bằng `raise exception '<MÃ>'`.
@@ -477,7 +634,7 @@ Xác minh: nếu supabase/tests/local/run.sh đã có thì chạy nó và đưa 
 
 ### T9 — Test nghiệp vụ (dev3, đợt 3)
 - File được phép: tạo `supabase/tests/local/cases/20_booking.sql`, `30_schedule_pricing.sql`, `40_search.sql`, `50_reviews_rating.sql`.
-- Nội dung (mỗi file là chuỗi assert với dữ liệu gieo riêng, dọn sau mình): chống trùng (kể cả 2 kết nối psql thực sự song song dùng `pg_sleep`/hai tiến trình nền nếu làm được trong `run.sh` mà không sửa nó; nếu không, ghi rõ chỉ kiểm tuần tự); giá T7/CN và override ngày; snapshot giá không đổi khi Gymer đổi giá sau; múi giờ: chạy cùng ca với `set timezone = 'UTC'` và `'Asia/Ho_Chi_Minh'`; hết hạn pending giải phóng khung; giới hạn 3 pending; huỷ lịch theo 2.4A: khách huỷ `pending` và `confirmed` khi `starts_at > now()` được; khách huỷ booking đã bắt đầu/đã qua => `ALREADY_STARTED`; Gymer huỷ `confirmed` trong quá khứ và đang diễn ra được; Gymer huỷ booking đã có đánh giá => `HAS_REVIEW` (nếu Q13 = a; nếu b thì được và đánh giá còn nguyên, `rating_avg` không đổi); huỷ `rejected`/`expired`/`cancelled` => `FORBIDDEN`; người thứ ba huỷ => `FORBIDDEN`; sau huỷ người khác đặt lại được khung và Gymer mất quyền đọc ghi chú sức khoẻ; `create_review` cho booking `cancelled` => lỗi; thống kê `confirmed` không đếm booking đã huỷ; certificates: tối đa 10 dòng/Gymer; tìm: bán kính 1/2/3/5, hộp bao ở vĩ độ khác, `unaccent` với "đ", Gymer không `is_listed` không xuất hiện, bộ lọc rating/tuổi/giá; rating: trigger tính lại khi thêm đánh giá, đánh giá chỉ khi `confirmed` và đã qua giờ, mỗi booking một đánh giá; huỷ lịch/`BOOKING_EXPIRED`.
+- Nội dung (mỗi file là chuỗi assert với dữ liệu gieo riêng, dọn sau mình): chống trùng (kể cả 2 kết nối psql thực sự song song dùng `pg_sleep`/hai tiến trình nền nếu làm được trong `run.sh` mà không sửa nó; nếu không, ghi rõ chỉ kiểm tuần tự); giá T7/CN và override ngày; snapshot giá không đổi khi Gymer đổi giá sau; múi giờ: chạy cùng ca với `set timezone = 'UTC'` và `'Asia/Ho_Chi_Minh'`; hết hạn pending giải phóng khung; giới hạn 3 pending; huỷ lịch theo 2.4A (cùng ca cho cả hai vai): khách và Gymer đều huỷ được `pending` và `confirmed` khi `starts_at > now()`; cả hai bị `ALREADY_STARTED` khi `starts_at <= now()` (kể cả booking đang diễn ra, đã qua, đã có đánh giá); huỷ `rejected`/`expired`/`cancelled` => `FORBIDDEN`; người thứ ba => `FORBIDDEN`; `UPDATE public.bookings` trực tiếp bằng role `authenticated` bị từ chối; sau huỷ người khác đặt lại được khung và Gymer mất quyền đọc ghi chú sức khoẻ; `create_review` cho booking `cancelled` => lỗi; thống kê `confirmed` không đếm booking đã huỷ; dữ liệu booking đã qua giờ không đổi sau mọi RPC; certificates: tối đa 10 dòng/Gymer; tìm: bán kính 1/2/3/5, hộp bao ở vĩ độ khác, `unaccent` với "đ", Gymer không `is_listed` không xuất hiện, bộ lọc rating/tuổi/giá; rating: trigger tính lại khi thêm đánh giá, đánh giá chỉ khi `confirmed` và đã qua giờ, mỗi booking một đánh giá; huỷ lịch/`BOOKING_EXPIRED`.
 - Hoàn thành: `run.sh` xanh kèm đầu ra; mỗi ca có tên; ca nào không kiểm được (ví dụ song song thật) ghi rõ trong đầu ra.
 - Phụ thuộc: T7, T8 để chạy; có thể viết trước.
 
@@ -491,7 +648,7 @@ Các lệch giữa UI hiện tại và schema, kèm bên đổi (đề xuất; u
 | Thiếu danh sách booking của khách | `BookingRepository` chỉ có `create` | App thêm `listMine(): Promise<MyBooking[]>` (kiểu mới `MyBooking` có `gymerName`, `status: BookingStatus`) |
 | Chứng chỉ không xác minh (Q8) | `Gymer.certified: boolean`; `Certificate.verified: boolean`; mock có `certified`/`verified`; gallery có Tag "Đã xác minh" | Bỏ `Gymer.certified` và `Certificate.verified` (còn `{ id, name }`); mock bỏ hai trường; Tag ví dụ ở gallery đổi sang "Tự khai" không dấu tick; UI hồ sơ khi dựng phải theo mục 2.7 |
 | Form địa điểm Gymer (Q2) | Chưa có màn thật | Khi dựng: nhãn "Phòng tập / địa điểm công cộng bạn dạy" và ghi chú không nhập nhà riêng (mục 2.3); không thêm kiểm duyệt |
-| Huỷ lịch (Q4) | `RequestRepository` chỉ có `respond` | Thêm `cancel(bookingId)` dùng chung hai phía (ở `BookingRepository` hoặc `RequestRepository`, chọn một khi làm); `MyBooking`/`BookingRequest` có `cancelledBy?: 'customer'|'gymer'`; lỗi `ALREADY_STARTED`, `HAS_REVIEW` map về `FORBIDDEN` |
+| Huỷ lịch (Q4) | `RequestRepository` chỉ có `respond` | Thêm `cancel(bookingId)` dùng chung hai phía (ở `BookingRepository` hoặc `RequestRepository`, chọn một khi làm); `MyBooking`/`BookingRequest` có `cancelledBy?: 'customer'|'gymer'`; lỗi `ALREADY_STARTED` map về `FORBIDDEN`; UI chỉ hiện nút Huỷ khi `start > now` |
 | Gói 10 buổi (Q1) | Mockup có dòng bảng giá "gói 10 buổi"; type và mock không có | Không đổi type; chỉ nhắc: không dựng dòng này khi làm màn hồ sơ |
 | Trạng thái thêm | `RequestStatus` 3 giá trị | Giữ nguyên; thêm `BookingStatus = RequestStatus | 'cancelled' | 'expired'` dùng cho phía khách; mapper phía Gymer lọc `cancelled` khỏi danh sách |
 | `distanceKm` bắt buộc | `Gymer.distanceKm: number` | `getDetail` không có tâm tìm kiếm => đổi thành `distanceKm?: number`; `GymerCard` ẩn đoạn "cách ..." khi vắng |
@@ -515,11 +672,11 @@ Các lệch giữa UI hiện tại và schema, kèm bên đổi (đề xuất; u
 Đã chạy `which` trong môi trường này (2026-10-10):
 - `docker`: CÓ binary (v29.8.2) nhưng daemon không chạy (không có socket) => `supabase start` không khả thi.
 - `supabase` CLI: KHÔNG có (cũng không có trong `node_modules/.bin`).
-- `psql` 16.15: CÓ. Máy chủ PostgreSQL 16.15: CÓ binary (`/usr/lib/postgresql/16/bin`: `initdb`, `postgres`, `pg_ctl`). Không có Postgres 17. Không có PostGIS (không thấy file extension). Contrib `btree_gist`, `cube`, `earthdistance`, `pgcrypto` có; `unaccent` chưa kiểm cụ thể.
-- Sen1 đã thử `initdb` trong thư mục scratchpad: THẤT BẠI vì quyền thư mục (thư mục của root, user `postgres` không vào được); đó là lỗi của chỗ chạy thử, không chứng minh PG không chạy được. CHƯA từng khởi động được cụm PG16 ở đây => T3 là bước phải chứng minh; plan không khẳng định nó chạy.
+- `psql` 16.15: CÓ. Máy chủ PostgreSQL 16.15: CÓ binary (`/usr/lib/postgresql/16/bin`: `initdb`, `postgres`, `pg_ctl`). Không có Postgres 17. Không có PostGIS. Contrib `btree_gist`, `unaccent`, `pgcrypto` có.
+- ĐÃ KIỂM (sen1, 2026-10-10): cụm PG16 tạm KHỞI ĐỘNG ĐƯỢC ở đây khi chạy bằng `runuser -u postgres --` với thư mục dữ liệu thuộc `postgres` dưới `/var/tmp` (lỗi quyền lần đầu là do thư mục scratchpad của root; root không chạy được `postgres`). Bản `run.sh` + shim + M1 + test khói ở mục T1/T3 đã được chạy ở một cây thư mục tạm ngoài repo: shim nạp OK, M1 áp hai lần liên tiếp OK (mỗi lần một giao dịch), test khói pass, chạy lại với thư mục migrations rỗng pass, thư mục tạm được dọn sạch; `scripts/ci/scan-migrations.sh` báo 0 cảnh báo cho M1; `unaccent('Đức Hà')` ra `Duc Ha`. Đây là kiểm trên PG16 + shim, KHÔNG phải trên Supabase/PG17 thật.
 
-Cách kiểm khả thi (nếu T3 thành công): dựng PG16 tạm + shim Supabase; áp migration; chạy test SQL theo vai. Kiểm được: cú pháp, thứ tự phụ thuộc, idempotent, ràng buộc/exclusion, trigger, RLS và column grant (với role `authenticated` giả lập), logic RPC, múi giờ, haversine, `unaccent`.
-Nếu T3 không chạy được: chỉ còn kiểm cú pháp bằng cách đọc và quét (`scan-migrations.sh`), không có bằng chứng chạy; khi đó nên đòi người dùng chạy `supabase start` + `supabase db reset` trên máy có Docker TRƯỚC khi duyệt đợt B, và đây là điều kiện nên có (không có staging).
+Cách kiểm khả thi (harness ở T3): dựng PG16 tạm + shim Supabase; áp migration; chạy test SQL theo vai. Kiểm được: cú pháp, thứ tự phụ thuộc, idempotent, ràng buộc/exclusion, trigger, RLS và column grant (với role `authenticated` giả lập), logic RPC, múi giờ, haversine, `unaccent`.
+Nếu harness hỏng trên máy dev khác: chỉ còn kiểm cú pháp bằng cách đọc và quét (`scan-migrations.sh`), không có bằng chứng chạy; khi đó nên đòi người dùng chạy `supabase start` + `supabase db reset` trên máy có Docker TRƯỚC khi duyệt đợt B (không có staging).
 
 CHỈ kiểm được khi chạy pipeline thật (hoặc trên stack Supabase thật):
 - Output thật của `supabase db push --dry-run`, cụm "up to date", cờ `--yes`, chờ duyệt đúng.
@@ -531,8 +688,8 @@ CHỈ kiểm được khi chạy pipeline thật (hoặc trên stack Supabase th
 
 ## 7. Thứ tự thực hiện và điểm kiểm tra
 
-1. Người dùng đã trả lời Q1–Q4, Q7, Q8, Q11, Q12 và các điểm xác nhận (mục 0). Còn lại: duyệt plan và quyết Q13 (mặc định a). sen1 cập nhật plan nếu đổi; trạng thái về `CHỜ APPROVE` sau mỗi lần sửa.
-2. Đợt viết 1 (T1–T3). Kiểm tra: T3 có đầu ra thật chứng minh harness chạy hoặc báo lỗi nguyên văn. sen1 review.
+1. HOÀN TẤT: plan ĐÃ APPROVE (2026-10-10); mọi câu hỏi mở đã đóng (Q1–Q13). Không còn bước chờ trả lời.
+2. ĐỢT A (giao ngay): chỉ T1 (M1) và T3 (harness); T2 chưa giao (thuộc Đợt B). Kiểm tra: đầu ra thật của `run.sh`; sen1 review Đạt/Chưa đạt; PM chạy lại `run.sh`.
 3. Merge ĐỢT A (M1 một mình). Kiểm tra: mục 3.2 điểm 1–4; ghi lại output thật của dry-run vào `docs/ci-cd-setup.md` hoặc báo lại (xác nhận/bác bỏ giả định "dry-run chỉ in tên file").
 4. Đợt viết 2 (T4–T6), review. Merge ĐỢT B (M2–M5) sau khi harness xanh. Kiểm tra: bảng đủ, RLS bật, advisor.
 5. Merge ĐỢT C (M6–M7) sau khi test RLS xanh. Kiểm tra: `\dp`, advisor.
