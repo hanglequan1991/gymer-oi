@@ -12,3 +12,7 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    # Bỏ qua bản nâng MAJOR: vite, vitest, eslint... phụ thuộc lẫn nhau và có thể ảnh hưởng zmp-sdk/zmp-ui, sẽ nâng gộp thủ công trong một đợt riêng.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
