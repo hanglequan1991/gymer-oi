@@ -1,4 +1,4 @@
-Trạng thái: CHỜ APPROVE
+Trạng thái: ĐÃ APPROVE (N2, ngày 2026-10-10)
 
 # Plan: schema Supabase v1 (migration đầu tiên)
 
