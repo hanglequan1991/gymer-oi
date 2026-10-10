@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gymer ơi - Mockup: đồng ý chia sẻ ghi chú sức khoẻ (CHỜ DUYỆT THIẾT KẾ)</title>
+<style>
+/* Token lấy từ src/styles/tokens.css (light). Mockup tĩnh, chỉ để xem; không phải code sản phẩm. */
+:root{
+  --gy-color-primary:#0068FF;--gy-color-on-primary:#fff;--gy-color-primary-soft:#E6F0FF;
+  --gy-color-bg:#F4F6F9;--gy-color-card:#fff;--gy-color-text:#1A1D21;--gy-color-muted:#66727A;
+  --gy-color-border:#E5E7EB;--gy-color-warn:#B45309;--gy-color-warn-soft:#FEF3C7;
+  --gy-color-danger:#DC2626;--gy-color-danger-soft:#FEE2E2;--gy-color-danger-text:#B91C1C;
+  --gy-color-ok-soft:#DCFCE7;--gy-color-ok-text:#15803D;--gy-color-primary-text:#005AE6;
+  --gy-radius-card:14px;--gy-radius-control:12px;--gy-radius-chip:999px;
+  --gy-font-family:-apple-system,"Roboto","Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--gy-font-family);font-size:15px;color:var(--gy-color-text);background:#E9ECF1}
+header.top{padding:20px 24px;background:#fff;border-bottom:1px solid var(--gy-color-border)}
+header.top h1{margin:0 0 4px;font-size:20px}
+header.top p{margin:2px 0;font-size:13px;color:var(--gy-color-muted)}
+nav.toc{padding:12px 24px;background:#fff;font-size:14px;border-bottom:1px solid var(--gy-color-border)}
+nav.toc a{margin-right:14px;color:var(--gy-color-primary-text)}
+h2.sec{margin:28px 24px 4px;font-size:17px}
+p.note{margin:0 24px 12px;font-size:13px;color:#4B5563}
+.row{display:flex;flex-wrap:wrap;gap:24px;padding:8px 24px 16px;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:6px}
+.cap{font-size:12px;font-weight:700;color:#374151;max-width:360px}
+.phone{width:360px;background:var(--gy-color-bg);border-radius:22px;border:1px solid #cfd4dc;overflow:hidden;position:relative;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.appbar{background:var(--gy-color-primary);color:#fff;padding:12px 16px;font-weight:700;font-size:17px;display:flex;gap:10px;align-items:center}
+.appbar.plain{background:var(--gy-color-card);color:var(--gy-color-text);border-bottom:1px solid var(--gy-color-border)}
+.body{padding:12px;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--gy-color-card);border-radius:var(--gy-radius-card);padding:12px;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.card h3{margin:0 0 8px;font-size:15px}
+.kv{display:flex;justify-content:space-between;gap:8px;padding:4px 0;font-size:14px}
+.kv span:first-child{color:var(--gy-color-muted)}
+label.f{display:block;font-weight:600;margin-bottom:4px}
+label.f small{font-weight:400;color:var(--gy-color-muted)}
+.input{border:1px solid var(--gy-color-border);border-radius:var(--gy-radius-control);padding:10px 12px;min-height:44px;font-size:15px;background:#fff;color:var(--gy-color-text)}
+.input.ph{color:var(--gy-color-muted)}
+.input.tall{min-height:88px}
+.input.err{border-color:var(--gy-color-danger)}
+.count{font-size:12px;color:var(--gy-color-muted);text-align:right}
+.count.warn{color:var(--gy-color-warn);font-weight:700}
+.helper{font-size:13px;color:var(--gy-color-muted);margin:4px 0 0}
+.errtxt{font-size:13px;color:var(--gy-color-danger-text);margin:4px 0 0}
+.consent{margin-top:10px;border:1px solid var(--gy-color-border);border-radius:var(--gy-radius-control);background:#fff;padding:4px 12px 12px}
+.consent .hit{display:flex;gap:12px;align-items:flex-start;min-height:56px;padding:10px 0}
+.consent .hit b{font-size:15px}
+.box{flex:0 0 24px;width:24px;height:24px;border:2px solid var(--gy-color-muted);border-radius:6px;background:#fff;margin-top:1px;display:flex;align-items:center;justify-content:center}
+.box.on{background:var(--gy-color-primary);border-color:var(--gy-color-primary)}
+.box.on::after{content:"";width:6px;height:11px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.consent.dis .hit b{color:var(--gy-color-muted)}
+.consent.dis .box{border-style:dashed;border-color:#9AA3AB}
+.consent ul{margin:0;padding-left:18px;font-size:13px;line-height:1.45}
+.consent ul li{margin-bottom:4px}
+.consent .sub{font-size:13px;font-weight:700;margin:4px 0}
+.consent .after{font-size:13px;color:var(--gy-color-muted);margin:6px 0 0}
+.status{font-size:13px;color:var(--gy-color-primary-text);margin:6px 0 0}
+.notice{display:flex;gap:10px;border-radius:var(--gy-radius-control);padding:10px 12px;font-size:14px}
+.notice b{display:block;margin-bottom:2px}
+.notice.warn{background:var(--gy-color-warn-soft);color:var(--gy-color-warn)}
+.notice.danger{background:var(--gy-color-danger-soft);color:var(--gy-color-danger-text)}
+.notice.info{background:var(--gy-color-primary-soft);color:var(--gy-color-primary-text)}
+.ico{flex:0 0 20px;font-weight:900}
+.bar{position:sticky;bottom:0;background:var(--gy-color-card);border-top:1px solid var(--gy-color-border);padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.price{font-weight:700;font-size:17px;color:var(--gy-color-primary-text)}
+.btn{min-height:44px;padding:0 16px;border-radius:var(--gy-radius-control);border:1px solid transparent;font-size:15px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;text-align:center}
+.btn.primary{background:var(--gy-color-primary);color:#fff}
+.btn.secondary{background:#fff;border-color:var(--gy-color-primary);color:var(--gy-color-primary-text)}
+.btn.ghost{background:transparent;color:var(--gy-color-primary-text)}
+.btn.block{width:100%}
+.btn.load{opacity:.8}
+.overlay{position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:#fff;border-radius:var(--gy-radius-card);padding:16px;width:100%;display:flex;flex-direction:column;gap:10px}
+.modal h4{margin:0;font-size:17px}
+.modal p{margin:0}
+.badge{display:inline-block;border-radius:var(--gy-radius-chip);padding:2px 10px;font-size:12px;font-weight:700}
+.badge.info{background:var(--gy-color-primary-soft);color:var(--gy-color-primary-text)}
+.badge.ok{background:var(--gy-color-ok-soft);color:var(--gy-color-ok-text)}
+.quote{background:var(--gy-color-primary-soft);border-radius:var(--gy-radius-control);padding:10px 12px;white-space:pre-wrap}
+.sk{height:12px;border-radius:6px;background:#DDE1E7;margin:8px 0}
+.snack{background:#1F2937;color:#fff;border-radius:10px;padding:10px 14px;font-size:14px;margin:0 12px 12px}
+.legend{margin:0 24px;font-size:13px}
+.hl{background:#FFF3C4;padding:0 2px}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Gymer ơi - Đồng ý chia sẻ ghi chú sức khoẻ, lỗi đặt lịch, form địa điểm Gymer</h1>
+  <p>Trạng thái: CHỜ DUYỆT THIẾT KẾ. Spec: <code>docs/design/health-consent-booking.md</code>.</p>
+  <p>Mockup tĩnh, dựng từ <code>src/styles/tokens.css</code> và <code>docs/core-ui-plan.md</code>. Chưa đối chiếu với hai mockup gốc trong claude.ai Project. Câu chữ chưa qua thẩm định pháp lý. Ví dụ dùng buổi Thứ 7, 17/10/2026, 09:00 – 10:00, nên mốc xem là 10:00 ngày 18/10.</p>
+</header>
+<nav class="toc">
+  <a href="#s1">1. Ô đồng ý (các trạng thái)</a><a href="#s2">2. Lỗi khi gửi yêu cầu</a><a href="#s3">3. Thành công</a><a href="#s4">4. Phía Gymer</a><a href="#s5">5. Lỗi phía Gymer</a><a href="#s6">6. Form địa điểm</a>
+</nav>
+
+<!-- 1 -->
+<h2 class="sec" id="s1">1. S1 Xác nhận đặt lịch: các trạng thái của ô đồng ý</h2>
+<p class="note">Thứ tự trường cố định: Mục tiêu, rồi Ghi chú sức khoẻ, rồi ô đồng ý, rồi tóm tắt, rồi nút gửi.</p>
+<div class="row">
+
+  <div class="col"><div class="cap">1A. Mặc định: ghi chú rỗng, ô tick vô hiệu (aria-disabled, vẫn focus được, có lý do)</div>
+  <div class="phone">
+    <div class="appbar">&lsaquo; Xác nhận đặt lịch</div>
+    <div class="body">
+      <div class="card"><h3>Minh Hà</h3><div class="kv"><span>Khu vực</span><span>Quận 7, TP.HCM</span></div>
+        <div class="kv"><span>Thời gian</span><span>Thứ 7, 17/10 · 09:00 – 10:00</span></div><div class="kv"><span>Giá</span><b>220.000đ</b></div></div>
+      <div class="card">
+        <label class="f">Mục tiêu tập luyện <small>(không bắt buộc)</small></label>
+        <div class="input ph tall" style="min-height:64px">Ví dụ: giảm mỡ, tăng cơ</div><div class="count">0/200</div>
+        <p class="helper">Gymer luôn thấy mục tiêu này. Đừng ghi bệnh hay chấn thương ở đây, hãy ghi ở ô Ghi chú sức khoẻ bên dưới.</p>
+      </div>
+      <div class="card">
+        <label class="f">Ghi chú sức khoẻ <small>(không bắt buộc)</small></label>
+        <div class="input ph tall">Ví dụ: đầu gối trái từng đau</div><div class="count">0/1000</div>
+        <p class="helper">Ví dụ: chấn thương, bệnh nền, thuốc đang dùng. Chỉ ghi điều Gymer cần biết để tập an toàn.</p>
+        <div class="consent dis" aria-disabled="true">
+          <div class="hit"><span class="box"></span><div><b>Cho Minh Hà xem ghi chú sức khoẻ của tôi</b>
+            <p class="helper" style="margin-top:2px">Nhập ghi chú sức khoẻ ở trên để bật lựa chọn này.</p></div></div>
+          <p class="after" style="margin-top:0">Nếu bạn chọn chia sẻ, bạn sẽ thấy tại đây ai xem được gì và trong bao lâu.</p>
+        </div>
+      </div>
+      <div class="card"><div class="kv"><span>Chia sẻ ghi chú sức khoẻ</span><b>Không</b></div>
+        <p class="helper">Yêu cầu giữ tối đa 24 giờ (hoặc đến trước giờ tập nếu sớm hơn).</p></div>
+    </div>
+    <div class="bar"><span class="price">220.000đ</span><span class="btn primary">Gửi yêu cầu đặt lịch</span></div>
+  </div></div>
+
+  <div class="col"><div class="cap">1B. Có ghi chú, chưa tick (bật; hiện đủ ai thấy gì, bao lâu)</div>
+  <div class="phone">
+    <div class="appbar">&lsaquo; Xác nhận đặt lịch</div>
+    <div class="body">
+      <div class="card">
+        <label class="f">Ghi chú sức khoẻ <small>(không bắt buộc)</small></label>
+        <div class="input tall">Đầu gối trái từng đau, tránh squat sâu.</div><div class="count">38/1000</div>
+        <div class="consent">
+          <div class="hit"><span class="box"></span><b>Cho Minh Hà xem ghi chú sức khoẻ của tôi</b></div>
+          <p class="sub">Nếu bạn chọn chia sẻ</p>
+          <ul>
+            <li>Chỉ Minh Hà xem được nội dung ghi chú. Người dùng khác không xem được.</li>
+            <li>Minh Hà xem được từ lúc bạn gửi yêu cầu, chừng nào yêu cầu còn chờ duyệt hoặc đã được xác nhận, và đến <b>10:00 ngày 18/10</b> (1 ngày sau khi buổi tập kết thúc).</li>
+            <li>Minh Hà sẽ không xem được nữa ngay khi yêu cầu bị từ chối, hết hạn hoặc bị huỷ.</li>
+            <li><b>Không thể rút lại sau khi bạn gửi yêu cầu.</b> Nếu muốn dừng chia sẻ, bạn phải huỷ lịch này trước giờ bắt đầu.</li>
+            <li>Nếu Minh Hà đã đọc hoặc chép lại nội dung trước đó, Gymer ơi không thu hồi được.</li>
+          </ul>
+          <p class="after">Nếu không chọn, Minh Hà sẽ không xem được ghi chú. Ghi chú vẫn được lưu và chỉ bạn xem lại được.</p>
+        </div>
+      </div>
+      <div class="card"><div class="kv"><span>Chia sẻ ghi chú sức khoẻ</span><b>Không</b></div></div>
+    </div>
+    <div class="bar"><span class="price">220.000đ</span><span class="btn primary">Gửi yêu cầu đặt lịch</span></div>
+  </div></div>
+
+  <div class="col"><div class="cap">1C. Đã tick (cảnh báo "không rút lại" thành Notice; tóm tắt cuối nêu mốc)</div>
+  <div class="phone">
+    <div class="appbar">&lsaquo; Xác nhận đặt lịch</div>
+    <div class="body">
+      <div class="card">
+        <label class="f">Ghi chú sức khoẻ <small>(không bắt buộc)</small></label>
+        <div class="input tall">Đầu gối trái từng đau, tránh squat sâu.</div><div class="count">38/1000</div>
+        <div class="consent">
+          <div class="hit"><span class="box on"></span><b>Cho Minh Hà xem ghi chú sức khoẻ của tôi</b></div>
+          <div class="notice warn" style="margin-bottom:8px"><span class="ico" aria-hidden="true">!</span><div><b>Không thể rút lại sau khi bạn gửi yêu cầu.</b>Muốn dừng chia sẻ, bạn phải huỷ lịch trước giờ bắt đầu.</div></div>
+          <p class="sub">Nếu bạn chọn chia sẻ</p>
+          <ul>
+            <li>Chỉ Minh Hà xem được nội dung ghi chú. Người dùng khác không xem được.</li>
+            <li>Minh Hà xem được đến <b>10:00 ngày 18/10</b>, chỉ khi yêu cầu còn chờ duyệt hoặc đã xác nhận.</li>
+            <li>Minh Hà mất quyền xem ngay khi yêu cầu bị từ chối, hết hạn hoặc bị huỷ.</li>
+            <li>Nếu Minh Hà đã đọc hoặc chép lại nội dung trước đó, Gymer ơi không thu hồi được.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card"><div class="kv"><span>Chia sẻ ghi chú sức khoẻ</span><b>Có, Minh Hà xem đến 10:00 18/10</b></div></div>
+    </div>
+    <div class="bar"><span class="price">220.000đ</span><span class="btn primary">Gửi yêu cầu đặt lịch</span></div>
+  </div></div>
+
+  <div class="col"><div class="cap">1D. Xoá hết ghi chú khi đang tick: tự bỏ tick, thông báo polite (role=status)</div>
+  <div class="phone">
+    <div class="appbar">&lsaquo; Xác nhận đặt lịch</div>
+    <div class="body">
+      <div class="card">
+        <label class="f">Ghi chú sức khoẻ <small>(không bắt buộc)</small></label>
+        <div class="input ph tall">Ví dụ: đầu gối trái từng đau</div><div class="count">0/1000</div>
+        <div class="consent dis">
+          <div class="hit"><span class="box"></span><div><b>Cho Minh Hà xem ghi chú sức khoẻ của tôi</b>
+            <p class="helper" style="margin-top:2px">Nhập ghi chú sức khoẻ ở trên để bật lựa chọn này.</p></div></div>
+        </div>
+        <p class="status" role="status">Đã bỏ chọn chia sẻ vì ghi chú đang trống.</p>
+      </div>
+      <div class="cap" style="margin-top:6px">1E. Mục tiêu gần chạm giới hạn (chữ, không chỉ màu)</div>
+      <div class="card">
+        <label class="f">Mục tiêu tập luyện <small>(không bắt buộc)</small></label>
+        <div class="input">Giảm mỡ bụng, tập 3 buổi mỗi tuần, chuẩn bị cho chuyến đi biển tháng sau, muốn có người nhắc tập đều và hướng dẫn kỹ thuật đúng cho các bài tạ đơn giản...</div>
+        <div class="count warn">Còn 12 ký tự (188/200)</div>
+      </div>
+      <div class="cap">1F. Đang gửi: ô nhập, ô tick, nút khoá</div>
+      <div class="card"><div class="consent" aria-disabled="true"><div class="hit"><span class="box on"></span><b>Cho Minh Hà xem ghi chú sức khoẻ của tôi</b></div></div></div>
+    </div>
+    <div class="bar"><span class="price">220.000đ</span><span class="btn primary load">Đang gửi...</span></div>
+  </div></div>
+
+</div>
+
+<!-- 2 -->
+<h2 class="sec" id="s2">2. S2 Lỗi khi gửi yêu cầu (create_booking)</h2>
+<p class="note">Notice đỏ (kiểu A) cho lỗi mà trang vẫn dùng được; Modal (kiểu B) cho lỗi cần quyết định. Nội dung nhập vẫn được giữ.</p>
+<div class="row">
+
+  <div class="col"><div class="cap">2A. SLOT_TAKEN (và SLOT_NOT_OPEN tương tự), bỏ tick, giữ chữ</div>
+  <div class="phone">
+    <div class="appbar">&lsaquo; Xác nhận đặt lịch</div>
+    <div class="body">
+      <div class="notice danger" role="alert"><span class="ico" aria-hidden="true">&times;</span><div><b>Khung giờ vừa có người đặt</b>Minh Hà vừa nhận lịch khác vào Thứ 7, 17/10 · 09:00. Mục tiêu và ghi chú của bạn vẫn còn.
+        <div style="margin-top:8px"><span class="btn primary" style="background:var(--gy-color-danger-text)">Chọn giờ khác</span></div></div></div>
+      <div class="card"><label class="f">Ghi chú sức khoẻ <small>(không bắt buộc)</small></label>
+        <div class="input tall">Đầu gối trái từng đau, tránh squat sâu.</div>
+        <div class="consent"><div class="hit"><span class="box"></span><b>Cho Minh Hà xem ghi chú sức khoẻ của tôi</b></div></div>
+        <p class="status" role="status">Bạn đã đổi giờ nên cần chọn lại lựa chọn chia sẻ.</p></div>
+    </div>
+  </div></div>
+
+  <div class="col"><div class="cap">2B. PRICE_CHANGED (Modal, không tự thử lại)</div>
+  <div class="phone" style="min-height:420px">
+    <div class="appbar">&lsaquo; Xác nhận đặt lịch</div>
+    <div class="body"><div class="card"><div class="kv"><span>Giá</span><b>200.000đ</b></div></div></div>
+    <div class="overlay"><div class="modal" role="dialog" aria-label="Giá đã thay đổi">
+      <h4>Giá đã thay đổi</h4>
+      <p>Giá buổi Thứ 7, 17/10 · 09:00 đổi từ 200.000đ thành <b>220.000đ</b>. Bạn có muốn tiếp tục với giá mới?</p>
+      <span class="btn primary block">Đặt với giá 220.000đ</span><span class="btn secondary block">Xem lại</span>
+    </div></div>
+  </div></div>
+
+  <div class="col"><div class="cap">2C. LIMIT_REACHED (Modal)</div>
+  <div class="phone" style="min-height:420px">
+    <div class="appbar">&lsaquo; Xác nhận đặt lịch</div>
+    <div class="body"><div class="card"><div class="kv"><span>Giá</span><b>220.000đ</b></div></div></div>
+    <div class="overlay"><div class="modal" role="dialog" aria-label="Chờ duyệt quá nhiều">
+      <h4>Bạn đang có 3 yêu cầu chờ duyệt</h4>
+      <p>Hãy đợi Gymer phản hồi, hoặc huỷ bớt một yêu cầu, rồi đặt tiếp.</p>
+      <span class="btn primary block">Xem yêu cầu của tôi</span><span class="btn secondary block">Đóng</span>
+      <p class="helper">Nút chính chỉ hiện khi đã có màn "yêu cầu của tôi" (câu hỏi mở Q3).</p>
+    </div></div>
+  </div></div>
+
+  <div class="col"><div class="cap">2D. NETWORK / UNKNOWN / VALIDATION / NOT_FOUND / FORBIDDEN / UNAUTHENTICATED</div>
+  <div class="phone">
+    <div class="appbar">&lsaquo; Xác nhận đặt lịch</div>
+    <div class="body">
+      <div class="notice danger" role="alert"><span class="ico">&times;</span><div><b>Không thể kết nối</b>Kiểm tra mạng rồi thử lại. Nếu bạn đã thấy yêu cầu này trong danh sách của mình thì không cần gửi lại.</div></div>
+      <div class="notice danger" role="alert"><span class="ico">&times;</span><div><b>Thông tin chưa hợp lệ</b>Hãy kiểm tra: đặt trước giờ tập ít nhất 2 giờ và không quá 60 ngày; mục tiêu tối đa 200 ký tự; ghi chú sức khoẻ tối đa 1000 ký tự.</div></div>
+      <div class="notice danger" role="alert"><span class="ico">&times;</span><div><b>Gymer không còn hiển thị</b>Hồ sơ này đã được ẩn hoặc không còn tồn tại. [Về danh sách Gymer]</div></div>
+      <div class="notice danger" role="alert"><span class="ico">&times;</span><div><b>Gymer tạm ngừng nhận yêu cầu</b>Bạn có thể thử lại sau hoặc chọn Gymer khác. [Tìm Gymer khác]</div></div>
+      <div class="notice danger" role="alert"><span class="ico">&times;</span><div><b>Phiên đăng nhập đã hết hạn</b>Hãy đăng nhập lại. Nội dung bạn đã nhập sẽ được giữ trong lúc đăng nhập. [Đăng nhập lại]</div></div>
+      <div class="notice danger" role="alert"><span class="ico">&times;</span><div><b>Có lỗi xảy ra</b>Chưa gửi được yêu cầu. Hãy thử lại sau ít phút. [Thử lại]</div></div>
+    </div>
+  </div></div>
+
+</div>
+
+<!-- 3 -->
+<h2 class="sec" id="s3">3. S3 Đặt lịch thành công</h2>
+<div class="row">
+  <div class="col"><div class="cap">3A. Có chia sẻ</div>
+  <div class="phone"><div class="appbar plain">Đã gửi</div>
+    <div class="body" style="align-items:center;text-align:center;padding-top:24px">
+      <div style="width:64px;height:64px;border-radius:50%;background:var(--gy-color-ok-soft);color:var(--gy-color-ok-text);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:900" aria-hidden="true">&#10003;</div>
+      <h3 style="margin:0">Đã gửi yêu cầu đặt lịch</h3>
+      <p style="margin:0">Minh Hà sẽ phản hồi trong vòng 24 giờ (hoặc trước giờ tập nếu sớm hơn).</p>
+      <div class="notice info" style="text-align:left"><span class="ico">i</span><div><b>Ghi chú sức khoẻ</b>Đã chia sẻ với Minh Hà đến 10:00 ngày 18/10. Muốn dừng chia sẻ, hãy huỷ lịch trước giờ bắt đầu.</div></div>
+      <span class="btn ghost">Về trang tìm kiếm</span>
+    </div></div></div>
+  <div class="col"><div class="cap">3B. Không chia sẻ</div>
+  <div class="phone"><div class="appbar plain">Đã gửi</div>
+    <div class="body" style="align-items:center;text-align:center;padding-top:24px">
+      <div style="width:64px;height:64px;border-radius:50%;background:var(--gy-color-ok-soft);color:var(--gy-color-ok-text);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:900" aria-hidden="true">&#10003;</div>
+      <h3 style="margin:0">Đã gửi yêu cầu đặt lịch</h3>
+      <p style="margin:0">Minh Hà sẽ phản hồi trong vòng 24 giờ (hoặc trước giờ tập nếu sớm hơn).</p>
+      <p class="helper" style="margin:0">Ghi chú sức khoẻ: không chia sẻ với Gymer.</p>
+      <span class="btn ghost">Về trang tìm kiếm</span>
+    </div></div></div>
+</div>
+
+<!-- 4 -->
+<h2 class="sec" id="s4">4. S4 Phía Gymer: chi tiết yêu cầu và khối ghi chú sức khoẻ</h2>
+<p class="note">Danh sách yêu cầu không bao giờ hiện ghi chú sức khoẻ, chỉ mục tiêu. Hai trạng thái có/không quyền xem được thiết kế để Gymer không phân biệt được lý do.</p>
+<div class="row">
+
+  <div class="col"><div class="cap">4A. Danh sách: chỉ có mục tiêu</div>
+  <div class="phone"><div class="appbar">Yêu cầu</div>
+    <div class="body">
+      <div class="card"><div style="display:flex;justify-content:space-between"><b>Lan Phương</b><span class="badge info">Chờ duyệt</span></div>
+        <div class="kv"><span>Thời gian</span><span>Thứ 7, 17/10 · 09:00 – 10:00</span></div>
+        <div class="kv"><span>Mục tiêu</span><span>Giảm mỡ bụng</span></div><div class="kv"><span>Giá</span><b>220.000đ</b></div>
+        <div style="display:flex;gap:8px;margin-top:6px"><span class="btn secondary" style="flex:1">Từ chối</span><span class="btn primary" style="flex:1">Xác nhận</span></div></div>
+    </div></div></div>
+
+  <div class="col"><div class="cap">4B. Chi tiết: được xem</div>
+  <div class="phone"><div class="appbar">&lsaquo; Chi tiết yêu cầu</div>
+    <div class="body">
+      <div class="card"><b>Lan Phương</b><div class="kv"><span>Mục tiêu</span><span>Giảm mỡ bụng</span></div></div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">Ghi chú sức khoẻ</h3><span class="badge info">Khách chia sẻ</span></div>
+        <div class="quote" style="margin-top:8px">Đầu gối trái từng đau, tránh squat sâu.
+Đang dùng thuốc huyết áp.</div>
+        <p class="helper">Bạn xem được ghi chú này đến 10:00 ngày 18/10, hoặc đến khi yêu cầu bị huỷ.</p>
+        <p class="helper" style="color:var(--gy-color-text)">Chỉ dùng để chuẩn bị buổi tập an toàn. Đừng sao chép hay chia sẻ cho người khác.</p>
+      </div>
+    </div>
+    <div class="bar"><span class="btn secondary" style="flex:1">Từ chối</span><span class="btn primary" style="flex:1">Xác nhận</span></div></div></div>
+
+  <div class="col"><div class="cap">4C. Chi tiết: không có quyền xem (gộp: không có ghi chú / không chia sẻ / hết hạn xem)</div>
+  <div class="phone"><div class="appbar">&lsaquo; Chi tiết yêu cầu</div>
+    <div class="body">
+      <div class="card"><b>Lan Phương</b><div class="kv"><span>Mục tiêu</span><span>Giảm mỡ bụng</span></div></div>
+      <div class="card"><h3>Ghi chú sức khoẻ</h3>
+        <p style="margin:0">Không có ghi chú sức khoẻ được chia sẻ.</p>
+        <p class="helper">Ghi chú chỉ hiển thị khi khách đồng ý chia sẻ và trong thời hạn cho phép.</p></div>
+      <div class="notice warn"><span class="ico">!</span><div><b>Phương án thay thế (câu hỏi mở Q2)</b>"Khách không chia sẻ ghi chú." Có thể không đúng khi khách không viết ghi chú hoặc đã quá hạn xem.</div></div>
+    </div></div></div>
+
+  <div class="col"><div class="cap">4D. Đang tải / lỗi tải riêng khối ghi chú</div>
+  <div class="phone"><div class="appbar">&lsaquo; Chi tiết yêu cầu</div>
+    <div class="body">
+      <div class="card"><h3>Ghi chú sức khoẻ</h3><div class="sk" style="width:90%"></div><div class="sk" style="width:75%"></div><div class="sk" style="width:60%"></div></div>
+      <div class="card"><h3>Ghi chú sức khoẻ</h3>
+        <div class="notice danger" role="alert"><span class="ico">&times;</span><div><b>Không tải được ghi chú</b>Kiểm tra mạng rồi thử lại.<div style="margin-top:6px"><span class="btn secondary">Thử lại</span></div></div></div></div>
+    </div></div></div>
+
+</div>
+
+<!-- 5 -->
+<h2 class="sec" id="s5">5. S5 Lỗi phía Gymer (xác nhận, từ chối, huỷ, đóng khung)</h2>
+<div class="row">
+  <div class="col"><div class="cap">5A. BOOKING_EXPIRED: Snackbar + thẻ sang "Hết hạn", ẩn hai nút</div>
+  <div class="phone"><div class="appbar">Yêu cầu</div>
+    <div class="body"><div class="card"><div style="display:flex;justify-content:space-between"><b>Lan Phương</b><span class="badge" style="background:#E5E7EB;color:#374151">Hết hạn</span></div>
+      <div class="kv"><span>Thời gian</span><span>Thứ 7, 17/10 · 09:00 – 10:00</span></div></div></div>
+    <div class="snack" role="status">Yêu cầu đã hết hạn. Bạn không thể xác nhận hoặc từ chối yêu cầu này nữa.</div></div></div>
+
+  <div class="col"><div class="cap">5B. SLOT_HAS_BOOKING khi đóng khung đã có lịch</div>
+  <div class="phone" style="min-height:360px"><div class="appbar">Lịch và giá</div>
+    <div class="body"><div class="card"><div class="kv"><span>09:00 – 10:00</span><b>Đang mở</b></div></div></div>
+    <div class="overlay"><div class="modal" role="dialog" aria-label="Khung giờ đã có lịch">
+      <h4>Khung giờ này đã có lịch</h4><p>Hãy huỷ lịch của khách trước khi đóng.</p>
+      <span class="btn primary block">Xem yêu cầu</span><span class="btn secondary block">Đóng</span></div></div></div></div>
+
+  <div class="col"><div class="cap">5C. Huỷ: ALREADY_STARTED và FORBIDDEN</div>
+  <div class="phone"><div class="appbar">Chi tiết lịch</div>
+    <div class="body">
+      <div class="notice danger" role="alert"><span class="ico">&times;</span><div><b>Buổi tập đã bắt đầu</b>Không thể huỷ buổi đã bắt đầu.</div></div>
+      <div class="notice danger" role="alert"><span class="ico">&times;</span><div><b>Lịch này không còn huỷ được</b>Có thể lịch đã được huỷ, bị từ chối hoặc đã hết hạn.</div></div>
+      <div class="notice danger" role="alert"><span class="ico">&times;</span><div><b>Yêu cầu này không còn chờ duyệt</b>Có thể khách đã huỷ hoặc yêu cầu đã được xử lý. Danh sách đã được làm mới.</div></div>
+    </div></div></div>
+
+  <div class="col"><div class="cap">5D. Từ chối khi đang có ghi chú hiển thị: nhắc mất quyền xem</div>
+  <div class="phone" style="min-height:360px"><div class="appbar">&lsaquo; Chi tiết yêu cầu</div><div class="body"><div class="card">...</div></div>
+    <div class="overlay"><div class="modal"><h4>Từ chối yêu cầu này?</h4>
+      <p>Sau khi từ chối, bạn không xem được ghi chú sức khoẻ của khách nữa.</p>
+      <span class="btn primary block" style="background:var(--gy-color-danger-text)">Từ chối yêu cầu</span><span class="btn secondary block">Quay lại</span></div></div></div></div>
+</div>
+
+<!-- 6 -->
+<h2 class="sec" id="s6">6. S6 Hồ sơ Gymer: Phòng tập / địa điểm công cộng bạn dạy</h2>
+<p class="note">Không có kiểm duyệt (Q2): chỉ có chữ nhắc, ô xác nhận và Modal "Bạn đang ở phòng tập này?". Việc lấy vị trí phụ thuộc <code>getLocation</code> và edge function <code>resolve-location</code> chưa làm (giả định, chưa kiểm thiết bị).</p>
+<div class="row">
+
+  <div class="col"><div class="cap">6A. Chưa đặt vị trí (nút Lưu chưa bật)</div>
+  <div class="phone"><div class="appbar">Hồ sơ</div>
+    <div class="body"><div class="card">
+      <h3>Phòng tập / địa điểm công cộng bạn dạy</h3>
+      <div class="notice warn"><span class="ico">!</span><div><b>Không nhập địa chỉ nhà riêng</b>Vị trí này hiện trong kết quả tìm kiếm của khách (làm tròn khoảng 100 m). Chỉ chọn phòng tập hoặc nơi công cộng bạn thật sự dạy.</div></div>
+      <div style="margin-top:12px"><label class="f">Khu vực hiển thị trên hồ sơ</label>
+        <div class="input">Quận 7, TP.HCM</div><div class="count">14/100</div>
+        <p class="helper">Ví dụ: Quận 7, TP.HCM. Ghi quận/phường, không ghi số nhà.</p></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px"><span>Chưa đặt vị trí</span><span class="btn secondary">Đặt vị trí phòng tập</span></div>
+      <div class="consent" style="margin-top:12px"><div class="hit"><span class="box"></span><div><b style="font-weight:600">Đây là phòng tập hoặc địa điểm công cộng, không phải nhà riêng của tôi.</b>
+        <p class="helper" style="margin-top:2px">Gymer ơi không kiểm tra được địa điểm bạn nhập. Bạn tự chịu trách nhiệm về thông tin này.</p></div></div></div>
+      <div style="margin-top:12px"><span class="btn primary block" style="opacity:.5" aria-disabled="true">Lưu địa điểm</span></div>
+    </div></div></div></div>
+
+  <div class="col"><div class="cap">6B. Modal xác nhận vị trí hiện tại</div>
+  <div class="phone" style="min-height:460px"><div class="appbar">Hồ sơ</div><div class="body"><div class="card"><h3>Phòng tập / địa điểm công cộng bạn dạy</h3></div></div>
+    <div class="overlay"><div class="modal" role="dialog" aria-label="Xác nhận vị trí">
+      <h4>Bạn đang ở phòng tập này?</h4>
+      <p>Hệ thống sẽ dùng vị trí hiện tại của bạn làm vị trí phòng tập. Nếu bạn đang ở nhà, hãy chọn Chưa phải và làm lại khi đến phòng tập.</p>
+      <span class="btn primary block">Đúng, dùng vị trí này</span><span class="btn secondary block">Chưa phải</span></div></div></div></div>
+
+  <div class="col"><div class="cap">6C. Đã đặt vị trí, đủ điều kiện lưu; và các lỗi</div>
+  <div class="phone"><div class="appbar">Hồ sơ</div>
+    <div class="body"><div class="card">
+      <h3>Phòng tập / địa điểm công cộng bạn dạy</h3>
+      <div class="input">Quận 7, TP.HCM</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px"><span style="color:var(--gy-color-ok-text);font-weight:600">&#10003; Đã đặt vị trí (làm tròn khoảng 100 m)</span><span class="btn ghost">Đặt lại</span></div>
+      <div class="consent" style="margin-top:12px"><div class="hit"><span class="box on"></span><b style="font-weight:600">Đây là phòng tập hoặc địa điểm công cộng, không phải nhà riêng của tôi.</b></div></div>
+      <div style="margin-top:12px"><span class="btn primary block">Lưu địa điểm</span></div>
+    </div>
+    <div class="notice danger" role="alert"><span class="ico">&times;</span><div><b>Chưa có quyền vị trí</b>Hãy cho phép Gymer ơi dùng vị trí trong cài đặt Zalo rồi thử lại. [Thử lại]</div></div>
+    <div class="notice danger" role="alert"><span class="ico">&times;</span><div><b>Chưa đặt được vị trí</b>Kiểm tra mạng rồi thử lại.</div></div>
+    <div class="snack">Đã lưu địa điểm</div>
+    </div></div></div>
+
+</div>
+<p class="legend">Ghi chú kiểm tra: tương phản đã tính bằng công thức WCAG 2.1 (xem mục 5 của spec). Viền ô tick dùng màu muted (4,94:1), không dùng --gy-color-border (1,24:1).</p>
+<br>
+</body>
+</html>
