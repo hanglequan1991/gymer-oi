@@ -13,18 +13,18 @@ Giả định (sai thì plan đổi):
 - G3. Quy mô v1 nhỏ (vài trăm Gymer, một thành phố). Con số này là phỏng đoán, chưa có dữ liệu thật.
 - G4. Mọi thao tác đều cần đăng nhập Zalo; `anon` không có quyền gì (xem Q3).
 
-Câu hỏi cần người dùng trả lời (đánh số để trả lời ngắn; mặc định của sen1 ghi trong ngoặc):
-- Q1. Cắt khỏi v1 những mục ở mục 2.8? (mặc định: cắt gói 10 buổi, áp dụng hàng loạt, upload file chứng chỉ, upload ảnh đại diện, sửa/xoá đánh giá, chọn thời lượng buổi.)
-- Q2. Gymer dạy ở đâu: phòng tập/điểm công cộng hay nhà riêng? Quyết định mức làm tròn toạ độ và cảnh báo quyền riêng tư. (mặc định: toạ độ làm tròn 3 chữ số thập phân, ~110 m, Gymer tự chọn "điểm hoạt động", không phải nhà.)
-- Q3. Cho xem danh sách Gymer trước khi đăng nhập không? (mặc định: không; `anon` không quyền.)
-- Q4. Khách có được tự huỷ lịch (pending/confirmed) không? Mockup không có. (mặc định: có, qua RPC `cancel_booking`, chỉ trước giờ bắt đầu.)
-- Q5. Đặt trước tối thiểu/tối đa bao lâu? (mặc định: sau hiện tại ít nhất 2 giờ, nhiều nhất 60 ngày.)
-- Q6. Tuổi tối thiểu của Gymer? (mặc định: 18, kiểm bằng trigger.) Khách không thu tuổi.
-- Q7. Hồ sơ công khai có hiện TÊN chứng chỉ đã xác minh không, hay chỉ cờ "đã xác minh"? Yêu cầu nói "cờ"; nhưng `GymerDetail.certificates` đang có `name`. (mặc định: hiện tên các chứng chỉ ĐÃ xác minh, không bao giờ hiện file, không hiện chứng chỉ chờ.)
-- Q8. Ai xác minh chứng chỉ và bằng cách nào khi v1 không có upload file? (mặc định: bạn xác minh thủ công qua dashboard Supabase, sau khi Gymer gửi ảnh qua Zalo ngoài app. Đây là xác minh dựa trên niềm tin, nói thẳng.)
-- Q9. Tên người đánh giá hiện đầy đủ ("Hoàng Nam") hay rút gọn ("Nam H.")? (mặc định: hiện như tên Zalo họ có; rủi ro riêng tư thấp nhưng có.)
-- Q10. Có yêu cầu xoá tài khoản/dữ liệu ngay trong v1 không? (mặc định: không có luồng xoá; xử lý thủ công theo yêu cầu, ghi rõ ở mục 4.)
-- Q11. Region của project Supabase (dữ liệu lưu ở đâu)? Ảnh hưởng cảnh báo pháp lý mục 4. Plan không biết.
+Đã chốt (nguồn: người dùng trả lời 2026-10-10):
+- Q1. Bỏ gói 10 buổi (khách và Gymer tự thương lượng ngoài app; không có cột, không có dòng giá này trong app). Người dùng không nhắc các mục khác của Q1 nên GIẢ ĐỊNH đồng ý mặc định: cắt khỏi v1 áp dụng hàng loạt, chọn thời lượng buổi (cố định 60 phút), upload file chứng chỉ, upload ảnh đại diện (dùng ảnh Zalo), sửa/xoá đánh giá. Giả định này CHƯA được xác nhận rõ; người dùng sửa nếu muốn giữ mục nào (mục 2.8).
+- Q2. Gymer dạy ở phòng tập công cộng. Giữ làm tròn toạ độ 3 chữ số (~110 m) và Gymer chọn "điểm hoạt động" là phòng tập (mục 2.3).
+- Q3. KHÔNG cho xem danh sách Gymer trước khi đăng nhập: `anon` không đọc gì.
+- Q4. Khách được tự huỷ lịch, quy tắc ở mục 2.4A.
+- Q8. KHÔNG xác minh chứng chỉ ở v1 (làm sau). Hệ quả: không có huy hiệu "đã xác minh"; chứng chỉ v1 chỉ là thông tin Gymer tự khai (mục 2.7, cần đổi UI/mock ở T10).
+- Q7. Khớp Q8: hồ sơ công khai hiện tên chứng chỉ tự khai, gắn nhãn "Tự khai, chưa xác minh". Không có cờ xác minh. (Khác bản đầu của yêu cầu 5 "chứng chỉ chỉ owner + cờ xác minh công khai": không còn xác minh nên cờ không có nghĩa.)
+- Q11. Region Singapore (`ap-southeast-1`) được người dùng chấp nhận. Dữ liệu vẫn nằm ngoài Việt Nam; xem cảnh báo mục 2.9.
+- Q5, Q6, Q9, Q10: người dùng không đổi, giữ mặc định: Q5 đặt sau hiện tại ít nhất 2 giờ và nhiều nhất 60 ngày; Q6 Gymer tối thiểu 18 tuổi (trigger), khách không thu tuổi; Q9 hiện tên người đánh giá như tên Zalo của họ; Q10 không có luồng xoá tài khoản, xử lý thủ công theo yêu cầu.
+
+Còn mở (một câu, phát sinh khi chốt Q4):
+- Q12. Gymer có được huỷ buổi đã `confirmed` trong app không? Mockup không có. (mặc định: KHÔNG ở v1; Gymer liên hệ khách ngoài app. Rủi ro: khách vẫn thấy lịch `confirmed` của buổi Gymer đã bỏ; cần xử lý thủ công hoặc bổ sung `cancel_booking` cho Gymer sau.)
 
 ## 1. Mục tiêu và phạm vi
 
@@ -33,7 +33,7 @@ Mục tiêu: schema + RLS + RPC đủ cho luồng v1: đăng nhập Zalo -> tìm
 KHÔNG làm trong plan này:
 - Không viết migration/SQL đầy đủ (chỉ SQL minh hoạ phần khó). Không commit/push.
 - Edge function `auth-zalo`, `resolve-location` (chỉ nêu giao diện và spike, mục 2.1). Cài đặt repository Supabase thật (`src/services/supabase/*`) và nối UI: plan riêng sau khi schema chạy.
-- Thanh toán, chat, thông báo đẩy (Zalo OA), admin UI, gói 10 buổi, áp dụng hàng loạt, upload file, pg_cron.
+- Thanh toán, chat, thông báo đẩy (Zalo OA), admin UI, gói 10 buổi (đã bỏ, Q1), áp dụng hàng loạt, upload file, xác minh chứng chỉ (Q8), pg_cron.
 
 ## 2. Quyết định kiến trúc
 
@@ -79,8 +79,8 @@ Loại: PostGIS ngay (chính xác hơn, có KNN, nhưng thêm extension chưa ki
 
 Quyền riêng tư vị trí:
 - Vị trí khách: KHÔNG lưu. App gửi `p_lat`, `p_lng` làm tròn 3 chữ số (~110 m) qua `supabase.rpc` (POST, tham số trong body, không nằm trong URL). Việc log request phía Supabase: chưa kiểm; cần xem cấu hình log, không dùng GET.
-- Vị trí Gymer: bảng `gymer_locations` chỉ chủ sở hữu đọc/ghi. Không có đường nào trả lat/lng của Gymer ra client; RPC chỉ trả `distance_km` làm tròn 0.1 km. Toạ độ ép làm tròn 3 chữ số bằng trigger (Gymer chọn "điểm hoạt động").
-- Rủi ro còn lại, nói thẳng: kẻ gọi RPC nhiều lần từ nhiều toạ độ giả có thể dò (trilateration) ra điểm của Gymer với sai số ~vài chục mét. Giảm: làm tròn khoảng cách, bán kính tối đa 10 km, giới hạn tối đa 50 kết quả; rate limit thật chưa có (cần cơ chế khác, ngoài v1). Chấp nhận nếu điểm là nơi công cộng (Q2).
+- Vị trí Gymer: bảng `gymer_locations` chỉ chủ sở hữu đọc/ghi. Không có đường nào trả lat/lng của Gymer ra client; RPC chỉ trả `distance_km` làm tròn 0.1 km. Toạ độ ép làm tròn 3 chữ số bằng trigger. Gymer dạy ở phòng tập công cộng (Q2) nên "điểm hoạt động" là địa điểm công khai; giữ 3 chữ số (sai số ~110 m so với bán kính nhỏ nhất 1 km là chấp nhận được) như lớp phòng thủ phụ nếu Gymer lỡ nhập nhà riêng.
+- Rủi ro còn lại, nói thẳng: kẻ gọi RPC nhiều lần từ nhiều toạ độ giả có thể dò (trilateration) ra điểm của Gymer với sai số ~vài chục mét. Giảm: làm tròn khoảng cách, bán kính tối đa 10 km, giới hạn tối đa 50 kết quả; rate limit thật chưa có (cần cơ chế khác, ngoài v1). Với điểm là phòng tập công cộng (Q2), dò ra điểm này không tiết lộ nhà ở; rủi ro còn lại chủ yếu là Gymer nhập nhầm địa chỉ nhà làm "phòng tập": giảm bằng chữ hướng dẫn trên form ("chọn phòng tập, không nhập nhà riêng"), schema không ép được. Chấp nhận.
 
 RPC minh hoạ (rút gọn, không phải bản cuối):
 
@@ -92,7 +92,7 @@ create or replace function public.search_gymers(
   p_age_min int default null, p_age_max int default null, p_max_price int default null)
 returns table (user_id uuid, display_name text, gender public.gender, age int,
                area_label text, distance_km numeric, rating_avg numeric, rating_count int,
-               price_weekday_vnd int, price_weekend_vnd int, tags text[], is_certified boolean, avatar_url text)
+               price_weekday_vnd int, price_weekend_vnd int, tags text[], avatar_url text)
 language plpgsql stable security definer set search_path = ''
 as $$
 begin
@@ -152,12 +152,25 @@ Thời gian:
 - T7/CN: `extract(isodow from day) in (6, 7)`; tính trên `date` nên không dính múi giờ.
 - Giá: `create_booking` tính ở server: `day_overrides.price_vnd` nếu có, không thì `price_weekend_vnd` (T7/CN) hoặc `price_weekday_vnd`; ghi vào `bookings.price_vnd` (integer VND, `check (>= 0)`). Client gửi `p_expected_price`; lệch thì ném `PRICE_CHANGED` để khách thấy giá mới trước khi xác nhận lại. Sau đó giá Gymer đổi không ảnh hưởng booking đã tạo.
 
+### 2.4A Khách huỷ lịch (Q4 đã chốt: được huỷ)
+
+RPC `cancel_booking(p_booking_id)`, chỉ khách của booking:
+- `pending` (chưa hết hạn): huỷ được bất cứ lúc nào trước `starts_at`.
+- `confirmed`: huỷ được khi còn ít nhất 2 giờ trước `starts_at` (hằng số do sen1 đề xuất, trùng mức đặt trước tối thiểu Q5; người dùng chưa nói con số này). Sát giờ hơn thì RPC ném `TOO_LATE`; khách phải liên hệ Gymer ngoài app.
+- Trạng thái khác (`rejected`, `cancelled`, `expired`) hoặc đã qua `starts_at`: `FORBIDDEN`/`BOOKING_EXPIRED`.
+Hệ quả:
+- Khung giờ trống lại NGAY: ràng buộc loại trừ chỉ tính `pending`/`confirmed`, nên người khác đặt lại được; `get_day_slots` trả `available` (trừ khi Gymer tự đóng khung).
+- Quyền đọc ghi chú sức khoẻ: Gymer MẤT quyền đọc ngay khi booking sang `cancelled` (policy chỉ cho `pending`/`confirmed`). Khách vẫn đọc ghi chú của chính mình. Hàng booking giữ lại làm lịch sử, không xoá.
+- Không có thông báo đẩy ở v1: Gymer chỉ thấy khi mở app; với `confirmed` huỷ trước giờ ít nhất 2 giờ thì rủi ro Gymer đến buổi trống được giảm nhưng không loại bỏ. Mapper phía Gymer ẩn hoặc gắn nhãn "Đã huỷ".
+- Không có phạt/hạn chế huỷ nhiều lần (thanh toán ngoài app). Khách có thể đặt rồi huỷ liên tục làm nhiễu lịch Gymer; giới hạn 3 `pending` chỉ chặn một phần. Chấp nhận ở v1.
+- Gymer huỷ buổi đã `confirmed`: chưa có (Q12).
+
 ### 2.5 RLS, quyền, SECURITY DEFINER
 
 Nguyên tắc:
 - Bật RLS cho MỌI bảng `public`, ngay trong chính migration tạo bảng (cùng file), kèm `revoke all ... from anon, authenticated`. Policy và `grant` chọn lọc nằm ở migration RLS riêng. Nhờ vậy giữa hai đợt deploy, bảng đã tạo vẫn đóng.
 - Giả định cần kiểm sau migration (`\dp` hoặc Supabase advisor): Supabase mặc định cấp quyền rộng cho `anon`/`authenticated` trên bảng mới ở schema `public`; nên không dựa vào "chưa có policy" mà revoke tường minh.
-- Ghi vào cột nhạy cảm bằng quyền theo cột: `grant update (cột...) on ... to authenticated` (RLS không giới hạn theo cột). Ví dụ `gymer_profiles`: client KHÔNG được ghi `rating_avg`, `rating_count`, `is_certified`.
+- Ghi vào cột nhạy cảm bằng quyền theo cột: `grant update (cột...) on ... to authenticated` (RLS không giới hạn theo cột). Ví dụ `gymer_profiles`: client KHÔNG được ghi `rating_avg`, `rating_count`.
 - Policy dùng `(select auth.uid())` để planner cache.
 - Hàm nội bộ (trigger, helper) đặt ở schema `private` (không lộ qua API). RPC cho client ở `public`.
 - Mọi hàm: `revoke all on function ... from public, anon; grant execute ... to authenticated` (Postgres mặc định cấp EXECUTE cho PUBLIC).
@@ -173,7 +186,7 @@ Ma trận quyền (anon = không có gì ở mọi bảng):
 | `gymer_profiles` | `is_listed` hoặc của mình hoặc Gymer mình có booking | insert/update dòng của mình, theo cột | không có `delete` ở v1 (tắt bằng `is_listed=false`) |
 | `gymer_locations` | chỉ chủ | insert/update của mình | không bao giờ lộ ra client khác |
 | `gymer_specialties` | theo quyền đọc `gymer_profiles` | chủ insert/delete | |
-| `certificates` | chỉ chủ | chủ insert (status ép `pending`), xoá khi còn `pending` | `status`, `verified_at` chỉ admin/service |
+| `certificates` | theo quyền đọc `gymer_profiles` (công khai khi Gymer `is_listed`) | chủ insert/update/delete dòng của mình | tên tự khai, KHÔNG có trạng thái xác minh (Q8); tối đa 10 dòng/Gymer (trigger) |
 | `gymer_open_hours`, `gymer_day_overrides`, `gymer_slot_overrides` | chỉ chủ | chủ | khách đọc qua RPC |
 | `bookings` | khách của booking hoặc Gymer của booking | KHÔNG ghi trực tiếp | ghi qua RPC |
 | `booking_health_notes` | khách của booking; Gymer của booking chỉ khi status `pending`/`confirmed` | KHÔNG ghi trực tiếp | ghi trong `create_booking`; `reject`/`cancel` làm Gymer mất quyền đọc |
@@ -193,9 +206,9 @@ create policy health_notes_select on public.booking_health_notes
 ```
 
 RPC SECURITY DEFINER (mỗi cái kèm lý do trong comment):
-- `search_gymers`, `get_day_slots`, `get_month_calendar`, `gymer_certificate_badges`: cần đọc bảng mà client bị chặn (toạ độ, ngoại lệ lịch, booking của người khác để tính khung bận, file/chứng chỉ), chỉ trả dữ liệu công khai/đã lọc. `get_day_slots` chỉ trả `booked_by` (tên khách) khi người gọi chính là Gymer đó.
+- `search_gymers`, `get_day_slots`, `get_month_calendar`: cần đọc bảng mà client bị chặn (toạ độ, ngoại lệ lịch, booking của người khác để tính khung bận), chỉ trả dữ liệu công khai/đã lọc. `get_day_slots` chỉ trả `booked_by` (tên khách) khi người gọi chính là Gymer đó.
 - `create_booking`, `respond_booking`, `cancel_booking`, `create_review`: kiểm điều kiện nghiệp vụ và ghi vào bảng mà client không có quyền ghi.
-- Trigger `private.recompute_rating` (sau thay đổi `reviews`) và `private.sync_is_certified` (sau thay đổi `certificates`): cập nhật cột client không được ghi.
+- Trigger `private.recompute_rating` (sau thay đổi `reviews`): cập nhật cột client không được ghi.
 Lỗi nghiệp vụ ném bằng `raise exception 'MÃ'` (ví dụ `SLOT_TAKEN`, `SLOT_NOT_OPEN`, `PRICE_CHANGED`, `FORBIDDEN`, `NOT_FOUND`, `BOOKING_EXPIRED`, `LIMIT_REACHED`, `VALIDATION`); mapper ở tầng services chuyển sang `AppError`. Khớp `ErrorCode` hiện có, hai mã mới (`PRICE_CHANGED`, `SLOT_NOT_OPEN`) tạm map về `VALIDATION`/`SLOT_TAKEN` (mục 5).
 
 ### 2.6 Đánh giá
@@ -206,24 +219,34 @@ Lỗi nghiệp vụ ném bằng `raise exception 'MÃ'` (ví dụ `SLOT_TAKEN`, 
 - v1 không sửa/xoá đánh giá (không có policy ghi); admin xử lý qua dashboard.
 Loại: tính động (chậm dần, khó lọc); cho đánh giá bất kỳ lúc nào (đánh giá giả).
 
-### 2.7 Chứng chỉ
+### 2.7 Chứng chỉ (Q8: không xác minh ở v1)
 
-v1 tối thiểu: chỉ metadata (`certificates`: `name`, `status` enum `pending|verified|rejected`, `file_path` null). Chưa tạo bucket Storage, chưa upload (cột `file_path` để sẵn, null). Xác minh thủ công: Q8. `gymer_profiles.is_certified` đồng bộ bằng trigger (có ít nhất một chứng chỉ `verified`). Công khai: cờ `is_certified` + (Q7) tên các chứng chỉ đã xác minh qua RPC `gymer_certificate_badges`.
-Khi làm upload: bucket private `certificates`, đường dẫn `<gymer_id>/<uuid>`, policy trên `storage.objects` (schema do Supabase quản lý, rủi ro riêng), xem ảnh bằng signed URL ngắn hạn; làm ở migration + plan riêng.
-Loại: upload ngay v1 (thêm bucket + policy `storage.objects` vào migration đầu, khó kiểm cục bộ, mở thêm bề mặt dữ liệu nhạy cảm).
+Quyết định (sen1 đề xuất trong khuôn khổ Q8; người dùng có thể đổi sang "bỏ hẳn"): v1 chỉ lưu chứng chỉ do Gymer TỰ KHAI. Bảng `certificates (id, gymer_id, name)`, không có `status`, `file_path`, `verified_at`; không có `gymer_profiles.is_certified`; không có enum `certificate_status`; không có RPC `gymer_certificate_badges`. Không bucket Storage, không upload.
 
-### 2.8 Phạm vi v1: đề xuất cắt (người dùng quyết, Q1)
+Nói thẳng rủi ro: mockup đang có huy hiệu "Đã xác minh" và nhãn "Chứng chỉ PT". Khi không có quy trình xác minh, hiện huy hiệu "Đã xác minh" là thông tin sai và làm người dùng hiểu nhầm về an toàn/chuyên môn của Gymer (người dùng tin để đặt buổi tập và có thể khai ghi chú sức khoẻ). Ngay cả danh sách tự khai cũng có thể bị lợi dụng để khai gian.
+Cách hiển thị trung thực (bắt buộc cho UI khi nối dữ liệu thật):
+- KHÔNG hiện chữ/biểu tượng "Đã xác minh", dấu tick xanh, hay `Gymer.certified` ở bất kỳ đâu (thẻ danh sách, hồ sơ, hồ sơ phía Gymer).
+- Phần chứng chỉ ở hồ sơ công khai đặt tiêu đề "Chứng chỉ (Gymer tự khai, chưa được Gymer ơi xác minh)"; từng dòng gắn nhãn "Tự khai".
+- Phía Gymer: ô nhập tên chứng chỉ; bỏ trạng thái "đã xác minh/đang chờ" và nút tải lên (mockup hiện có) cho đến khi làm xác minh.
+- Mockup trong Project cần cập nhật tương ứng (ngoài repo).
+Việc phải đổi ở app (T10): `Gymer.certified` bỏ; `Certificate.verified` bỏ; mock bỏ `certified`/`verified`; ví dụ Tag "Đã xác minh" ở gallery đổi thành "Tự khai" không dấu tick.
+Giảm nhẹ trong DB: tên tối đa 100 ký tự, tối đa 10 chứng chỉ mỗi Gymer (trigger). Không chặn được khai gian.
+Khi làm xác minh sau (expand, không phá): thêm cột `status` (mặc định `unverified`), `file_path`, `verified_at`, bucket private `certificates` + policy `storage.objects` (schema do Supabase quản lý, rủi ro riêng) + quy trình người xác minh; làm ở plan riêng.
+Loại: giữ trạng thái xác minh thủ công "dựa trên niềm tin" (người dùng đã quyết không làm); bỏ hẳn chứng chỉ khỏi v1 (an toàn hơn về hiểu nhầm, nhưng mất thông tin hữu ích và mockup có sẵn; để người dùng chọn nếu thấy rủi ro khai gian lớn hơn lợi ích).
+
+### 2.8 Phạm vi v1: cắt (Q1: gói 10 buổi do người dùng chốt; các mục còn lại là GIẢ ĐỊNH đồng ý mặc định, chưa xác nhận)
 
 | Mục | Đề xuất | Lý do | Nếu cần sau |
 |---|---|---|---|
-| Gói 10 buổi | Cắt | Không có logic tính tiền/đặt gói; thanh toán ngoài app | Thêm cột `price_pack10_vnd` (nullable, chỉ hiển thị) bằng migration expand; UI phải ẩn dòng này đến lúc đó |
+| Gói 10 buổi | Bỏ (người dùng chốt: khách và Gymer tự thương lượng ngoài app) | Không có cột, không có logic | UI/mockup phải bỏ dòng "gói 10 buổi" khỏi bảng giá |
 | Áp dụng hàng loạt | Cắt | Đặt/đóng từng ngày, từng khung đã đủ; cần RPC nguyên tử riêng | RPC `apply_schedule_bulk` |
 | Chọn thời lượng buổi | Cắt (cố định 60) | Ràng buộc slot và chống trùng đơn giản hơn nhiều | Cột `slot_minutes` + sinh khung theo đó |
-| Upload file chứng chỉ | Cắt | Mục 2.7 | Storage plan riêng |
+| Upload file chứng chỉ, xác minh chứng chỉ | Cắt (người dùng chốt xác minh để sau, Q8) | Mục 2.7 | Plan riêng: cột `status`/`file_path`, Storage |
 | Upload ảnh đại diện | Cắt (dùng URL ảnh Zalo) | Cần bucket public + policy | Bucket `avatars` |
 | Sửa/xoá đánh giá | Cắt | | Policy + trigger đã sẵn sàng tính lại |
 | Sửa mẫu giờ mở theo thứ trong tuần | Cắt (mẫu giống nhau mọi ngày, đóng/mở bằng ngoại lệ) | Mockup không có màn sửa mẫu | Thêm cột `weekday` (expand) |
-| Huỷ lịch bởi khách | Giữ (mặc định), Q4 | Không có thì khung bị giữ vô thời hạn khi `confirmed` | |
+| Huỷ lịch bởi khách | GIỮ (người dùng chốt Q4) | Quy tắc mục 2.4A | |
+| Gymer huỷ buổi đã xác nhận | Cắt (Q12 còn mở) | Mockup không có | RPC bổ sung |
 | Xoá tài khoản tự phục vụ | Cắt (Q10) | Cần quy tắc giữ lịch sử | |
 
 ### 2.9 Dữ liệu cá nhân
@@ -235,7 +258,7 @@ Lưu tối thiểu:
 - `zalo_identities`: chỉ `zalo_id`, `user_id`.
 Cảnh báo (không phải tư vấn pháp lý; cần người có chuyên môn xác nhận):
 - Ghi chú sức khoẻ và dữ liệu vị trí thường được coi là dữ liệu cá nhân nhạy cảm theo quy định bảo vệ dữ liệu cá nhân của Việt Nam (Nghị định 13/2023 và luật bảo vệ dữ liệu cá nhân có hiệu lực từ 2026; plan không kiểm lại nội dung hiện hành). Thường đòi hỏi sự đồng ý rõ ràng, mục đích xử lý rõ, chính sách quyền riêng tư; ngoài ra Zalo Mini App có yêu cầu riêng.
-- Dữ liệu nằm ở region Supabase (Q11); chuyển dữ liệu ra nước ngoài có thể kéo theo nghĩa vụ riêng.
+- Dữ liệu nằm ở region Singapore (`ap-southeast-1`, Q11, người dùng chấp nhận); nghĩa là ngoài Việt Nam, và chuyển dữ liệu cá nhân ra nước ngoài có thể kéo theo nghĩa vụ riêng (cần người có chuyên môn pháp lý xác nhận).
 - Người điều hành project và nhân sự Supabase có thể đọc dữ liệu (dashboard, backup); v1 KHÔNG mã hoá theo cột.
 - Chưa có luồng xoá dữ liệu (Q10): khoá ngoại từ `bookings`/`reviews` tới `profiles` dùng `on delete restrict`; xoá một người phải làm tay và có chủ đích.
 - Người dưới 18 tuổi: chỉ Gymer có `birth_year`; khách không kiểm tuổi.
@@ -249,7 +272,7 @@ auth.users 1─1 profiles 1─1 zalo_identities
                  │
                  ├─0..1─ gymer_profiles ─┬─1─1─ gymer_locations        (riêng tư)
                  │        │              ├─*─* specialties (qua gymer_specialties)
-                 │        │              ├─1─* certificates
+                 │        │              ├─1─* certificates            (tự khai, chưa xác minh)
                  │        │              ├─1─* gymer_open_hours
                  │        │              ├─1─* gymer_day_overrides
                  │        │              └─1─* gymer_slot_overrides
@@ -261,18 +284,17 @@ auth.users 1─1 profiles 1─1 zalo_identities
 Enum (kiểu Postgres; thêm giá trị sau bằng `alter type ... add value`, KHÔNG xoá được; chọn enum thay vì `check` vì `database.types.ts` sinh ra union chặt):
 - `public.gender`: `female`, `male` (khớp `Gender`; thêm "khác" là câu hỏi nhỏ, hiện UI không có).
 - `public.booking_status`: `pending`, `confirmed`, `rejected`, `cancelled`, `expired`.
-- `public.certificate_status`: `pending`, `verified`, `rejected`.
 
 Bảng và cột chính (chỉ cột đáng nói; `created_at/updated_at timestamptz default now()` ở mọi bảng, `updated_at` bằng trigger `private.set_updated_at`):
 
 - `profiles`: `id uuid pk references auth.users on delete cascade`, `display_name text not null check (char_length between 1 and 50)`, `avatar_url text`.
 - `zalo_identities`: `zalo_id text pk`, `user_id uuid not null unique references profiles(id) on delete cascade`.
 - `specialties`: `name text pk` (khớp `Specialty` và `tags`). Seed trong migration (`on conflict do nothing`): Gym, Giảm mỡ, Tăng cơ, Yoga, Calisthenics, Giãn cơ (mock có tag "Giãn cơ" không nằm trong union `Specialty`: nhãn tự do vẫn được, bộ lọc chỉ dùng 5 giá trị).
-- `gymer_profiles`: `user_id uuid pk references profiles(id) on delete restrict`, `display_name text not null`, `gender gender not null`, `birth_year smallint not null check (between 1940 and 2100)` (+ trigger tuổi >= 18, Q6), `area_label text not null` (ví dụ "Quận 1, TP.HCM"), `bio text check (char_length <= 1000)`, `avatar_url text`, `price_weekday_vnd int not null check (between 0 and 5000000)`, `price_weekend_vnd int not null` (cùng check), `accepts_requests boolean not null default true`, `is_listed boolean not null default false`, `is_certified boolean not null default false`, `rating_avg numeric(3,2) not null default 0`, `rating_count int not null default 0`.
+- `gymer_profiles`: `user_id uuid pk references profiles(id) on delete restrict`, `display_name text not null`, `gender gender not null`, `birth_year smallint not null check (between 1940 and 2100)` (+ trigger tuổi >= 18, Q6), `area_label text not null` (ví dụ "Quận 1, TP.HCM"), `bio text check (char_length <= 1000)`, `avatar_url text`, `price_weekday_vnd int not null check (between 0 and 5000000)`, `price_weekend_vnd int not null` (cùng check), `accepts_requests boolean not null default true`, `is_listed boolean not null default false`, `rating_avg numeric(3,2) not null default 0`, `rating_count int not null default 0`.
   Index: `(is_listed)` phần `where is_listed` trên `user_id`.
 - `gymer_locations`: `user_id pk references gymer_profiles on delete cascade`, `lat double precision not null check (between -90 and 90)`, `lng double precision not null check (between -180 and 180)`; trigger làm tròn 3 chữ số. Index một phần `(lat, lng)` (tác dụng nhỏ ở quy mô hiện tại, ghi rõ).
 - `gymer_specialties`: `pk (gymer_id, specialty_name)`, `specialty_name references specialties(name) on update cascade`.
-- `certificates`: `id uuid pk default gen_random_uuid()`, `gymer_id`, `name text not null check (<= 100)`, `file_path text`, `status certificate_status not null default 'pending'`, `verified_at timestamptz`. Index `(gymer_id)`.
+- `certificates`: `id uuid pk default gen_random_uuid()`, `gymer_id uuid not null references gymer_profiles(user_id) on delete cascade`, `name text not null check (char_length between 1 and 100)`. Chỉ có `created_at/updated_at` chung; không có trạng thái xác minh (Q8). Trigger giới hạn 10 dòng/Gymer. Index `(gymer_id)`.
 - `gymer_open_hours`: `pk (gymer_id, start_time)`, `start_time time not null check (date_part('minute', start_time) = 0 and date_part('second', start_time) = 0)`.
 - `gymer_day_overrides`: `pk (gymer_id, day)`, `day date not null`, `is_open boolean not null default true`, `price_vnd int check (between 0 and 5000000)`.
 - `gymer_slot_overrides`: `pk (gymer_id, day, start_time)`, `is_open boolean not null`; cùng check giờ chẵn.
@@ -288,14 +310,14 @@ Tên file theo `docs/supabase-migrations.md`: `YYYYMMDDHHMMSS_ten.sql` (timestam
 
 | # | File | Nội dung | Rủi ro |
 |---|---|---|---|
-| M1 | `20261010100000_init_extensions_enums_private.sql` | `create extension if not exists btree_gist, unaccent with schema extensions`; `create schema if not exists private`; 3 enum (bọc `do $$ ... exception when duplicate_object`) | Thấp. Không có bảng, không có dữ liệu. PHÉP THỬ PIPELINE NHỎ NHẤT (xem 3.1) |
-| M2 | `20261010100100_core_profile_tables.sql` | `private.set_updated_at`; `profiles`, `zalo_identities`, `specialties` (+seed), `gymer_profiles`, `gymer_locations` (+trigger làm tròn), `gymer_specialties`, `certificates`; mỗi bảng enable RLS + revoke | Trung bình |
+| M1 | `20261010100000_init_extensions_enums_private.sql` | `create extension if not exists btree_gist, unaccent with schema extensions`; `create schema if not exists private`; 2 enum `gender`, `booking_status` (bọc `do $$ ... exception when duplicate_object`) | Thấp. Không có bảng, không có dữ liệu. PHÉP THỬ PIPELINE NHỎ NHẤT (xem 3.1) |
+| M2 | `20261010100100_core_profile_tables.sql` | `private.set_updated_at`; `profiles`, `zalo_identities`, `specialties` (+seed), `gymer_profiles`, `gymer_locations` (+trigger làm tròn), `gymer_specialties`, `certificates` (tự khai, +trigger giới hạn 10 dòng/Gymer); mỗi bảng enable RLS + revoke | Trung bình |
 | M3 | `20261010100200_schedule_tables.sql` | `gymer_open_hours`, `gymer_day_overrides`, `gymer_slot_overrides`; trigger gán giờ mặc định khi tạo `gymer_profiles`; enable RLS + revoke | Thấp |
 | M4 | `20261010100300_booking_tables.sql` | `bookings` + exclusion constraint + index, `booking_health_notes`; enable RLS + revoke | Cao nhất trong nhóm bảng (exclusion + extension ngoài) |
-| M5 | `20261010100400_reviews_and_triggers.sql` | `reviews`; `private.recompute_rating` (+trigger); `private.sync_is_certified` (+trigger); enable RLS + revoke | Trung bình |
+| M5 | `20261010100400_reviews_and_triggers.sql` | `reviews`; `private.recompute_rating` (+trigger); enable RLS + revoke | Trung bình |
 | M6 | `20261010100500_rls_gymer_side.sql` | policy + grant theo cột cho `profiles`, `specialties`, `gymer_*`, `certificates`, 3 bảng lịch | Cao (RLS sai = lộ/chặn dữ liệu) |
 | M7 | `20261010100600_rls_booking_review.sql` | policy cho `bookings`, `booking_health_notes`, `reviews`; policy bổ sung `profiles`/`gymer_profiles` cho người có booking | Cao |
-| M8 | `20261010100700_rpc_read.sql` | `search_gymers`, `get_day_slots`, `get_month_calendar`, `gymer_certificate_badges` + revoke/grant execute | Cao |
+| M8 | `20261010100700_rpc_read.sql` | `search_gymers`, `get_day_slots`, `get_month_calendar` + revoke/grant execute | Cao |
 | M9 | `20261010100800_rpc_booking_flow.sql` | `create_booking`, `respond_booking`, `cancel_booking`, `create_review`; trigger chặn đóng khung/ngày đã có booking | Cao nhất (logic nghiệp vụ, khoá, giá) |
 
 Vì sao M6, M7 tách khỏi bảng (M2–M5): người duyệt đọc "cấu trúc" và "quyền" riêng; sai quyền sửa bằng migration quyền, không đụng cấu trúc.
@@ -327,6 +349,9 @@ Danh sách kiểm cho từng đợt:
 6. Đợt C/D: grep `grant ... to anon` (kỳ vọng không có); mọi hàm `security definer` có `set search_path = ''` và comment lý do; mọi hàm có `revoke ... from public, anon`.
 7. Không có `drop table|column`, `truncate`, `delete from`, `alter column ... type` ngoài ý muốn.
 8. Trước đợt C: xác nhận đã có kết quả test cục bộ (báo cáo của dev kèm đầu ra) và Supabase có bật backup/PITR (database trống nên rủi ro mất dữ liệu thấp, nhưng nên giữ thói quen theo `docs/supabase-migrations.md`).
+9. Không có dấu vết xác minh chứng chỉ: grep `certificate_status`, `is_certified`, `verified` trong `supabase/migrations/` => kỳ vọng không có. Đợt B/C: `certificates` chỉ có `id`, `gymer_id`, `name` (+ cột thời gian).
+10. Đợt C: grep policy có `anon` => không có (Q3); mọi `grant select` cho `authenticated` đúng ma trận 2.5; policy ghi chú sức khoẻ chỉ cho Gymer khi `pending`/`confirmed`.
+11. Đợt D: `cancel_booking` đúng 2.4A (confirmed cần >= 2 giờ); không có RPC nào trả lat/lng.
 
 ## 4. Rủi ro và cách giảm
 
@@ -343,6 +368,7 @@ Danh sách kiểm cho từng đợt:
 | R9 | `unaccent`/"đ", haversine tại cực, kết quả rỗng sai | Thấp | Ca test cụ thể |
 | R10 | Mô hình lịch suy ra sai (đặc biệt ngày T7/CN, ranh giới nửa đêm, múi giờ) | Trung bình | Test với `timezone = 'UTC'` và `'Asia/Ho_Chi_Minh'`; giờ chẵn 19:00 VN = 12:00 UTC cùng ngày; 07:00 VN = 00:00 UTC cùng ngày; không có giờ nào vượt ngày |
 | R11 | Pháp lý/riêng tư (mục 2.9) | Cao (ngoài kỹ thuật) | Người dùng tìm tư vấn pháp lý trước khi có người dùng thật; chặn `is_listed` cho đến khi có chính sách |
+| R13 | Hiển thị chứng chỉ tự khai bị hiểu là đã xác minh, hoặc khai gian | Trung bình | Mục 2.7: không huy hiệu/tick xanh, nhãn "Tự khai", tiêu đề rõ; T10 bỏ `certified`/`verified`; cập nhật mockup trong Project; người duyệt UI kiểm khi nối dữ liệu thật |
 | R12 | `database.types.ts` lệch schema | Trung bình | Sinh bằng công cụ (mục 5, T9), không viết tay; kiểm typecheck |
 
 ## 5. Break-down task
@@ -380,15 +406,15 @@ Xác minh: nếu supabase/tests/local/run.sh đã có thì chạy nó và đưa 
 ### T1 — Migration M1 (dev1, đợt 1)
 - Mục tiêu: file phép thử pipeline nhỏ nhất.
 - File được phép: tạo `supabase/migrations/20261010100000_init_extensions_enums_private.sql`.
-- Nội dung: `create extension if not exists btree_gist with schema extensions;` và `unaccent` (cùng cách); `create schema if not exists private;` (không grant gì cho client); 3 enum ở mục 2A bọc DO-exception; comment đầu file nêu mục đích và "không có bảng, không dữ liệu".
+- Nội dung: `create extension if not exists btree_gist with schema extensions;` và `unaccent` (cùng cách); `create schema if not exists private;` (không grant gì cho client); 2 enum (`gender`, `booking_status`) ở mục 2A bọc DO-exception; comment đầu file nêu mục đích và "không có bảng, không dữ liệu".
 - Hoàn thành: file đúng tên/định dạng; chạy trong harness (T3) hai lần liên tiếp không lỗi; `bash scripts/ci/scan-migrations.sh supabase/migrations/20261010100000_init_extensions_enums_private.sql` ra 0 cảnh báo. Nếu T3 chưa có: chỉ báo "chưa chạy được".
 - Phụ thuộc: không.
 
 ### T2 — Migration M2 (dev2, đợt 1)
 - File được phép: tạo `supabase/migrations/20261010100100_core_profile_tables.sql`.
-- Nội dung: theo 2A: `private.set_updated_at()`; bảng `profiles`, `zalo_identities`, `specialties` (+ seed 6 dòng), `gymer_profiles`, `gymer_locations` (+ trigger BEFORE INSERT/UPDATE làm tròn lat/lng 3 chữ số), `gymer_specialties`, `certificates`; trigger updated_at; index đã nêu; enable RLS + revoke. KHÔNG viết policy ở file này. Trigger tuổi >= 18 cho `gymer_profiles` (Q6, mặc định 18) dùng hàm `private.check_gymer_age()` (BEFORE INSERT/UPDATE).
+- Nội dung: theo 2A: `private.set_updated_at()`; bảng `profiles`, `zalo_identities`, `specialties` (+ seed 6 dòng), `gymer_profiles`, `gymer_locations` (+ trigger BEFORE INSERT/UPDATE làm tròn lat/lng 3 chữ số), `gymer_specialties`, `certificates` (chỉ `id`, `gymer_id`, `name`; trigger `private.limit_certificates()` tối đa 10 dòng/Gymer); trigger updated_at; index đã nêu; enable RLS + revoke. KHÔNG viết policy ở file này. Trigger tuổi >= 18 cho `gymer_profiles` (Q6, mặc định 18) dùng hàm `private.check_gymer_age()` (BEFORE INSERT/UPDATE).
 - Hoàn thành: áp trong harness sau M1 hai lần không lỗi; `\d` các bảng đúng cột; mọi bảng `relrowsecurity = true`; `anon`/`authenticated` không có quyền trên bất kỳ bảng nào (truy vấn `information_schema.role_table_grants` ra rỗng); scan 0 cảnh báo.
-- Phụ thuộc: M1 (enum `gender`, `certificate_status`) chỉ khi chạy thử.
+- Phụ thuộc: M1 (enum `gender`) chỉ khi chạy thử.
 
 ### T3 — Harness Postgres cục bộ + shim Supabase (dev3, đợt 1)
 - Mục tiêu: chạy được mọi migration và test SQL trên Postgres 16 cục bộ, vì không có Docker daemon/CLI (mục 6).
@@ -408,21 +434,21 @@ Xác minh: nếu supabase/tests/local/run.sh đã có thì chạy nó và đưa 
 
 ### T5 — Migration M5 + M6 (dev2, đợt 2)
 - File được phép: tạo `supabase/migrations/20261010100400_reviews_and_triggers.sql`, `supabase/migrations/20261010100500_rls_gymer_side.sql`.
-- M5: `reviews`; `private.recompute_rating(gymer uuid)` và trigger AFTER INSERT/UPDATE/DELETE (DEFINER vì: cập nhật cột client không được ghi); `private.sync_is_certified` + trigger trên `certificates` (cùng lý do). Enable RLS + revoke.
-- M6: policy + grant theo cột đúng ma trận mục 2.5 cho `profiles`, `specialties`, `gymer_profiles` (bản ghi của mình + `is_listed`; policy cho người có booking viết ở M7), `gymer_locations`, `gymer_specialties`, `certificates`, `gymer_open_hours`, `gymer_day_overrides`, `gymer_slot_overrides`. Grant update theo cột đúng danh sách (không gồm `rating_*`, `is_certified`, `user_id`). Không grant gì cho `anon`.
+- M5: `reviews`; `private.recompute_rating(gymer uuid)` và trigger AFTER INSERT/UPDATE/DELETE (DEFINER vì: cập nhật cột client không được ghi). Enable RLS + revoke. (Không còn `sync_is_certified`: không có xác minh, Q8.)
+- M6: policy + grant theo cột đúng ma trận mục 2.5 cho `profiles`, `specialties`, `gymer_profiles` (bản ghi của mình + `is_listed`; policy cho người có booking viết ở M7), `gymer_locations`, `gymer_specialties`, `certificates` (đọc theo quyền đọc `gymer_profiles`; chủ ghi dòng của mình), `gymer_open_hours`, `gymer_day_overrides`, `gymer_slot_overrides`. Grant update theo cột đúng danh sách (không gồm `rating_*`, `user_id`). Không grant gì cho `anon`.
 - Hoàn thành: harness xanh; sau khi T6 có test, các ca RLS của bảng này pass; scan 0 cảnh báo; truy vấn `information_schema.column_privileges` chứng minh `authenticated` không có UPDATE trên `rating_avg`.
 - Phụ thuộc: M1–M4.
 
 ### T6 — Migration M7 + test RLS (dev3, đợt 2)
 - File được phép: tạo `supabase/migrations/20261010100600_rls_booking_review.sql`, `supabase/tests/local/cases/10_rls.sql`.
 - M7: policy `bookings`, `booking_health_notes` (như ví dụ 2.5), `reviews`; policy bổ sung `SELECT` cho `profiles` (Gymer đọc hồ sơ khách có booking gửi cho mình) và `gymer_profiles` (khách đọc Gymer mình có booking dù đã `is_listed=false`). `grant select` cho `authenticated` trên 3 bảng; KHÔNG grant insert/update/delete.
-- `10_rls.sql`: tạo hai khách A, B, hai Gymer G1, G2 (dữ liệu gieo bằng role superuser/`service_role`); với từng vai (`set local role authenticated; set local request.jwt.claim.sub = ...`), assert: A chỉ thấy booking của A; G1 chỉ thấy booking gửi G1; B không đọc `booking_health_notes` của A; G2 không đọc; G1 đọc được khi `pending/confirmed`, không đọc sau `rejected`; `anon` không đọc/ghi bảng nào; không ai ghi được `bookings`/`reviews` trực tiếp; client không ghi được `rating_avg`; `gymer_locations` của G1 không đọc được bởi A.
+- `10_rls.sql`: tạo hai khách A, B, hai Gymer G1, G2 (dữ liệu gieo bằng role superuser/`service_role`); với từng vai (`set local role authenticated; set local request.jwt.claim.sub = ...`), assert: A chỉ thấy booking của A; G1 chỉ thấy booking gửi G1; B không đọc `booking_health_notes` của A; G2 không đọc; G1 đọc được khi `pending/confirmed`, không đọc sau `rejected` hoặc `cancelled`; chứng chỉ của Gymer `is_listed=false` không đọc được bởi khách không có booking, người khác không ghi/xoá được chứng chỉ của G1; `anon` không đọc/ghi bảng nào; không ai ghi được `bookings`/`reviews` trực tiếp; client không ghi được `rating_avg`; `gymer_locations` của G1 không đọc được bởi A.
 - Hoàn thành: `bash supabase/tests/local/run.sh` xanh, đầu ra kèm; mỗi assert có thông điệp rõ.
 - Phụ thuộc: T2, T4, T5 (bảng và M6) để chạy.
 
 ### T7 — Migration M8 (dev1, đợt 3)
 - File được phép: tạo `supabase/migrations/20261010100700_rpc_read.sql`.
-- Nội dung: `search_gymers` (khung ở 2.3; đủ bộ lọc: keyword trên `display_name` và tên môn bằng `extensions.unaccent` + `ilike`, `p_specialty`, giới tính, rating tối thiểu, khoảng tuổi, giá tối đa; chỉ `is_listed`; tối đa 50; sắp theo khoảng cách); `get_day_slots(p_gymer_id uuid, p_day date)` trả `(start_time time, state text 'available'|'booked'|'closed', booked_by text)`; `get_month_calendar(p_gymer_id uuid, p_year int, p_month int)` trả `(day date, price_vnd int, is_open boolean, has_booked boolean)`; `gymer_certificate_badges(p_gymer_id uuid)` trả tên chứng chỉ `verified`. Quy tắc suy ra khung: mục 2.4 (mẫu + ngoại lệ - booking giữ chỗ; `pending` quá hạn coi là trống). Giá ngày = override > T7/CN > ngày thường. Revoke/grant execute; DEFINER + search_path + lý do.
+- Nội dung: `search_gymers` (khung ở 2.3; đủ bộ lọc: keyword trên `display_name` và tên môn bằng `extensions.unaccent` + `ilike`, `p_specialty`, giới tính, rating tối thiểu, khoảng tuổi, giá tối đa; chỉ `is_listed`; tối đa 50; sắp theo khoảng cách); `get_day_slots(p_gymer_id uuid, p_day date)` trả `(start_time time, state text 'available'|'booked'|'closed', booked_by text)`; `get_month_calendar(p_gymer_id uuid, p_year int, p_month int)` trả `(day date, price_vnd int, is_open boolean, has_booked boolean)`; KHÔNG có RPC chứng chỉ (đọc thẳng bảng qua RLS). Quy tắc suy ra khung: mục 2.4 (mẫu + ngoại lệ - booking giữ chỗ; `pending` quá hạn coi là trống). Giá ngày = override > T7/CN > ngày thường. Revoke/grant execute; DEFINER + search_path + lý do.
 - Hoàn thành: harness xanh; test cục bộ nhanh của chính task (T9 làm bộ đầy đủ): tìm "minh ha" khớp "Minh Hà"; khoảng cách giữa hai điểm biết trước đúng ±0.1 km; `get_day_slots` trả khung đã đặt là `booked`, khung đóng là `closed`.
 - Phụ thuộc: M1–M7.
 
@@ -431,7 +457,7 @@ Xác minh: nếu supabase/tests/local/run.sh đã có thì chạy nó và đưa 
 - Nội dung:
   - `create_booking(p_gymer_id uuid, p_starts_at timestamptz, p_goal text, p_health_note text, p_expected_price int) returns uuid`: kiểm đã đăng nhập; Gymer `is_listed` và `accepts_requests`; không tự đặt; thời điểm hợp lệ (mặc định sau hiện tại >= 2 giờ, <= 60 ngày; Q5); khung đang mở theo 2.4 (giờ VN); lấy advisory lock theo Gymer; chuyển `pending` quá hạn chồng khung sang `expired`; giới hạn 3 `pending`/khách (`LIMIT_REACHED`); tính giá ở server, lệch `p_expected_price` => `PRICE_CHANGED`; chèn `bookings` (`ends_at = starts_at + 60 phút`, `expires_at = least(now() + 24h, starts_at)`) và `booking_health_notes` nếu có ghi chú; bắt `exclusion_violation` => `SLOT_TAKEN`.
   - `respond_booking(p_booking_id uuid, p_decision text)`: chỉ Gymer của booking; chỉ từ `pending` chưa hết hạn (quá hạn => `BOOKING_EXPIRED` và chuyển `expired`); `p_decision` thuộc `confirmed|rejected`.
-  - `cancel_booking(p_booking_id uuid)`: chỉ khách của booking, trước `starts_at`, từ `pending|confirmed` sang `cancelled` (Q4).
+  - `cancel_booking(p_booking_id uuid)`: chỉ khách của booking; quy tắc đúng mục 2.4A: `pending` huỷ được trước `starts_at`; `confirmed` chỉ khi còn >= 2 giờ, sát giờ hơn ném `TOO_LATE`; trạng thái khác `FORBIDDEN`; sang `cancelled`, khung trống lại ngay. Mã lỗi `TOO_LATE` tạm map về `FORBIDDEN` ở tầng services.
   - `create_review(p_booking_id uuid, p_rating int, p_body text) returns uuid`: chỉ khách của booking, `confirmed` và `ends_at < now()`, chưa có đánh giá; chụp `author_name` từ `profiles.display_name`.
   - Trigger BEFORE INSERT/UPDATE trên `gymer_day_overrides` và `gymer_slot_overrides` (đặt `is_open = false`): nếu có booking `pending|confirmed` giữ khung/ngày đó => `SLOT_HAS_BOOKING`; dùng cùng advisory lock.
   - Mã lỗi đúng danh sách 2.5, ném bằng `raise exception '<MÃ>'`.
@@ -440,7 +466,7 @@ Xác minh: nếu supabase/tests/local/run.sh đã có thì chạy nó và đưa 
 
 ### T9 — Test nghiệp vụ (dev3, đợt 3)
 - File được phép: tạo `supabase/tests/local/cases/20_booking.sql`, `30_schedule_pricing.sql`, `40_search.sql`, `50_reviews_rating.sql`.
-- Nội dung (mỗi file là chuỗi assert với dữ liệu gieo riêng, dọn sau mình): chống trùng (kể cả 2 kết nối psql thực sự song song dùng `pg_sleep`/hai tiến trình nền nếu làm được trong `run.sh` mà không sửa nó; nếu không, ghi rõ chỉ kiểm tuần tự); giá T7/CN và override ngày; snapshot giá không đổi khi Gymer đổi giá sau; múi giờ: chạy cùng ca với `set timezone = 'UTC'` và `'Asia/Ho_Chi_Minh'`; hết hạn pending giải phóng khung; giới hạn 3 pending; tìm: bán kính 1/2/3/5, hộp bao ở vĩ độ khác, `unaccent` với "đ", Gymer không `is_listed` không xuất hiện, bộ lọc rating/tuổi/giá; rating: trigger tính lại khi thêm đánh giá, đánh giá chỉ khi `confirmed` và đã qua giờ, mỗi booking một đánh giá; huỷ lịch/`BOOKING_EXPIRED`.
+- Nội dung (mỗi file là chuỗi assert với dữ liệu gieo riêng, dọn sau mình): chống trùng (kể cả 2 kết nối psql thực sự song song dùng `pg_sleep`/hai tiến trình nền nếu làm được trong `run.sh` mà không sửa nó; nếu không, ghi rõ chỉ kiểm tuần tự); giá T7/CN và override ngày; snapshot giá không đổi khi Gymer đổi giá sau; múi giờ: chạy cùng ca với `set timezone = 'UTC'` và `'Asia/Ho_Chi_Minh'`; hết hạn pending giải phóng khung; giới hạn 3 pending; huỷ lịch theo 2.4A (`pending` huỷ được; `confirmed` còn >= 2 giờ huỷ được; < 2 giờ bị `TOO_LATE`; sau huỷ người khác đặt lại được khung; huỷ booking của người khác bị chặn); certificates: tối đa 10 dòng/Gymer; tìm: bán kính 1/2/3/5, hộp bao ở vĩ độ khác, `unaccent` với "đ", Gymer không `is_listed` không xuất hiện, bộ lọc rating/tuổi/giá; rating: trigger tính lại khi thêm đánh giá, đánh giá chỉ khi `confirmed` và đã qua giờ, mỗi booking một đánh giá; huỷ lịch/`BOOKING_EXPIRED`.
 - Hoàn thành: `run.sh` xanh kèm đầu ra; mỗi ca có tên; ca nào không kiểm được (ví dụ song song thật) ghi rõ trong đầu ra.
 - Phụ thuộc: T7, T8 để chạy; có thể viết trước.
 
@@ -452,6 +478,8 @@ Các lệch giữa UI hiện tại và schema, kèm bên đổi (đề xuất; u
 | Slot không có id riêng | `Slot.id`, `setSlotClosed(slotId, closed)` | App đổi: `setSlotClosed(dateIso: string, time: string, closed: boolean)`; `Slot.id` giữ làm khoá hiển thị (mapper đặt = `time`) |
 | `endIso` thừa | `BookingCreateInput.endIso` | App bỏ `endIso` (server tính +60 phút); thêm `expectedPrice: number`, `healthNote?: string` (đã có `note`; đổi tên thành `healthNote` để không nhầm) |
 | Thiếu danh sách booking của khách | `BookingRepository` chỉ có `create` | App thêm `listMine(): Promise<MyBooking[]>` (kiểu mới `MyBooking` có `gymerName`, `status: BookingStatus`) |
+| Chứng chỉ không xác minh (Q8) | `Gymer.certified: boolean`; `Certificate.verified: boolean`; mock có `certified`/`verified`; gallery có Tag "Đã xác minh" | Bỏ `Gymer.certified` và `Certificate.verified` (còn `{ id, name }`); mock bỏ hai trường; Tag ví dụ ở gallery đổi sang "Tự khai" không dấu tick; UI hồ sơ khi dựng phải theo mục 2.7 |
+| Gói 10 buổi (Q1) | Mockup có dòng bảng giá "gói 10 buổi"; type và mock không có | Không đổi type; chỉ nhắc: không dựng dòng này khi làm màn hồ sơ |
 | Trạng thái thêm | `RequestStatus` 3 giá trị | Giữ nguyên; thêm `BookingStatus = RequestStatus | 'cancelled' | 'expired'` dùng cho phía khách; mapper phía Gymer lọc `cancelled` khỏi danh sách |
 | `distanceKm` bắt buộc | `Gymer.distanceKm: number` | `getDetail` không có tâm tìm kiếm => đổi thành `distanceKm?: number`; `GymerCard` ẩn đoạn "cách ..." khi vắng |
 | `age` vs `birth_year` | `Gymer.age` | Giữ `age`; mapper tính từ `birth_year` theo giờ Việt Nam |
@@ -459,7 +487,7 @@ Các lệch giữa UI hiện tại và schema, kèm bên đổi (đề xuất; u
 | Mã lỗi | `ErrorCode` | Thêm `PRICE_CHANGED` và `SLOT_NOT_OPEN`? Đề xuất v1: không thêm, map `PRICE_CHANGED`/`SLOT_NOT_OPEN` => `VALIDATION`/`SLOT_TAKEN`; ghi nhớ để UI hiện câu phù hợp sau |
 | `Specialty` | 5 giá trị; mock có "Giãn cơ" | Giữ; tags là chuỗi tự do |
 
-- File được phép: `src/types/domain.ts`, `src/services/repositories/scheduleRepository.ts`, `src/services/repositories/bookingRepository.ts`, `src/services/repositories/index.ts`, `src/services/createServices.ts`, `src/services/createServices.test.ts`, `src/components/ui/cards/GymerCard/GymerCard.tsx` (và test cùng thư mục nếu có). Cần file khác (ví dụ `src/mocks/*`, `src/services/index.ts`) thì dừng và báo.
+- File được phép: `src/types/domain.ts`, `src/services/repositories/scheduleRepository.ts`, `src/services/repositories/bookingRepository.ts`, `src/services/repositories/index.ts`, `src/services/createServices.ts`, `src/services/createServices.test.ts`, `src/components/ui/cards/GymerCard/GymerCard.tsx` (và test cùng thư mục nếu có), `src/mocks/gymers.ts` (bỏ `certified`/`verified`), `src/pages/gallery/sections/AtomsSection.tsx` (chỉ ví dụ Tag "Đã xác minh" ở khoảng dòng 53). Cần file khác (ví dụ `src/mocks/*` còn lại, `src/services/index.ts`) thì dừng và báo; nếu vượt ngân sách context thì báo để chia đôi (hợp đồng services trước, chứng chỉ/mock sau).
 - Hoàn thành: `npm run typecheck && npm run lint && npm test` xanh, số test không giảm; không sửa logic UI ngoài các điểm trong bảng; `GymerCard` có test cho trường hợp thiếu `distanceKm`.
 - Phụ thuộc: không phụ thuộc SQL. Chỉ chạy sau khi người dùng duyệt các dòng bảng này (chúng đổi hợp đồng đã dùng); nếu không duyệt, bỏ T10.
 
@@ -490,7 +518,7 @@ CHỈ kiểm được khi chạy pipeline thật (hoặc trên stack Supabase th
 
 ## 7. Thứ tự thực hiện và điểm kiểm tra
 
-1. Người dùng duyệt plan và trả lời Q1–Q11 (ít nhất Q1, Q2, Q3, Q4, Q7, Q8, Q10). sen1 cập nhật plan nếu đổi; trạng thái về `CHỜ APPROVE` sau mỗi lần sửa.
+1. Người dùng đã trả lời Q1–Q4, Q7, Q8, Q11 (mục 0). Còn: duyệt plan, xác nhận giả định Q1 (các mục cắt ngoài gói 10 buổi), con số 2 giờ ở 2.4A, chọn "tự khai" hay "bỏ hẳn" chứng chỉ (2.7), và Q12. sen1 cập nhật plan nếu đổi; trạng thái về `CHỜ APPROVE` sau mỗi lần sửa.
 2. Đợt viết 1 (T1–T3). Kiểm tra: T3 có đầu ra thật chứng minh harness chạy hoặc báo lỗi nguyên văn. sen1 review.
 3. Merge ĐỢT A (M1 một mình). Kiểm tra: mục 3.2 điểm 1–4; ghi lại output thật của dry-run vào `docs/ci-cd-setup.md` hoặc báo lại (xác nhận/bác bỏ giả định "dry-run chỉ in tên file").
 4. Đợt viết 2 (T4–T6), review. Merge ĐỢT B (M2–M5) sau khi harness xanh. Kiểm tra: bảng đủ, RLS bật, advisor.
