@@ -27,8 +27,10 @@ Giả định (sai thì plan đổi):
 
 - Q13 ĐÃ ĐÓNG (người dùng trả lời 2026-10-10): áp dụng chung cho Gymer và khách như Q4 ở trên (tương đương phương án (c) cũ nhưng ranh giới là `starts_at`, không phải `ends_at`). Thay quyết định trước đó "Gymer huỷ mọi lúc".
 - Rủi ro khách huỷ phút chót: người dùng bỏ qua, ghi là rủi ro chấp nhận (R14); không phạt, không cửa sổ tối thiểu.
+- N2. CHỜ NGƯỜI DÙNG QUYẾT. Gymer đọc ghi chú sức khoẻ của booking `confirmed` vô thời hạn (mục 2.5). Đề xuất: giới hạn đến `ends_at + 1 ngày`, sau đó Gymer mất quyền đọc (khách vẫn đọc). Chưa quyết thì chưa chốt policy này trong M7.
+- N3. CHỜ QUYẾT, CẦN THỬ TRƯỚC. `reviews` lộ `author_id` và `booking_id` cho mọi người đọc được dòng đó. RLS không giới hạn theo cột, nhưng có thể giới hạn bằng quyền cột (`grant select (...)` chỉ các cột công khai, không cấp `author_id`, `booking_id`). Cần thử trên local: `select *` và embed PostgREST không lỗi ngoài ý muốn; và client có cần `author_id` để nhận "đánh giá của mình" không (nếu cần, tìm cách khác). Chưa thử thì chưa chốt.
 
-Không còn câu hỏi mở nào cần người dùng trả lời. Điểm chưa chắc về kỹ thuật (spike S1/S2, hành vi thật của dry-run, extension trên hosted) nằm ở mục 2.1 và mục 6.
+Câu hỏi còn chờ người dùng quyết: N2, N3. Điểm chưa chắc về kỹ thuật (spike S1/S2, hành vi thật của dry-run, extension trên hosted) nằm ở mục 2.1 và mục 6.
 
 ## 1. Mục tiêu và phạm vi
 
@@ -198,8 +200,8 @@ Ma trận quyền (anon = không có gì ở mọi bảng):
 | `certificates` | theo quyền đọc `gymer_profiles` (công khai khi Gymer `is_listed`) | chủ insert/update/delete dòng của mình | tên tự khai, KHÔNG có trạng thái xác minh (Q8); tối đa 10 dòng/Gymer (trigger) |
 | `gymer_open_hours`, `gymer_day_overrides`, `gymer_slot_overrides` | chỉ chủ | chủ | khách đọc qua RPC |
 | `bookings` | khách của booking hoặc Gymer của booking | KHÔNG ghi trực tiếp | ghi qua RPC |
-| `booking_health_notes` | khách của booking; Gymer của booking chỉ khi status `pending`/`confirmed` | KHÔNG ghi trực tiếp | ghi trong `create_booking`; `reject`/`cancel` làm Gymer mất quyền đọc |
-| `reviews` | của Gymer đang `is_listed`, hoặc của mình | KHÔNG ghi trực tiếp | ghi qua `create_review` |
+| `booking_health_notes` | khách của booking; Gymer của booking chỉ khi booking `confirmed` (không hạn, xem N2) hoặc `pending` còn hạn (`expires_at > now()`). Quá hạn, `rejected`, `cancelled`, `expired`: Gymer không đọc | KHÔNG ghi trực tiếp | ghi trong `create_booking`; `reject`/`cancel`/hết hạn làm Gymer mất quyền đọc |
+| `reviews` | đọc được khi đọc được hồ sơ `gymer_profiles` của `gymer_id` (theo dòng trên: Gymer đang `is_listed`, hoặc chính Gymer đó, hoặc khách có booking với Gymer đó; kể cả khi Gymer đã ẩn). Đổi policy `gymer_profiles` sẽ đổi luôn phạm vi đọc `reviews` | KHÔNG ghi trực tiếp | ghi qua `create_review`; cột `author_id`, `booking_id`: xem N3 |
 
 Ví dụ một policy (ghi chú sức khoẻ):
 
@@ -211,12 +213,13 @@ create policy health_notes_select on public.booking_health_notes
     select 1 from public.bookings b
     where b.id = booking_health_notes.booking_id
       and ( b.customer_id = (select auth.uid())
-         or (b.gymer_id = (select auth.uid()) and b.status in ('pending', 'confirmed')) )));
+         or (b.gymer_id = (select auth.uid()) and (b.status = 'confirmed' or (b.status = 'pending' and b.expires_at > now()))) )));
 ```
 
 RPC SECURITY DEFINER (mỗi cái kèm lý do trong comment):
 - `search_gymers`, `get_day_slots`, `get_month_calendar`: cần đọc bảng mà client bị chặn (toạ độ, ngoại lệ lịch, booking của người khác để tính khung bận), chỉ trả dữ liệu công khai/đã lọc. `get_day_slots` chỉ trả `booked_by` (tên khách) khi người gọi chính là Gymer đó.
 - `create_booking`, `respond_booking`, `cancel_booking`, `create_review`: kiểm điều kiện nghiệp vụ và ghi vào bảng mà client không có quyền ghi.
+- `create_booking` (M9, T8; bảng mục 3 ghi M9, không phải M8) phải từ chối Gymer `is_listed=false` bằng một mã lỗi trong danh sách trên. Cần test (T9, `20_booking.sql`): đặt Gymer đã ẩn bị từ chối.
 - Trigger `private.recompute_rating` (sau thay đổi `reviews`): cập nhật cột client không được ghi.
 Lỗi nghiệp vụ ném bằng `raise exception 'MÃ'` (ví dụ `SLOT_TAKEN`, `SLOT_NOT_OPEN`, `PRICE_CHANGED`, `FORBIDDEN`, `NOT_FOUND`, `BOOKING_EXPIRED`, `LIMIT_REACHED`, `ALREADY_STARTED`, `VALIDATION`); mapper ở tầng services chuyển sang `AppError`. Khớp `ErrorCode` hiện có, các mã mới (`PRICE_CHANGED`, `SLOT_NOT_OPEN`, `ALREADY_STARTED`) tạm map về `VALIDATION`/`SLOT_TAKEN`/`FORBIDDEN` (mục 5).
 
