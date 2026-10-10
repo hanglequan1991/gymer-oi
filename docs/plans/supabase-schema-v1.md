@@ -1,8 +1,10 @@
-Trạng thái: ĐÃ APPROVE (người dùng, 2026-10-10)
+Trạng thái: CHỜ APPROVE
 
 # Plan: schema Supabase v1 (migration đầu tiên)
 
-Phạm vi approve: TOÀN BỘ plan, thực thi theo 4 đợt merge (A: M1 là phép thử pipeline; B: bảng; C: policy; D: RPC). Mỗi đợt chỉ merge sau khi người dùng đọc dry-run và duyệt job `migrate`. Mọi thay đổi plan sau đây (nếu có) phải đưa trạng thái về `CHỜ APPROVE`.
+Phạm vi approve ban đầu (2026-10-10): TOÀN BỘ plan, thực thi theo 4 đợt merge (A: M1 là phép thử pipeline; B: bảng; C: policy; D: RPC). Mỗi đợt chỉ merge sau khi người dùng đọc dry-run và duyệt job `migrate`. Mọi thay đổi plan sau đây (nếu có) phải đưa trạng thái về `CHỜ APPROVE`.
+
+Sửa đổi chờ approve (2026-10-10, sen1): chốt N2 "cách 2" (khách tick đồng ý chia sẻ ghi chú sức khoẻ khi đặt lịch; Gymer chỉ đọc khi có tick, booking `confirmed` hoặc `pending` còn hạn, và đến `ends_at + 1 ngày`). Vì M4 và M7 đã/đang áp lên production nên KHÔNG sửa M4/M7; thêm migration mới M7b (`20261010100650_health_note_consent.sql`, đợt C2) và đổi M9/T8/T9 chưa áp dụng. Chi tiết: mục 2.5A, mục 3, T6b; bản tóm tắt tại `docs/plans/schema-v1-n2-health-consent.md`. Phần plan đã approve trước đó không đổi ngoài các điểm này.
 
 Tác giả: sen1. Ngày: 2026-10-10. Chỉ là tài liệu; chưa viết migration thật, chưa commit/push.
 Tham chiếu: `docs/supabase-migrations.md`, `docs/ci-cd-setup.md`, `docs/project-structure.md` (mục 3), `src/types/domain.ts`, `src/services/repositories/*.ts`, `src/mocks/*`.
@@ -27,10 +29,10 @@ Giả định (sai thì plan đổi):
 
 - Q13 ĐÃ ĐÓNG (người dùng trả lời 2026-10-10): áp dụng chung cho Gymer và khách như Q4 ở trên (tương đương phương án (c) cũ nhưng ranh giới là `starts_at`, không phải `ends_at`). Thay quyết định trước đó "Gymer huỷ mọi lúc".
 - Rủi ro khách huỷ phút chót: người dùng bỏ qua, ghi là rủi ro chấp nhận (R14); không phạt, không cửa sổ tối thiểu.
-- N2. CHỜ NGƯỜI DÙNG QUYẾT. Gymer đọc ghi chú sức khoẻ của booking `confirmed` vô thời hạn (mục 2.5). Đề xuất: giới hạn đến `ends_at + 1 ngày`, sau đó Gymer mất quyền đọc (khách vẫn đọc). Chưa quyết thì chưa chốt policy này trong M7.
+- N2. ĐÃ ĐÓNG (người dùng quyết "cách 2", 2026-10-10): khi `create_booking`, khách tick đồng ý cho Gymer xem ghi chú sức khoẻ. Có tick thì Gymer mới đọc được, và vẫn chỉ khi booking `confirmed` hoặc `pending` còn hạn, và chỉ đến `ends_at + 1 ngày`. Không tick thì Gymer không đọc được (khách vẫn đọc ghi chú của mình). Thực hiện bằng migration mới M7b, không sửa M7 (mục 2.5A).
 - N3. CHỜ QUYẾT, CẦN THỬ TRƯỚC. `reviews` lộ `author_id` và `booking_id` cho mọi người đọc được dòng đó. RLS không giới hạn theo cột, nhưng có thể giới hạn bằng quyền cột (`grant select (...)` chỉ các cột công khai, không cấp `author_id`, `booking_id`). Cần thử trên local: `select *` và embed PostgREST không lỗi ngoài ý muốn; và client có cần `author_id` để nhận "đánh giá của mình" không (nếu cần, tìm cách khác). Chưa thử thì chưa chốt.
 
-Câu hỏi còn chờ người dùng quyết: N2, N3. Điểm chưa chắc về kỹ thuật (spike S1/S2, hành vi thật của dry-run, extension trên hosted) nằm ở mục 2.1 và mục 6.
+Câu hỏi còn chờ người dùng quyết: N3 (N2 đã đóng). Điểm chưa chắc về kỹ thuật (spike S1/S2, hành vi thật của dry-run, extension trên hosted) nằm ở mục 2.1 và mục 6.
 
 ## 1. Mục tiêu và phạm vi
 
@@ -200,25 +202,57 @@ Ma trận quyền (anon = không có gì ở mọi bảng):
 | `certificates` | theo quyền đọc `gymer_profiles` (công khai khi Gymer `is_listed`) | chủ insert/update/delete dòng của mình | tên tự khai, KHÔNG có trạng thái xác minh (Q8); tối đa 10 dòng/Gymer (trigger) |
 | `gymer_open_hours`, `gymer_day_overrides`, `gymer_slot_overrides` | chỉ chủ | chủ | khách đọc qua RPC |
 | `bookings` | khách của booking hoặc Gymer của booking | KHÔNG ghi trực tiếp | ghi qua RPC |
-| `booking_health_notes` | khách của booking; Gymer của booking chỉ khi booking `confirmed` (không hạn, xem N2) hoặc `pending` còn hạn (`expires_at > now()`). Quá hạn, `rejected`, `cancelled`, `expired`: Gymer không đọc | KHÔNG ghi trực tiếp | ghi trong `create_booking`; `reject`/`cancel`/hết hạn làm Gymer mất quyền đọc |
+| `booking_health_notes` | khách của booking (luôn đọc); Gymer của booking CHỈ khi đủ cả ba: (1) khách đã tick đồng ý (`shared_with_gymer = true`), (2) booking `confirmed` hoặc `pending` còn hạn (`expires_at > now()`), (3) `now() <= ends_at + 1 ngày`. Không tick, quá hạn, quá `ends_at + 1 ngày`, `rejected`, `cancelled`, `expired`: Gymer không đọc (N2, mục 2.5A) | KHÔNG ghi trực tiếp | ghi trong `create_booking` (cùng lúc ghi cờ đồng ý); `reject`/`cancel`/hết hạn/quá 1 ngày làm Gymer mất quyền đọc; v1 không có đường thu hồi/đổi cờ |
 | `reviews` | đọc được khi đọc được hồ sơ `gymer_profiles` của `gymer_id` (theo dòng trên: Gymer đang `is_listed`, hoặc chính Gymer đó, hoặc khách có booking với Gymer đó; kể cả khi Gymer đã ẩn). Đổi policy `gymer_profiles` sẽ đổi luôn phạm vi đọc `reviews` | KHÔNG ghi trực tiếp | ghi qua `create_review`; cột `author_id`, `booking_id`: xem N3 |
 
-Ví dụ một policy (ghi chú sức khoẻ):
+### 2.5A Ghi chú sức khoẻ: đồng ý của khách (N2, người dùng chốt "cách 2")
+
+Quyết định: thêm cột `booking_health_notes.shared_with_gymer boolean not null default false` bằng migration MỚI M7b `20261010100650_health_note_consent.sql` (đợt C2, chạy sau M7 và trước M8/M9), rồi `drop policy if exists` + `create policy` lại `booking_health_notes_select`. KHÔNG sửa M4 (tạo bảng) và M7 (policy cũ) vì đã/đang áp lên production; sửa file đã áp dụng làm lệch lịch sử migration.
+
+Lý do chọn cột trên `booking_health_notes` thay vì `bookings.health_note_shared`:
+- Cờ đồng ý gắn đúng với dữ liệu nhạy cảm nó điều khiển; policy đọc cờ ngay trên hàng đang kiểm, không thêm cột vào bảng `bookings` (bảng nóng, có exclusion constraint, nhiều RPC dùng).
+- Không có ghi chú thì không có hàng, nên không có trạng thái vô nghĩa "đã đồng ý chia sẻ một thứ không tồn tại".
+- Client không có `insert/update` trên bảng này (M7), nên cờ chỉ được đặt trong `create_booking` (DEFINER), không ai bật lại sau khi tạo. Mặc định `false` = an toàn nếu một đường ghi nào quên đặt cờ.
+- Thêm cột không-null có default hằng số vào bảng hiện có là thay đổi expand, không khoá lâu; bảng hiện chưa có dữ liệu thật (không có `create_booking` nào chạy). Hàng cũ (nếu có) mặc định `false`, tức Gymer mất quyền đọc: hướng an toàn.
+- Thời điểm đồng ý = `created_at` của hàng (cùng giao dịch `create_booking`); không cần cột thời gian riêng.
+Phương án đã loại: `bookings.health_note_shared` (đổi bảng nóng, cờ tách khỏi dữ liệu, có thể `true` mà không có ghi chú); cột timestamp `consented_at` (dư vì đã có `created_at`); hàm RPC đọc ghi chú riêng cho Gymer (thêm bề mặt API, trong khi policy đủ); sửa M7 tại chỗ (lệch lịch sử đã áp dụng).
+
+Policy mới (thay thế bản trong M7; nội dung minh hoạ, T6b viết bản cuối):
 
 ```sql
-drop policy if exists health_notes_select on public.booking_health_notes;
-create policy health_notes_select on public.booking_health_notes
+alter table public.booking_health_notes
+  add column if not exists shared_with_gymer boolean not null default false;
+
+drop policy if exists booking_health_notes_select on public.booking_health_notes;
+create policy booking_health_notes_select on public.booking_health_notes
   for select to authenticated
   using (exists (
     select 1 from public.bookings b
     where b.id = booking_health_notes.booking_id
       and ( b.customer_id = (select auth.uid())
-         or (b.gymer_id = (select auth.uid()) and (b.status = 'confirmed' or (b.status = 'pending' and b.expires_at > now()))) )));
+         or ( booking_health_notes.shared_with_gymer
+              and b.gymer_id = (select auth.uid())
+              and now() <= b.ends_at + interval '1 day'
+              and (b.status = 'confirmed' or (b.status = 'pending' and b.expires_at > now())) ) )));
 ```
+
+`create_booking` (M9) nhận thêm tham số cuối `p_share_health_note boolean default false` (mục T8). Quy tắc:
+- Có ghi chú (sau trim không rỗng) thì chèn hàng với `shared_with_gymer = coalesce(p_share_health_note, false)`. Không có ghi chú mà `p_share_health_note = true` => `VALIDATION` (không lưu đồng ý trống; UI vô hiệu tick khi ô ghi chú rỗng). Không thêm mã lỗi mới.
+- Không tick (hoặc bỏ qua tham số) => Gymer không bao giờ đọc được; khách vẫn đọc.
+- Sau `ends_at + 1 ngày` Gymer mất quyền đọc dù booking vẫn `confirmed`. Với `pending`, `expires_at <= starts_at` nên điều kiện ngày thừa nhưng vô hại.
+Hệ quả và giới hạn (nói thẳng):
+- Gymer không phân biệt được "khách không có ghi chú" với "khách không chia sẻ" với "đã quá hạn xem" (hàng bị RLS ẩn trong cả ba trường hợp). UI Gymer chỉ nên hiện chung một dòng, ví dụ "Không có ghi chú sức khoẻ được chia sẻ". Không thêm RPC/cột để lộ sự tồn tại của ghi chú.
+- v1 khách KHÔNG rút lại được sự đồng ý sau khi đặt (không có UPDATE). Rút lại tạm thời = huỷ booking (Gymer mất quyền đọc ngay). Nếu cần rút lại độc lập: RPC `withdraw_health_note_share` ở plan sau.
+- Văn bản đồng ý (ô tick) phải nói rõ: ai xem (Gymer đã chọn), khi nào (đến 1 ngày sau buổi), mục đích. Nội dung do designer/UX copy; chưa kiểm pháp lý (mục 2.9).
+- Quyền của Gymer khi dữ liệu đã được đọc: Gymer có thể đã xem hoặc chép ghi chú trước khi hết hạn; DB không ngăn được. Hạn `ends_at + 1 ngày` chỉ chặn đọc tiếp qua app.
+
+Policy cũ trong M7 (không có điều kiện đồng ý và hạn `ends_at + 1 ngày`) bị thay hoàn toàn bởi M7b; không dùng làm chuẩn nữa.
+
+### 2.5B RPC SECURITY DEFINER và mã lỗi
 
 RPC SECURITY DEFINER (mỗi cái kèm lý do trong comment):
 - `search_gymers`, `get_day_slots`, `get_month_calendar`: cần đọc bảng mà client bị chặn (toạ độ, ngoại lệ lịch, booking của người khác để tính khung bận), chỉ trả dữ liệu công khai/đã lọc. `get_day_slots` chỉ trả `booked_by` (tên khách) khi người gọi chính là Gymer đó.
-- `create_booking`, `respond_booking`, `cancel_booking`, `create_review`: kiểm điều kiện nghiệp vụ và ghi vào bảng mà client không có quyền ghi.
+- `create_booking`, `respond_booking`, `cancel_booking`, `create_review`: kiểm điều kiện nghiệp vụ và ghi vào bảng mà client không có quyền ghi. `create_booking` có tham số `p_share_health_note` (2.5A).
 - `create_booking` (M9, T8; bảng mục 3 ghi M9, không phải M8) phải từ chối Gymer `is_listed=false` bằng một mã lỗi trong danh sách trên. Cần test (T9, `20_booking.sql`): đặt Gymer đã ẩn bị từ chối.
 - Trigger `private.recompute_rating` (sau thay đổi `reviews`): cập nhật cột client không được ghi.
 Lỗi nghiệp vụ ném bằng `raise exception 'MÃ'` (ví dụ `SLOT_TAKEN`, `SLOT_NOT_OPEN`, `PRICE_CHANGED`, `FORBIDDEN`, `NOT_FOUND`, `BOOKING_EXPIRED`, `LIMIT_REACHED`, `ALREADY_STARTED`, `VALIDATION`); mapper ở tầng services chuyển sang `AppError`. Khớp `ErrorCode` hiện có, các mã mới (`PRICE_CHANGED`, `SLOT_NOT_OPEN`, `ALREADY_STARTED`) tạm map về `VALIDATION`/`SLOT_TAKEN`/`FORBIDDEN` (mục 5).
@@ -266,7 +300,7 @@ Loại: giữ trạng thái xác minh thủ công "dựa trên niềm tin" (ngư
 Lưu tối thiểu:
 - `profiles`: `display_name`, `avatar_url` (từ Zalo). Không giới tính/tuổi/SĐT của khách.
 - `gymer_profiles`: `display_name` (công khai, có thể khác tên Zalo), `gender`, `birth_year smallint` (không lưu ngày sinh đầy đủ; tuổi = năm hiện tại (giờ Việt Nam) - `birth_year`, lệch tối đa 1 tuổi, chấp nhận; lưu `age` trực tiếp sẽ cũ dần nên loại). Không lưu `lat/lng` của khách.
-- `booking_health_notes.note`: tách bảng riêng để policy riêng, xoá riêng được; giới hạn 1000 ký tự; KHÔNG ghi vào log hay trả trong danh sách yêu cầu (Gymer chỉ đọc khi mở chi tiết booking).
+- `booking_health_notes.note`: tách bảng riêng để policy riêng, xoá riêng được; giới hạn 1000 ký tự; KHÔNG ghi vào log hay trả trong danh sách yêu cầu (Gymer chỉ đọc khi mở chi tiết booking). `shared_with_gymer` (M7b, N2): mặc định không chia sẻ; Gymer chỉ đọc khi khách tick đồng ý, trong hạn `ends_at + 1 ngày` (2.5A).
 - `zalo_identities`: chỉ `zalo_id`, `user_id`.
 Cảnh báo (không phải tư vấn pháp lý; cần người có chuyên môn xác nhận):
 - Ghi chú sức khoẻ và dữ liệu vị trí thường được coi là dữ liệu cá nhân nhạy cảm theo quy định bảo vệ dữ liệu cá nhân của Việt Nam (Nghị định 13/2023 và luật bảo vệ dữ liệu cá nhân có hiệu lực từ 2026; plan không kiểm lại nội dung hiện hành). Thường đòi hỏi sự đồng ý rõ ràng, mục đích xử lý rõ, chính sách quyền riêng tư; ngoài ra Zalo Mini App có yêu cầu riêng.
@@ -311,7 +345,7 @@ Bảng và cột chính (chỉ cột đáng nói; `created_at/updated_at timesta
 - `gymer_day_overrides`: `pk (gymer_id, day)`, `day date not null`, `is_open boolean not null default true`, `price_vnd int check (between 0 and 5000000)`.
 - `gymer_slot_overrides`: `pk (gymer_id, day, start_time)`, `is_open boolean not null`; cùng check giờ chẵn.
 - `bookings`: `id uuid pk default gen_random_uuid()`, `gymer_id uuid not null references gymer_profiles(user_id) on delete restrict`, `customer_id uuid not null references profiles(id) on delete restrict`, `starts_at timestamptz not null`, `ends_at timestamptz not null`, `goal text check (char_length <= 200)`, `price_vnd int not null check (>= 0)`, `status booking_status not null default 'pending'`, `expires_at timestamptz not null`, `responded_at timestamptz`, `cancelled_at timestamptz`, `cancelled_by uuid references profiles(id) on delete restrict`. Check: `(status = 'cancelled') = (cancelled_at is not null)`, `ends_at = starts_at + interval '60 minutes'`, `customer_id <> gymer_id`. Ràng buộc loại trừ ở 2.4. Index: `(customer_id, starts_at desc)`, `(gymer_id, status, starts_at)`.
-- `booking_health_notes`: `booking_id uuid pk references bookings on delete cascade`, `note text not null check (char_length between 1 and 1000)`.
+- `booking_health_notes`: `booking_id uuid pk references bookings on delete cascade`, `note text not null check (char_length between 1 and 1000)`, `shared_with_gymer boolean not null default false` (cột này thêm bởi M7b, KHÔNG nằm trong M4).
 - `reviews`: `id uuid pk`, `booking_id uuid not null unique references bookings`, `gymer_id`, `author_id`, `author_name text not null`, `rating smallint not null check (between 1 and 5)`, `body text check (<= 500)`. Index `(gymer_id, created_at desc)`.
 
 Đối chiếu với `src/types/domain.ts` (lệch và bên nào đổi) — xem mục 5.
@@ -329,11 +363,12 @@ Tên file theo `docs/supabase-migrations.md`: `YYYYMMDDHHMMSS_ten.sql` (timestam
 | M5 | `20261010100400_reviews_and_triggers.sql` | `reviews`; `private.recompute_rating` (+trigger); enable RLS + revoke | Trung bình |
 | M6 | `20261010100500_rls_gymer_side.sql` | policy + grant theo cột cho `profiles`, `specialties`, `gymer_*`, `certificates`, 3 bảng lịch | Cao (RLS sai = lộ/chặn dữ liệu) |
 | M7 | `20261010100600_rls_booking_review.sql` | policy cho `bookings`, `booking_health_notes`, `reviews`; policy bổ sung `profiles`/`gymer_profiles` cho người có booking | Cao |
+| M7b | `20261010100650_health_note_consent.sql` | MỚI (N2): `alter table public.booking_health_notes add column if not exists shared_with_gymer boolean not null default false`; `drop policy if exists` + `create policy booking_health_notes_select` mới (2.5A). Không sửa M4/M7 | Cao (RLS dữ liệu nhạy cảm); thay đổi nhỏ, tách đợt C2 để duyệt riêng |
 | M8 | `20261010100700_rpc_read.sql` | `search_gymers`, `get_day_slots`, `get_month_calendar` + revoke/grant execute | Cao |
-| M9 | `20261010100800_rpc_booking_flow.sql` | `create_booking`, `respond_booking`, `cancel_booking`, `create_review`; trigger chặn đóng khung/ngày đã có booking | Cao nhất (logic nghiệp vụ, khoá, giá) |
+| M9 | `20261010100800_rpc_booking_flow.sql` | `create_booking` (có `p_share_health_note`), `respond_booking`, `cancel_booking`, `create_review`; trigger chặn đóng khung/ngày đã có booking | Cao nhất (logic nghiệp vụ, khoá, giá) |
 
 Vì sao M6, M7 tách khỏi bảng (M2–M5): người duyệt đọc "cấu trúc" và "quyền" riêng; sai quyền sửa bằng migration quyền, không đụng cấu trúc.
-Thứ tự phụ thuộc: M1 trước tất cả; M3, M4, M5 cần M2; M6 cần M2–M3; M7 cần M4–M5; M8, M9 cần M2–M5 (và nên sau M6–M7 để quyền đúng khi hàm chạy).
+Thứ tự phụ thuộc: M1 trước tất cả; M3, M4, M5 cần M2; M6 cần M2–M3; M7 cần M4–M5; M7b cần M4 (bảng) và M7 (policy cũ để thay), chạy sau M7 và trước M8/M9 (timestamp 100650 nằm giữa 100600 và 100700; không chèn trước migration đã áp dụng); M8, M9 cần M2–M5 và M7b (và nên sau M6–M7 để quyền đúng khi hàm chạy). M9 ghi cột `shared_with_gymer` nên bắt buộc sau M7b.
 
 ### 3.1 Cách đưa lên production (đợt merge)
 
@@ -343,7 +378,8 @@ Mỗi lần merge `main` có migration chờ thì pipeline dry-run rồi chờ d
 |---|---|---|---|
 | A | M1 | Phép thử pipeline: dry-run, duyệt, `--yes`, cụm "up to date" ở lần sau | Mục 3.2 điểm 1–4 |
 | B | M2–M5 | Cấu trúc bảng (đóng sẵn bằng RLS+revoke) | `\dt`/dashboard: đủ bảng, RLS bật; advisor bảo mật không báo "RLS disabled" |
-| C | M6–M7 | Quyền | Chạy bộ test RLS cục bộ đã xanh trước; kiểm `\dp` |
+| C | M6–M7 | Quyền (M7 đã/đang áp, không sửa) | Chạy bộ test RLS cục bộ đã xanh trước; kiểm `\dp` |
+| C2 | M7b | Cột đồng ý + policy ghi chú sức khoẻ mới (N2); merge riêng, một file | Dry-run chỉ liệt kê đúng `20261010100650_health_note_consent.sql`; sau áp: `\d booking_health_notes` có `shared_with_gymer`, `pg_policies` có đúng một policy `booking_health_notes_select` với điều kiện mới |
 | D | M8–M9 | RPC | Gọi thử qua dashboard bằng role `authenticated` giả (nếu có thể); advisor "function search_path mutable" không báo |
 
 Quy tắc chung: MỖI đợt chỉ merge vào `main` sau khi người dùng đọc dry-run (job `plan-migrate`) và duyệt job `migrate`; PM không merge đợt kế tiếp khi chưa có kết quả đợt trước.
@@ -364,7 +400,7 @@ Danh sách kiểm cho từng đợt:
 7. Không có `drop table|column`, `truncate`, `delete from`, `alter column ... type` ngoài ý muốn.
 8. Trước đợt C: xác nhận đã có kết quả test cục bộ (báo cáo của dev kèm đầu ra) và Supabase có bật backup/PITR (database trống nên rủi ro mất dữ liệu thấp, nhưng nên giữ thói quen theo `docs/supabase-migrations.md`).
 9. Không có dấu vết xác minh chứng chỉ: grep `certificate_status`, `is_certified`, `verified` trong `supabase/migrations/` => kỳ vọng không có. Đợt B/C: `certificates` chỉ có `id`, `gymer_id`, `name` (+ cột thời gian).
-10. Đợt C: grep policy có `anon` => không có (Q3); mọi `grant select` cho `authenticated` đúng ma trận 2.5; policy ghi chú sức khoẻ chỉ cho Gymer khi `pending`/`confirmed`.
+10. Đợt C: grep policy có `anon` => không có (Q3); mọi `grant select` cho `authenticated` đúng ma trận 2.5; policy ghi chú sức khoẻ chỉ cho Gymer khi `pending`/`confirmed`. Đợt C2 (M7b): file chỉ có `alter table ... add column if not exists`, `drop policy if exists`, `create policy`; không `drop column`/`drop table`; policy mới có đủ ba điều kiện cho Gymer (`shared_with_gymer`, trạng thái, `now() <= ends_at + interval '1 day'`) và khách luôn đọc; không có policy/grant ghi nào mới; không đụng M4/M7 (`git diff` hai file đó rỗng).
 11. Đợt D: `cancel_booking` đúng 2.4A: MỘT điều kiện `starts_at > now()` cho cả hai vai, không nhánh riêng theo vai về thời gian, không hằng số "2 giờ", không `HAS_REVIEW`; chỉ chuyển từ `pending`/`confirmed`; set `cancelled_at`, `cancelled_by`; khoá hàng; không có `grant update`/policy `update` trên `bookings`; không RPC nào trả lat/lng. Đợt B: `bookings` có `cancelled_at`, `cancelled_by` và check nhất quán.
 
 ## 4. Rủi ro và cách giảm
@@ -374,7 +410,7 @@ Danh sách kiểm cho từng đợt:
 | R1 | Migration lỗi giữa chừng khi áp dụng thật (dry-run không bắt) | Cao | Test cục bộ trên Postgres 16 với shim (mục 6); chia đợt nhỏ; mỗi file idempotent. Khi lỗi: chạy `supabase migration list` để biết file nào đã áp dụng; file lỗi chưa được ghi nhận thì sửa tại chỗ được; file đã áp dụng thì CHỈ tạo migration mới (hành vi ghi nhận lịch sử khi lỗi: chưa kiểm, xác nhận lúc gặp) |
 | R2 | Khác biệt PG16 cục bộ so với PG17 hosted và các thành phần Supabase (role, `auth.uid()`, default privileges, extension schema) | Trung bình | Shim chỉ mô phỏng; mục "CHỈ kiểm được khi chạy thật" ở mục 6 là danh sách điểm kiểm sau đợt |
 | R3 | RLS/column grant sai làm lộ hoặc chặn dữ liệu | Cao | Bộ test SQL theo vai (khách A, khách B, Gymer, anon); đợt C riêng; advisor sau áp dụng |
-| R4 | Rò rỉ ghi chú sức khoẻ | Cao | Bảng riêng + policy riêng + không chọn ghi chú trong RPC danh sách; test: khách B, Gymer khác, anon đều không đọc; Gymer mất quyền sau reject/cancel |
+| R4 | Rò rỉ ghi chú sức khoẻ | Cao | Bảng riêng + policy riêng + không chọn ghi chú trong RPC danh sách; test: khách B, Gymer khác, anon đều không đọc; Gymer không đọc khi khách không tick; Gymer mất quyền sau reject/cancel và sau `ends_at + 1 ngày`. Tồn dư: Gymer có thể đã chép ghi chú khi còn quyền xem; khách không rút lại được sau khi đặt (2.5A) |
 | R5 | Đặt trùng / đua với đóng khung | Cao | Exclusion constraint + advisory lock + test song song 2 phiên |
 | R6 | Dò vị trí Gymer bằng nhiều lần gọi `search_gymers` | Trung bình | Mục 2.3; không có rate limit ở v1, nói thẳng |
 | R7 | Spam `pending` chiếm khung | Trung bình | Giới hạn 3 pending/khách; hết hạn 24h; chưa chặn tài khoản mới tạo hàng loạt |
@@ -409,9 +445,10 @@ Xác minh: nếu supabase/tests/local/run.sh đã có thì chạy nó và đưa 
 | 2 | T4 Migration M3 + M4 | dev1 | T1 (enum), T3 để chạy thử | T5, T6 |
 | 2 | T5 Migration M5 + M6 | dev2 | T2, T3 | T4, T6 |
 | 2 | T6 Migration M7 + test RLS | dev3 | T2, T4 (tên cột bookings), T3 | T4, T5 |
+| 2b (MỚI, N2) | T6b Migration M7b + test đồng ý ghi chú | dev3 | T6 xong (M7 và `10_rls.sql` đã có) | T7, T8, T10 (khác file) |
 | 3 | T7 Migration M8 | dev1 | đợt 2 xong | T8, T9, T10 |
-| 3 | T8 Migration M9 | dev2 | đợt 2 xong | T7, T9, T10 |
-| 3 | T9 Test nghiệp vụ (đặt lịch, giá, múi giờ, tìm kiếm, rating) | dev3 | đợt 2 xong; chạy được khi T7, T8 có | T7, T8, T10 |
+| 3 | T8 Migration M9 | dev2 | đợt 2 xong và T6b có file M7b (cột `shared_with_gymer`) để chạy thử | T7, T9, T10 |
+| 3 | T9 Test nghiệp vụ (đặt lịch, giá, múi giờ, tìm kiếm, rating) | dev3 | đợt 2 xong; chạy được khi T7, T8 có; sau T6b (cùng dev3, tuần tự) | T7, T8, T10 |
 | 3 | T10 Căn chỉnh kiểu/interface app (NGOÀI phạm vi migration) | dev1 hoặc dev2 sau xong việc | không phụ thuộc SQL | T7–T9 (khác file) |
 | 4 | T11 Sinh `database.types.ts` | dev3 | SAU khi các đợt B–D đã áp dụng thật | — |
 
@@ -617,6 +654,14 @@ Test case: thêm file *.sql vào cases/, dùng do $$ ... assert ... $$; lỗi =>
 - Hoàn thành: `bash supabase/tests/local/run.sh` xanh, đầu ra kèm; mỗi assert có thông điệp rõ.
 - Phụ thuộc: T2, T4, T5 (bảng và M6) để chạy.
 
+### T6b — Migration M7b + test đồng ý ghi chú sức khoẻ (dev3, đợt 2b; N2)
+- Bối cảnh: người dùng chốt N2 "cách 2" (mục 2.5A). M4 và M7 đã/đang áp lên production nên TUYỆT ĐỐI không sửa hai file đó; mọi thay đổi nằm trong migration mới.
+- File được phép: tạo `supabase/migrations/20261010100650_health_note_consent.sql`; tạo `supabase/tests/local/cases/15_health_consent.sql`; sửa `supabase/tests/local/cases/10_rls.sql` CHỈ để các dòng seed `insert into public.booking_health_notes` (khoảng dòng 63 và 365) thêm cột `shared_with_gymer` = `true` cho những hàng mà các assert Gymer-đọc-được hiện có đang kỳ vọng (b1, b2, và nhóm b13, b14), vì sau M7b mặc định `false`. Không đổi assert khác. Không sửa file migration nào khác (`git diff` trên M4 và M7 phải rỗng).
+- Nội dung migration (idempotent, KHÔNG có `drop column`/`delete`): (1) `alter table public.booking_health_notes add column if not exists shared_with_gymer boolean not null default false;` kèm `comment on column`; (2) `drop policy if exists booking_health_notes_select on public.booking_health_notes;` rồi `create policy` đúng như mục 2.5A (khách của booking luôn đọc; Gymer chỉ khi `shared_with_gymer` VÀ `now() <= b.ends_at + interval '1 day'` VÀ (`confirmed` hoặc `pending` với `expires_at > now()`)). Không thêm policy/grant ghi; không `grant` nào cho `anon`. Comment tiếng Việt ngắn nêu N2.
+- `15_health_consent.sql` (assert có thông điệp, gieo dữ liệu bằng superuser rồi `set local role authenticated` + `request.jwt.claim.sub`; ghi chú chèn trực tiếp, không dùng RPC vì M9 chưa chắc có): Gymer KHÔNG đọc khi `shared_with_gymer=false` (booking `confirmed` còn trong hạn); Gymer đọc được khi `true` + `confirmed` trong hạn; Gymer đọc được khi `true` + `pending` còn hạn; KHÔNG đọc khi `true` + `pending` quá `expires_at`; KHÔNG đọc khi `true` + `confirmed` mà `now() > ends_at + 1 ngày` (gieo ends_at lùi 1 ngày + vài giờ), và ĐỌC được khi `ends_at` lùi chỉ vài giờ (còn trong 1 ngày); KHÔNG đọc khi `true` + `rejected`/`cancelled`/`expired`; khách của booking đọc được ở mọi trường hợp trên (kể cả `false`, kể cả quá hạn); khách khác, Gymer khác, anon không đọc; client không đổi được `shared_with_gymer` bằng UPDATE/INSERT (bắt `42501`); cột tồn tại với `boolean not null default false` (truy vấn `information_schema.columns`); `pg_policies` có đúng MỘT policy SELECT `booking_health_notes_select` và không có policy ghi. Tránh chia sẻ một giá trị tuyệt đối sát ranh giới (không assert đúng giây `ends_at + 1 ngày`).
+- Hoàn thành: `bash supabase/tests/local/run.sh` xanh, dán đầu ra thật (M7b chạy 2 lần liên tiếp OK; `10_rls.sql` và `15_health_consent.sql` OK); `bash scripts/ci/scan-migrations.sh supabase/migrations/20261010100650_health_note_consent.sql` 0 cảnh báo; `git status --short` chỉ có ba file trên.
+- Phụ thuộc: T6 xong. Không commit, không push.
+
 ### T7 — Migration M8 (dev1, đợt 3)
 - File được phép: tạo `supabase/migrations/20261010100700_rpc_read.sql`.
 - Nội dung: `search_gymers` (khung ở 2.3; đủ bộ lọc: keyword trên `display_name` và tên môn bằng `extensions.unaccent` + `ilike`, `p_specialty`, giới tính, rating tối thiểu, khoảng tuổi, giá tối đa; chỉ `is_listed`; tối đa 50; sắp theo khoảng cách); `get_day_slots(p_gymer_id uuid, p_day date)` trả `(start_time time, state text 'available'|'booked'|'closed', booked_by text)`; `get_month_calendar(p_gymer_id uuid, p_year int, p_month int)` trả `(day date, price_vnd int, is_open boolean, has_booked boolean)`; KHÔNG có RPC chứng chỉ (đọc thẳng bảng qua RLS). Quy tắc suy ra khung: mục 2.4 (mẫu + ngoại lệ - booking giữ chỗ; `pending` quá hạn coi là trống). Giá ngày = override > T7/CN > ngày thường. Revoke/grant execute; DEFINER + search_path + lý do.
@@ -626,18 +671,18 @@ Test case: thêm file *.sql vào cases/, dùng do $$ ... assert ... $$; lỗi =>
 ### T8 — Migration M9 (dev2, đợt 3)
 - File được phép: tạo `supabase/migrations/20261010100800_rpc_booking_flow.sql`.
 - Nội dung:
-  - `create_booking(p_gymer_id uuid, p_starts_at timestamptz, p_goal text, p_health_note text, p_expected_price int) returns uuid`: kiểm đã đăng nhập; Gymer `is_listed` và `accepts_requests`; không tự đặt; thời điểm hợp lệ (mặc định sau hiện tại >= 2 giờ, <= 60 ngày; Q5); khung đang mở theo 2.4 (giờ VN); lấy advisory lock theo Gymer; chuyển `pending` quá hạn chồng khung sang `expired`; giới hạn 3 `pending`/khách (`LIMIT_REACHED`); tính giá ở server, lệch `p_expected_price` => `PRICE_CHANGED`; chèn `bookings` (`ends_at = starts_at + 60 phút`, `expires_at = least(now() + 24h, starts_at)`) và `booking_health_notes` nếu có ghi chú; bắt `exclusion_violation` => `SLOT_TAKEN`.
+  - `create_booking(p_gymer_id uuid, p_starts_at timestamptz, p_goal text, p_health_note text, p_expected_price int, p_share_health_note boolean default false) returns uuid` (N2, mục 2.5A; M9 chưa áp dụng nên được tự do đặt chữ ký này, không cần giữ chữ ký cũ): `p_health_note` sau trim rỗng/null => không chèn hàng ghi chú, và nếu `p_share_health_note` là `true` => `raise exception 'VALIDATION'`; có ghi chú => chèn `booking_health_notes (booking_id, note, shared_with_gymer)` với `shared_with_gymer = coalesce(p_share_health_note, false)`; không tick => `false`. Không thêm mã lỗi mới. Kiểm đã đăng nhập; Gymer `is_listed` và `accepts_requests`; không tự đặt; thời điểm hợp lệ (mặc định sau hiện tại >= 2 giờ, <= 60 ngày; Q5); khung đang mở theo 2.4 (giờ VN); lấy advisory lock theo Gymer; chuyển `pending` quá hạn chồng khung sang `expired`; giới hạn 3 `pending`/khách (`LIMIT_REACHED`); tính giá ở server, lệch `p_expected_price` => `PRICE_CHANGED`; chèn `bookings` (`ends_at = starts_at + 60 phút`, `expires_at = least(now() + 24h, starts_at)`) và `booking_health_notes` nếu có ghi chú; bắt `exclusion_violation` => `SLOT_TAKEN`.
   - `respond_booking(p_booking_id uuid, p_decision text)`: chỉ Gymer của booking; chỉ từ `pending` chưa hết hạn (quá hạn => `BOOKING_EXPIRED` và chuyển `expired`); `p_decision` thuộc `confirmed|rejected`.
   - `cancel_booking(p_booking_id uuid)`: đúng mục 2.4A. Khoá hàng booking `for update`; xác định người gọi là `customer_id` hoặc `gymer_id` (nếu không phải => `FORBIDDEN`); điều kiện duy nhất cho cả hai vai: `status in ('pending','confirmed')` và `starts_at > now()`, nếu `starts_at <= now()` => `ALREADY_STARTED`, trạng thái khác => `FORBIDDEN`. Set `status='cancelled'`, `cancelled_at=now()`, `cancelled_by=auth.uid()`. Không có hằng số cửa sổ giờ, không kiểm `reviews`.
   - `create_review(p_booking_id uuid, p_rating int, p_body text) returns uuid`: chỉ khách của booking, `confirmed` và `ends_at < now()`, chưa có đánh giá; chụp `author_name` từ `profiles.display_name`.
   - Trigger BEFORE INSERT/UPDATE trên `gymer_day_overrides` và `gymer_slot_overrides` (đặt `is_open = false`): nếu có booking `pending|confirmed` giữ khung/ngày đó => `SLOT_HAS_BOOKING`; dùng cùng advisory lock.
   - Mã lỗi đúng danh sách 2.5, ném bằng `raise exception '<MÃ>'`.
-- Hoàn thành: harness xanh; test nhanh của task: 2 `create_booking` cùng khung (hai phiên khách khác nhau) => đúng một thành công, người kia `SLOT_TAKEN`; giá T7/CN đúng; `PRICE_CHANGED`; đóng khung đã đặt bị chặn.
-- Phụ thuộc: M1–M7.
+- Hoàn thành: harness xanh; test nhanh của task: 2 `create_booking` cùng khung (hai phiên khách khác nhau) => đúng một thành công, người kia `SLOT_TAKEN`; giá T7/CN đúng; `PRICE_CHANGED`; đóng khung đã đặt bị chặn; `create_booking` có tick => hàng ghi chú `shared_with_gymer = true`, không tick => `false`, tick mà ghi chú rỗng => `VALIDATION`.
+- Phụ thuộc: M1–M7 và M7b (cột `shared_with_gymer`; không sửa file M7b, của T6b).
 
 ### T9 — Test nghiệp vụ (dev3, đợt 3)
 - File được phép: tạo `supabase/tests/local/cases/20_booking.sql`, `30_schedule_pricing.sql`, `40_search.sql`, `50_reviews_rating.sql`.
-- Nội dung (mỗi file là chuỗi assert với dữ liệu gieo riêng, dọn sau mình): chống trùng (kể cả 2 kết nối psql thực sự song song dùng `pg_sleep`/hai tiến trình nền nếu làm được trong `run.sh` mà không sửa nó; nếu không, ghi rõ chỉ kiểm tuần tự); giá T7/CN và override ngày; snapshot giá không đổi khi Gymer đổi giá sau; múi giờ: chạy cùng ca với `set timezone = 'UTC'` và `'Asia/Ho_Chi_Minh'`; hết hạn pending giải phóng khung; giới hạn 3 pending; huỷ lịch theo 2.4A (cùng ca cho cả hai vai): khách và Gymer đều huỷ được `pending` và `confirmed` khi `starts_at > now()`; cả hai bị `ALREADY_STARTED` khi `starts_at <= now()` (kể cả booking đang diễn ra, đã qua, đã có đánh giá); huỷ `rejected`/`expired`/`cancelled` => `FORBIDDEN`; người thứ ba => `FORBIDDEN`; `UPDATE public.bookings` trực tiếp bằng role `authenticated` bị từ chối; sau huỷ người khác đặt lại được khung và Gymer mất quyền đọc ghi chú sức khoẻ; `create_review` cho booking `cancelled` => lỗi; thống kê `confirmed` không đếm booking đã huỷ; dữ liệu booking đã qua giờ không đổi sau mọi RPC; certificates: tối đa 10 dòng/Gymer; tìm: bán kính 1/2/3/5, hộp bao ở vĩ độ khác, `unaccent` với "đ", Gymer không `is_listed` không xuất hiện, bộ lọc rating/tuổi/giá; rating: trigger tính lại khi thêm đánh giá, đánh giá chỉ khi `confirmed` và đã qua giờ, mỗi booking một đánh giá; huỷ lịch/`BOOKING_EXPIRED`.
+- Nội dung (mỗi file là chuỗi assert với dữ liệu gieo riêng, dọn sau mình): chống trùng (kể cả 2 kết nối psql thực sự song song dùng `pg_sleep`/hai tiến trình nền nếu làm được trong `run.sh` mà không sửa nó; nếu không, ghi rõ chỉ kiểm tuần tự); giá T7/CN và override ngày; snapshot giá không đổi khi Gymer đổi giá sau; múi giờ: chạy cùng ca với `set timezone = 'UTC'` và `'Asia/Ho_Chi_Minh'`; hết hạn pending giải phóng khung; giới hạn 3 pending; huỷ lịch theo 2.4A (cùng ca cho cả hai vai): khách và Gymer đều huỷ được `pending` và `confirmed` khi `starts_at > now()`; cả hai bị `ALREADY_STARTED` khi `starts_at <= now()` (kể cả booking đang diễn ra, đã qua, đã có đánh giá); huỷ `rejected`/`expired`/`cancelled` => `FORBIDDEN`; người thứ ba => `FORBIDDEN`; `UPDATE public.bookings` trực tiếp bằng role `authenticated` bị từ chối; sau huỷ người khác đặt lại được khung và Gymer mất quyền đọc ghi chú sức khoẻ; ghi chú sức khoẻ qua `create_booking` (N2, đọc bằng role `authenticated` của Gymer, ghi chú không được rò qua RPC/danh sách): (a) CÓ tick + `confirmed` => Gymer đọc được; (b) KHÔNG tick (cả `false` tường minh lẫn bỏ tham số) => Gymer không đọc, khách vẫn đọc; (c) tick mà ghi chú rỗng => `VALIDATION`; (d) CÓ tick nhưng `ends_at + 1 ngày` đã qua (đưa `ends_at` lùi bằng superuser, hoặc gieo booking quá khứ) => Gymer không đọc, khách vẫn đọc; (e) CÓ tick + `pending` quá `expires_at` (hoặc đã `expired` lười) => Gymer không đọc; (f) CÓ tick rồi `rejected`/`cancelled` => Gymer không đọc; (g) `pending` còn hạn + tick => Gymer đọc được trước khi respond; `create_review` cho booking `cancelled` => lỗi; thống kê `confirmed` không đếm booking đã huỷ; dữ liệu booking đã qua giờ không đổi sau mọi RPC; certificates: tối đa 10 dòng/Gymer; tìm: bán kính 1/2/3/5, hộp bao ở vĩ độ khác, `unaccent` với "đ", Gymer không `is_listed` không xuất hiện, bộ lọc rating/tuổi/giá; rating: trigger tính lại khi thêm đánh giá, đánh giá chỉ khi `confirmed` và đã qua giờ, mỗi booking một đánh giá; huỷ lịch/`BOOKING_EXPIRED`.
 - Hoàn thành: `run.sh` xanh kèm đầu ra; mỗi ca có tên; ca nào không kiểm được (ví dụ song song thật) ghi rõ trong đầu ra.
 - Phụ thuộc: T7, T8 để chạy; có thể viết trước.
 
@@ -657,6 +702,7 @@ Các lệch giữa UI hiện tại và schema, kèm bên đổi (đề xuất; u
 | `distanceKm` bắt buộc | `Gymer.distanceKm: number` | `getDetail` không có tâm tìm kiếm => đổi thành `distanceKm?: number`; `GymerCard` ẩn đoạn "cách ..." khi vắng |
 | `age` vs `birth_year` | `Gymer.age` | Giữ `age`; mapper tính từ `birth_year` theo giờ Việt Nam |
 | `isNew` của yêu cầu | `BookingRequest.isNew` | Không có cột; mapper đặt `isNew = status==='pending' && tạo < 24h trước`. Nếu cần "chưa xem", thêm cột sau |
+| Đồng ý chia sẻ ghi chú sức khoẻ (N2) | `BookingCreateInput` có `healthNote?` | Thêm `shareHealthNote?: boolean` (mặc định `false`); mapper gửi `p_share_health_note`; mock giữ nguyên hành vi. UI (ô tick, copy đồng ý, vô hiệu khi ô ghi chú rỗng) do designer đặc tả, chưa làm ở T10; phía Gymer hiện một dòng chung "Không có ghi chú sức khoẻ được chia sẻ" (2.5A) |
 | Mã lỗi | `ErrorCode` | Thêm `PRICE_CHANGED` và `SLOT_NOT_OPEN`? Đề xuất v1: không thêm, map `PRICE_CHANGED`/`SLOT_NOT_OPEN` => `VALIDATION`/`SLOT_TAKEN`; ghi nhớ để UI hiện câu phù hợp sau |
 | `Specialty` | 5 giá trị; mock có "Giãn cơ" | Giữ; tags là chuỗi tự do |
 
@@ -695,6 +741,7 @@ CHỈ kiểm được khi chạy pipeline thật (hoặc trên stack Supabase th
 2. ĐỢT A (giao ngay): chỉ T1 (M1) và T3 (harness); T2 chưa giao (thuộc Đợt B). Kiểm tra: đầu ra thật của `run.sh`; sen1 review Đạt/Chưa đạt; PM chạy lại `run.sh`.
 3. Merge ĐỢT A (M1 một mình). Kiểm tra: mục 3.2 điểm 1–4; ghi lại output thật của dry-run vào `docs/ci-cd-setup.md` hoặc báo lại (xác nhận/bác bỏ giả định "dry-run chỉ in tên file").
 4. Đợt viết 2 (T4–T6), review. Merge ĐỢT B (M2–M5) sau khi harness xanh. Kiểm tra: bảng đủ, RLS bật, advisor.
-5. Merge ĐỢT C (M6–M7) sau khi test RLS xanh. Kiểm tra: `\dp`, advisor.
-6. Đợt viết 3 (T7–T9), review (sen1 soi riêng: chống trùng, giá T7/CN, RLS, ghi chú sức khoẻ, `search_path`). Merge ĐỢT D (M8–M9).
+5. Merge ĐỢT C (M6–M7) sau khi test RLS xanh. Kiểm tra: `\dp`, advisor. (M7 giữ nguyên, không sửa.)
+5b. Đợt viết 2b: T6b (M7b + test đồng ý), sen1 review Đạt/Chưa đạt. Merge ĐỢT C2 (M7b một mình) sau khi người dùng đọc dry-run; kiểm tra: cột `shared_with_gymer` tồn tại, policy mới đúng một bản.
+6. Đợt viết 3 (T7–T9), review (sen1 soi riêng: chống trùng, giá T7/CN, RLS, ghi chú sức khoẻ gồm tick/không tick/`ends_at + 1 ngày`/pending quá hạn, `search_path`). Merge ĐỢT D (M8–M9) SAU đợt C2.
 7. T11 sinh type sau Đợt D; T10 khi người dùng duyệt các thay đổi hợp đồng. Sau đó plan riêng: `auth-zalo` (S1), `resolve-location` (S2), repository Supabase thật.
