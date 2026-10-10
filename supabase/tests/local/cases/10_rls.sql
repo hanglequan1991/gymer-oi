@@ -63,8 +63,8 @@ values
 insert into public.booking_health_notes (booking_id, note, shared_with_gymer) values
   ('b0000000-0000-4000-8000-000000000001', 'Dau lung nhe', true),
   ('b0000000-0000-4000-8000-000000000002', 'Chan goi yeu', true),
-  ('b0000000-0000-4000-8000-000000000003', 'Ghi chu bi tu choi', false),
-  ('b0000000-0000-4000-8000-000000000004', 'Ghi chu bi huy', false),
+  ('b0000000-0000-4000-8000-000000000003', 'Ghi chu bi tu choi', true),
+  ('b0000000-0000-4000-8000-000000000004', 'Ghi chu bi huy', true),
   ('b0000000-0000-4000-8000-000000000006', 'Tien su huyet ap', true);
 
 -- Đánh giá gắn với booking đã qua (ràng buộc thời gian chỉ ở RPC create_review, M9).
@@ -363,8 +363,8 @@ values
    now() + interval '8 days', now() + interval '8 days' + interval '60 minutes', 200000, 'confirmed', now() - interval '3 days');
 
 insert into public.booking_health_notes (booking_id, note, shared_with_gymer) values
-  ('b0000000-0000-4000-8000-000000000011', 'Ghi chu pending qua han', false),
-  ('b0000000-0000-4000-8000-000000000012', 'Ghi chu expired', false),
+  ('b0000000-0000-4000-8000-000000000011', 'Ghi chu pending qua han', true),
+  ('b0000000-0000-4000-8000-000000000012', 'Ghi chu expired', true),
   ('b0000000-0000-4000-8000-000000000013', 'Ghi chu pending con han', true),
   ('b0000000-0000-4000-8000-000000000014', 'Ghi chu confirmed', true);
 
