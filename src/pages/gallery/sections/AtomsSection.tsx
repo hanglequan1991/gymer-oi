@@ -50,7 +50,7 @@ export function AtomsSection() {
         <div className="gy-gallery__row">
           <Tag tone="default">Gym</Tag>
           <Tag tone="primary">Giảm mỡ</Tag>
-          <Tag tone="ok">Đã xác minh</Tag>
+          <Tag tone="default">Tự khai</Tag>
           <Tag tone="primary" leadingCheck>
             Đã chọn
           </Tag>

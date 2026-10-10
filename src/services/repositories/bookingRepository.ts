@@ -7,6 +7,8 @@ export interface BookingCreateInput {
   endIso: string; // ISO
   goal?: string;
   note?: string;
+  /** Khách đồng ý chia sẻ ghi chú sức khoẻ với Gymer. Chỉ có hiệu lực khi có ghi chú sức khoẻ; mặc định false. */
+  shareHealthNote?: boolean;
 }
 
 export interface BookingRepository {

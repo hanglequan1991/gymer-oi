@@ -6,6 +6,11 @@ import type { ErrorCode } from '@/services/errors';
 const MESSAGES: Record<ErrorCode, string> = {
   NOT_FOUND: 'Không tìm thấy nội dung bạn cần. Có thể đã bị xóa.',
   SLOT_TAKEN: 'Khung giờ này vừa có người đặt. Vui lòng chọn giờ khác.',
+  SLOT_NOT_OPEN: 'Gymer không nhận khung giờ này. Vui lòng chọn giờ khác.',
+  PRICE_CHANGED: 'Giá đã thay đổi. Vui lòng xem lại giá mới trước khi đặt.',
+  BOOKING_EXPIRED: 'Yêu cầu đã hết hạn.',
+  LIMIT_REACHED: 'Bạn đang có quá nhiều yêu cầu chờ duyệt. Hãy đợi phản hồi hoặc huỷ bớt rồi thử lại.',
+  UNAUTHENTICATED: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
   FORBIDDEN: 'Bạn không có quyền thực hiện thao tác này.',
   NETWORK: 'Không thể kết nối. Kiểm tra mạng rồi thử lại.',
   VALIDATION: 'Thông tin chưa hợp lệ. Vui lòng kiểm tra lại.',

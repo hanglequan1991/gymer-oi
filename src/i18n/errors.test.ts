@@ -6,7 +6,12 @@ import type { ErrorCode } from '@/services/errors';
 const ALL_CODES: Record<ErrorCode, true> = {
   NOT_FOUND: true,
   SLOT_TAKEN: true,
+  SLOT_NOT_OPEN: true,
+  PRICE_CHANGED: true,
+  BOOKING_EXPIRED: true,
+  LIMIT_REACHED: true,
   FORBIDDEN: true,
+  UNAUTHENTICATED: true,
   NETWORK: true,
   VALIDATION: true,
   NOT_IMPLEMENTED: true,

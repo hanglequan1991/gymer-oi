@@ -15,7 +15,6 @@ export const MOCK_GYMERS: Gymer[] = [
     priceWeekend: 220_000,
     tags: ['Gym', 'Giảm mỡ'],
     bio: 'Huấn luyện viên cá nhân, chuyên giảm mỡ và xây nền tập gym an toàn cho người mới.',
-    certified: true,
   },
   {
     id: 'gymer-tuan-kiet',
@@ -30,7 +29,6 @@ export const MOCK_GYMERS: Gymer[] = [
     priceWeekend: 260_000,
     tags: ['Tăng cơ', 'Calisthenics'],
     bio: 'Tập tăng cơ và calisthenics, hướng dẫn kỹ thuật chống đẩy, kéo xà và giữ form đúng.',
-    certified: true,
   },
   {
     id: 'gymer-lan-anh',
@@ -45,7 +43,6 @@ export const MOCK_GYMERS: Gymer[] = [
     priceWeekend: 190_000,
     tags: ['Yoga', 'Giãn cơ'],
     bio: 'Yoga và giãn cơ cho dân văn phòng, giúp cải thiện tư thế và giảm đau vai gáy.',
-    certified: false,
   },
   {
     id: 'gymer-duc-long',
@@ -60,11 +57,10 @@ export const MOCK_GYMERS: Gymer[] = [
     priceWeekend: 240_000,
     tags: ['Gym', 'Tăng cơ'],
     bio: 'Kinh nghiệm thi đấu thể hình nghiệp dư, lập lịch tập theo mục tiêu tăng cơ từng giai đoạn.',
-    certified: false,
   },
 ];
 
 export const MOCK_CERTIFICATES: Certificate[] = [
-  { id: 'cert-ace-pt', name: 'Chứng chỉ huấn luyện viên cá nhân ACE', verified: true },
-  { id: 'cert-yoga-200', name: 'Giáo viên Yoga 200 giờ', verified: false },
+  { id: 'cert-ace-pt', name: 'Chứng chỉ huấn luyện viên cá nhân ACE' },
+  { id: 'cert-yoga-200', name: 'Giáo viên Yoga 200 giờ' },
 ];

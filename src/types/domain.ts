@@ -4,6 +4,7 @@ export type Gender = 'female' | 'male';
 export type Specialty = 'Gym' | 'Giảm mỡ' | 'Tăng cơ' | 'Yoga' | 'Calisthenics';
 export type SlotState = 'available' | 'booked' | 'closed' | 'selected'; // closed = Gymer chủ động đóng
 export type RequestStatus = 'pending' | 'confirmed' | 'rejected';
+export type BookingStatus = RequestStatus | 'cancelled' | 'expired'; // phía khách; 'expired' chỉ là nhãn, xem utils/booking.ts
 
 export interface Gymer {
   id: string;
@@ -18,7 +19,6 @@ export interface Gymer {
   priceWeekend: number;
   tags: string[];
   bio: string;
-  certified: boolean;
   avatarUrl?: string;
 }
 
@@ -56,8 +56,8 @@ export interface Review {
   dateLabel: string;
 }
 
+/** Chứng chỉ do Gymer tự khai (v1 không xác minh; UI luôn gắn nhãn "Tự khai"). */
 export interface Certificate {
   id: string;
   name: string;
-  verified: boolean;
 }
