@@ -1,4 +1,4 @@
-Trạng thái: CHỜ APPROVE
+Trạng thái: ĐÃ APPROVE (người dùng chấp nhận Q2, Q8, Q9, Q10 mặc định, 2026-10-10)
 
 # Plan: nối app với backend Supabase thật (auth-zalo + repository Supabase)
 

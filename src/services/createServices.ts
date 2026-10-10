@@ -2,9 +2,23 @@
 // Bước khung: mọi repository chưa có cài đặt thật, mọi phương thức ném AppError('NOT_IMPLEMENTED')
 // (cả khi dataSource là 'mock' lẫn 'supabase'). Khi có cài đặt thật, đây là chỗ duy nhất chọn theo env.dataSource
 // (docs/project-structure.md, mục 2.6).
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type { AppEnv, DataSource } from '@/config';
+import type { AuthPort, StoragePort } from '@/platform/ports';
 import { AppError } from './errors';
 import type { Services } from './index';
+
+/**
+ * Phụ thuộc có thể tiêm vào composition root (để test và để chọn nền tảng thật).
+ * Ở bước khung chưa được dùng; cài đặt thật sẽ đọc các trường này ở đợt sau.
+ * client không khai báo SupabaseClient<Database>: database.types.ts chỉ được import trong src/services/supabase/* và mappers.
+ */
+export interface CreateServicesDeps {
+  storage?: StoragePort;
+  auth?: AuthPort;
+  client?: SupabaseClient;
+  now?: () => Date;
+}
 
 /**
  * Tạo hàm bất đồng bộ luôn từ chối với mã NOT_IMPLEMENTED.
@@ -17,7 +31,8 @@ function notImplemented(dataSource: DataSource, method: string): () => Promise<n
 }
 
 /** Tạo bộ Services từ cấu hình môi trường. Ở bước khung, mọi phương thức đều chưa được cài đặt. */
-export function createServices(env: AppEnv): Services {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- _deps chưa dùng ở bước khung (xem CreateServicesDeps)
+export function createServices(env: AppEnv, _deps?: CreateServicesDeps): Services {
   const ds = env.dataSource;
 
   return {
@@ -41,6 +56,11 @@ export function createServices(env: AppEnv): Services {
     profile: {
       getMine: notImplemented(ds, 'profile.getMine'),
       updateMine: notImplemented(ds, 'profile.updateMine'),
+    },
+    session: {
+      signIn: notImplemented(ds, 'session.signIn'),
+      getSession: notImplemented(ds, 'session.getSession'),
+      signOut: notImplemented(ds, 'session.signOut'),
     },
   };
 }

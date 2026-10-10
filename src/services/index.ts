@@ -5,6 +5,7 @@ import type {
   ProfileRepository,
   RequestRepository,
   ScheduleRepository,
+  SessionRepository,
 } from './repositories';
 
 /** Bộ repository mà ứng dụng dùng. Mỗi trường là một cổng. */
@@ -14,6 +15,7 @@ export interface Services {
   bookings: BookingRepository;
   requests: RequestRepository;
   profile: ProfileRepository;
+  session: SessionRepository;
 }
 
 export type { ErrorCode } from './errors';
@@ -27,4 +29,5 @@ export type {
   BookingCreateInput,
   RequestRepository,
   ProfileRepository,
+  SessionRepository,
 } from './repositories';

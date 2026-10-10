@@ -13,18 +13,21 @@ const calls: Array<[string, (s: Services) => Promise<unknown>]> = [
   ['schedule.getDaySlots', (s) => s.schedule.getDaySlots('g1', '2026-10-09')],
   ['schedule.setPrices', (s) => s.schedule.setPrices({ weekday: 100000, weekend: 150000 })],
   ['schedule.setSlotClosed', (s) => s.schedule.setSlotClosed('slot1', true)],
-  ['bookings.create', (s) => s.bookings.create({ gymerId: 'g1', startIso: '2026-10-09T08:00:00Z', endIso: '2026-10-09T09:00:00Z' })],
+  ['bookings.create', (s) => s.bookings.create({ gymerId: 'g1', startIso: '2026-10-09T08:00:00Z', endIso: '2026-10-09T09:00:00Z', expectedPrice: 150000 })],
   ['requests.list', (s) => s.requests.list()],
   ['requests.respond', (s) => s.requests.respond('r1', 'confirmed')],
   ['profile.getMine', (s) => s.profile.getMine()],
   ['profile.updateMine', (s) => s.profile.updateMine({ name: 'Quán' })],
+  ['session.signIn', (s) => s.session.signIn()],
+  ['session.getSession', (s) => s.session.getSession()],
+  ['session.signOut', (s) => s.session.signOut()],
 ];
 
 describe.each<DataSource>(['mock', 'supabase'])('createServices với nguồn "%s"', (dataSource) => {
-  it('trả về đủ năm nhóm repository', () => {
+  it('trả về đủ sáu nhóm repository', () => {
     const services = createServices({ dataSource });
 
-    expect(Object.keys(services).sort()).toEqual(['bookings', 'gymers', 'profile', 'requests', 'schedule']);
+    expect(Object.keys(services).sort()).toEqual(['bookings', 'gymers', 'profile', 'requests', 'schedule', 'session']);
   });
 
   it.each(calls)('%s ném AppError với mã NOT_IMPLEMENTED', async (_name, call) => {

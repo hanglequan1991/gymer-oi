@@ -1,7 +1,7 @@
 // Kiểu miền dùng chung cho core-ui và mock (docs/core-ui-plan.md, mục 4).
 
 export type Gender = 'female' | 'male';
-export type Specialty = 'Gym' | 'Giảm mỡ' | 'Tăng cơ' | 'Yoga' | 'Calisthenics';
+export type Specialty = 'Gym' | 'Giảm mỡ' | 'Tăng cơ' | 'Yoga' | 'Calisthenics' | 'Giãn cơ';
 export type SlotState = 'available' | 'booked' | 'closed' | 'selected'; // closed = Gymer chủ động đóng
 export type RequestStatus = 'pending' | 'confirmed' | 'rejected';
 export type BookingStatus = RequestStatus | 'cancelled' | 'expired'; // phía khách; 'expired' chỉ là nhãn, xem utils/booking.ts
@@ -45,6 +45,8 @@ export interface BookingRequest {
   note?: string;
   price: number;
   status: RequestStatus;
+  /** Hạn xác nhận (ISO), chỉ có với yêu cầu chờ duyệt; dùng với isExpired để ẩn yêu cầu quá hạn. */
+  expiresAt?: string;
   isNew?: boolean;
 }
 
