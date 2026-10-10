@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Nền xanh Zalo, full-bleed, không bo góc, không viền -->
+  <rect x="0" y="0" width="1024" height="1024" fill="#0068FF"/>
+  <!-- Ghim vị trí trắng, nằm trong vùng an toàn 80% (102..922) -->
+  <path fill="#FFFFFF" d="M512 830 C512 830 282 600 282 400 A230 230 0 1 1 742 400 C742 600 512 830 512 830 Z"/>
+  <!-- Tạ đòn (dumbbell) xanh bên trong đầu ghim -->
+  <g fill="#0068FF">
+    <rect x="346" y="330" width="44" height="140" rx="14"/>
+    <rect x="396" y="352" width="20" height="96" rx="10"/>
+    <rect x="412" y="388" width="200" height="24" rx="12"/>
+    <rect x="608" y="352" width="20" height="96" rx="10"/>
+    <rect x="634" y="330" width="44" height="140" rx="14"/>
+  </g>
+  <!-- Điểm nhấn #E6F0FF: chấm vị trí dưới mũi ghim -->
+  <circle cx="512" cy="880" r="26" fill="#E6F0FF"/>
+</svg>
