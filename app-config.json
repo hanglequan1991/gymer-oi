@@ -1,0 +1,16 @@
+{
+  "app": {
+    "title": "Gymer ơi",
+    "headerTitle": "Gymer ơi",
+    "headerColor": "#0068FF",
+    "textColor": "white",
+    "leftButton": "none",
+    "statusBar": "normal",
+    "actionBarHidden": true,
+    "hideAndroidBottomNavigationBar": false,
+    "hideIOSSafeAreaBottom": false
+  },
+  "listCSS": [],
+  "listSyncJS": [],
+  "listAsyncJS": []
+}

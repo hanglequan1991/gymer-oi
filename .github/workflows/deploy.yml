@@ -1,5 +1,6 @@
-# Deploy production: CI (gọi ci.yml) -> phát hiện thay đổi -> dry-run migration -> áp dụng migration -> edge functions.
-# Job zalo sẽ được thêm sau (task T7). Thứ tự các job CD: changes -> plan-migrate -> migrate -> functions.
+# Deploy production: CI (gọi ci.yml) -> phát hiện thay đổi -> dry-run migration -> áp dụng migration -> edge functions
+# -> Zalo Mini App (job zalo: build bản supabase, kiểm gói, đăng nhập/đẩy lên Development hoặc Testing; không phát hành production).
+# Thứ tự các job CD: changes -> plan-migrate -> migrate -> functions -> zalo.
 name: Deploy
 
 on:
@@ -9,7 +10,19 @@ on:
       - 'docs/**'
       - '**/*.md'
   # Chạy lại có chủ đích (ví dụ sau khi sửa lỗi, hoặc để kiểm checklist khi chưa có commit ngoài docs).
+  # zalo_mode mặc định none: không chạy job zalo, giữ nguyên hành vi dispatch cũ (chạy lại migrate/functions).
   workflow_dispatch:
+    inputs:
+      zalo_mode:
+        description: 'Chế độ job Zalo Mini App (none: không chạy job zalo)'
+        type: choice
+        options:
+          - none
+          - check
+          - login-only
+          - deploy-dev
+          - deploy-testing
+        default: none
 
 permissions:
   contents: read
@@ -34,14 +47,21 @@ jobs:
     outputs:
       has_migrations: ${{ steps.detect.outputs.has_migrations }}
       has_functions: ${{ steps.detect.outputs.has_functions }}
+      has_app: ${{ steps.detect.outputs.has_app }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # Cần lịch sử đủ để diff before..sha (has_app).
+          fetch-depth: 0
           persist-credentials: false
 
-      - name: Phát hiện migration và edge function
+      - name: Phát hiện migration, edge function và thay đổi ứng dụng
         id: detect
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
         run: bash scripts/ci/detect-changes.sh
 
   plan-migrate:
@@ -200,3 +220,170 @@ jobs:
           if [ "$deployed" -eq 0 ]; then
             echo "Chưa có edge function nào trong supabase/functions/ để deploy; bỏ qua."
           fi
+
+  zalo:
+    name: Zalo Mini App (Development/Testing)
+    # Chạy khi: nhánh main; changes thành công; plan-migrate, migrate, functions đều success hoặc skipped
+    # (DB hoặc function lỗi thì app không lên, vì app phụ thuộc schema và function); và một trong hai:
+    # dispatch với zalo_mode khác none, hoặc push có thay đổi ứng dụng (has_app). Mode push lấy từ vars.ZALO_PUSH_MODE.
+    # Không phát hành production: job chỉ đẩy lên Development/Testing; gửi duyệt là thao tác thủ công trên Zalo Developers.
+    needs: [changes, plan-migrate, migrate, functions]
+    if: ${{ !cancelled() && github.ref == 'refs/heads/main' && needs.changes.result == 'success' && contains(fromJSON('["success","skipped"]'), needs.plan-migrate.result) && contains(fromJSON('["success","skipped"]'), needs.migrate.result) && contains(fromJSON('["success","skipped"]'), needs.functions.result) && ((github.event_name == 'workflow_dispatch' && inputs.zalo_mode != 'none') || (github.event_name == 'push' && needs.changes.outputs.has_app == 'true')) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: production-deploy
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Xác định chế độ Zalo
+        id: resolve
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_MODE: ${{ inputs.zalo_mode }}
+          PUSH_MODE_VAR: ${{ vars.ZALO_PUSH_MODE }}
+        run: |
+          set -euo pipefail
+          case "$EVENT_NAME" in
+            workflow_dispatch)
+              mode="${INPUT_MODE:-none}"
+              case "$mode" in
+                check|login-only|deploy-dev|deploy-testing) ;;
+                *) echo "::error::zalo_mode không hợp lệ: '$mode'"; exit 2 ;;
+              esac
+              ;;
+            push)
+              # Push chỉ được check hoặc deploy-dev; deploy-testing chỉ qua dispatch thủ công.
+              mode="${PUSH_MODE_VAR:-check}"
+              case "$mode" in
+                check|deploy-dev) ;;
+                *) echo "::error::ZALO_PUSH_MODE không hợp lệ: '$mode' (chỉ chấp nhận check hoặc deploy-dev)"; exit 2 ;;
+              esac
+              ;;
+            *)
+              echo "::error::Sự kiện không hỗ trợ cho job Zalo: '$EVENT_NAME'"; exit 2 ;;
+          esac
+          case "$mode" in
+            deploy-dev) dest="Development" ;;
+            deploy-testing) dest="Testing" ;;
+            *) dest="không upload" ;;
+          esac
+          echo "Chế độ Zalo: $mode (đích: $dest)"
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Zalo Mini App"
+            echo "- Chế độ: \`$mode\`"
+            echo "- Đích: $dest"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Cài Node theo .nvmrc
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            tools/zmp-cli/package-lock.json
+
+      - name: Cài dependency ứng dụng
+        run: npm ci
+
+      - name: Build bản Supabase
+        env:
+          VITE_DATA_SOURCE: ${{ vars.VITE_DATA_SOURCE }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          ZALO_MODE: ${{ steps.resolve.outputs.mode }}
+        run: |
+          set -euo pipefail
+          if [ "$VITE_DATA_SOURCE" != "supabase" ]; then
+            case "$ZALO_MODE" in
+              deploy-dev|deploy-testing)
+                echo "::error::VITE_DATA_SOURCE phải là 'supabase' khi đẩy lên Zalo (hiện: '${VITE_DATA_SOURCE:-<trống>}')"
+                exit 1
+                ;;
+              *)
+                echo "::warning::VITE_DATA_SOURCE='${VITE_DATA_SOURCE:-<trống>}' (không phải 'supabase'); chỉ chấp nhận ở chế độ kiểm tra"
+                ;;
+            esac
+          fi
+          # Chặn khóa bí mật Supabase lọt vào bundle (mọi mode). Không in giá trị khóa.
+          node -e '
+            const k = (process.env.VITE_SUPABASE_ANON_KEY || "").trim();
+            const fail = (m) => { console.log("::error::" + m); process.exit(1); };
+            if (k.startsWith("sb_secret_")) {
+              fail("VITE_SUPABASE_ANON_KEY là khóa sb_secret_ (khóa bí mật). Từ chối build; hãy dùng khóa publishable hoặc anon.");
+            }
+            if (k.startsWith("eyJ")) {
+              let role;
+              try {
+                const parts = k.split(".");
+                if (parts.length !== 3) throw new Error("not a jwt");
+                role = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8")).role;
+              } catch (e) {
+                fail("VITE_SUPABASE_ANON_KEY có dạng JWT nhưng không giải mã được payload. Từ chối build.");
+              }
+              if (role === "service_role") {
+                fail("VITE_SUPABASE_ANON_KEY là khóa service_role (bí mật). Từ chối build; hãy dùng khóa anon.");
+              }
+            }
+          '
+          npm run build
+
+      - name: Kiểm gói Zalo (zalo-check)
+        run: bash scripts/ci/zalo-check.sh dist
+
+      - name: Kiểm sự hiện diện cấu hình Zalo (không in giá trị)
+        env:
+          ZALO_MODE: ${{ steps.resolve.outputs.mode }}
+          HAS_ZMP_TOKEN: ${{ secrets.ZMP_TOKEN != '' }}
+          HAS_ZMP_APP_ID: ${{ vars.ZMP_APP_ID != '' }}
+        run: |
+          set -euo pipefail
+          echo "ZMP_TOKEN: $HAS_ZMP_TOKEN"
+          echo "ZMP_APP_ID: $HAS_ZMP_APP_ID"
+          if [ "$ZALO_MODE" != "check" ]; then
+            if [ "$HAS_ZMP_TOKEN" != "true" ]; then
+              echo "::error::Thiếu secret ZMP_TOKEN cho chế độ '$ZALO_MODE'. Dừng trước khi cài zmp-cli và đẩy lên Zalo."
+              exit 1
+            fi
+            if [ "$HAS_ZMP_APP_ID" != "true" ]; then
+              echo "::error::Thiếu variable ZMP_APP_ID cho chế độ '$ZALO_MODE'. Dừng trước khi cài zmp-cli và đẩy lên Zalo."
+              exit 1
+            fi
+          fi
+
+      - name: Tải artifact dist (7 ngày)
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: zalo-dist
+          path: dist
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Cài zmp-cli (tools/zmp-cli, lockfile đã khóa)
+        if: ${{ steps.resolve.outputs.mode != 'check' }}
+        run: npm ci --prefix tools/zmp-cli --ignore-scripts --no-audit --no-fund
+
+      - name: Đăng nhập và đẩy lên Zalo
+        if: ${{ steps.resolve.outputs.mode != 'check' }}
+        env:
+          ZMP_ACCESS_TOKEN: ${{ secrets.ZMP_TOKEN }}
+          ZMP_APP_ID: ${{ vars.ZMP_APP_ID }}
+          ZMP_TOKEN_KIND: ${{ vars.ZMP_TOKEN_KIND || 'access' }}
+          ZMP_CLI_BIN: ${{ github.workspace }}/tools/zmp-cli/node_modules/.bin/zmp
+          DIST_DIR: dist
+          ZALO_MODE: ${{ steps.resolve.outputs.mode }}
+        run: |
+          set -euo pipefail
+          bash scripts/ci/zalo-deploy.sh "$ZALO_MODE"
+
+      - name: Ghi chú gửi duyệt thủ công
+        if: ${{ startsWith(steps.resolve.outputs.mode, 'deploy-') }}
+        run: |
+          {
+            echo "## Bước tiếp theo (thủ công)"
+            echo "Bản này chưa phát hành production. Gửi duyệt trên Zalo Developers là thao tác thủ công, không có trong pipeline (xem docs/ci-cd-setup.md)."
+          } >> "$GITHUB_STEP_SUMMARY"

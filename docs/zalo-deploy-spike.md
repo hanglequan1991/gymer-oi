@@ -4,6 +4,7 @@
 - Zalo Mini App ID của dự án: `3208658009530863386` (không bí mật).
 - Cài thử: thư mục tạm ngoài repo (scratchpad), `npm i --ignore-scripts zmp-cli@4.0.3`. Không sửa `package.json`/`package-lock.json`. Không có token nào được tạo hay lưu.
 - Trạng thái: phần đọc mã nguồn (JS đã làm rối) và `--help` là bằng chứng trực tiếp. Phần đăng nhập và deploy thật CHƯA chạy.
+- Cập nhật 2026-10-10: đã bổ sung mục cuối "Bổ sung từ đọc mã nguồn" (E1-E11, đánh dấu đã đọc mã nguồn hay chưa chạy thật) và cập nhật "Người dùng cần làm". Các kết luận cũ bên dưới được giữ nguyên.
 
 ## Nguồn đã dùng
 
@@ -73,16 +74,51 @@ Dự kiến: đến bước build và đăng nhập bằng token là khả thi m
 
 ## Người dùng cần làm để hoàn tất spike
 
+Trạng thái (2026-10-10): CHƯA có bước nào trong danh sách dưới đây được người dùng thực hiện. Việc đã làm, không cần người dùng: sen1 chạy `zmp deploy -e -p -o dist` trong thư mục rỗng, không token, chỉ để xem lỗi cục bộ (E4, E5). Bước 7 trùng với câu hỏi Q7 của plan, có thể bỏ qua nếu bậc 4 của thang kiểm chứng được làm.
+
 Thực hiện trên MÁY CÁ NHÂN, không trên CI, trong thư mục tạm ngoài repo. Không dán token vào chat hay vào repo. Che giá trị bí mật trước khi gửi output (thay bằng `***`).
 
-1. Lấy access token theo hướng dẫn chính thức của Zalo Developers (đường dẫn chính xác CHƯA XÁC MINH; cộng đồng nói là API Explorer). Ghi lại thời điểm lấy.
-2. Trong thư mục tạm: `npm i zmp-cli@4.0.3`, rồi `npx zmp login --app-id 3208658009530863386 --token "$ZMP_TOKEN"` (với `ZMP_TOKEN` đã export trên shell). Gửi lại: exit code và output đã che bí mật.
-3. Kiểm tra login có ghi `.env` không: `ls -la` trong thư mục tạm. Chỉ báo có/không và tên key, không gửi giá trị.
-4. Chạy `npx zmp init` trong thư mục tạm rỗng (nếu đòi đăng nhập QR thì dừng). Gửi lại nội dung `app-config.json` sinh ra, đã che giá trị có vẻ bí mật.
-5. Sau khoảng 24 giờ, chạy lại bước 2. Ghi kết quả để xác định thời hạn token.
-6. Trên Zalo Developers console: cho biết có bước gửi duyệt riêng để đưa phiên bản lên production không, và tên chính xác của trang/nút đó. Chụp mô tả bằng chữ, không gửi ảnh có tài khoản.
-7. Nếu được phép: trên bản sao repo (không phải repo chính), chạy `npm run build` rồi `npx zmp deploy --existing -o dist -p -m "spike" --app-id ...`. Gửi exit code và output đã che bí mật.
+1. [Chưa làm] Lấy access token theo hướng dẫn chính thức của Zalo Developers (đường dẫn chính xác CHƯA XÁC MINH; cộng đồng nói là API Explorer). Ghi lại thời điểm lấy và tài khoản đã tạo token (Q2).
+2. [Chưa làm] Trong thư mục tạm: `npm i zmp-cli@4.0.3`, rồi `npx zmp login --app-id 3208658009530863386 --token "$ZMP_ACCESS_TOKEN"`. Dùng tên `ZMP_ACCESS_TOKEN` cho biến shell, khớp với pipeline (E2). Sau lệnh này chạy `unset ZMP_TOKEN` và không export `ZMP_TOKEN` trong shell cho các bước sau (CLI ưu tiên biến môi trường hơn `.env`, E2). Gửi lại: exit code và output đã che bí mật. Exit code 0 không đủ để kết luận đăng nhập thành công (E3); xem bước 3.
+3. [Chưa làm; cần bước 2] Kiểm tra login có ghi `.env` không: `ls -la` trong thư mục tạm, rồi kiểm có khóa `ZMP_TOKEN` không. Chỉ báo có/không và tên key, không gửi giá trị.
+4. [Chưa làm] Chạy `npx zmp init` trong thư mục tạm rỗng (nếu đòi đăng nhập QR thì dừng). Gửi lại nội dung `app-config.json` sinh ra, đã che giá trị có vẻ bí mật.
+5. [Chưa làm; cần bước 2 đã thành công] Sau khoảng 24 giờ, chạy lại bước 2. Ghi kết quả để xác định thời hạn token.
+6. [Chưa làm] Trên Zalo Developers console: cho biết có bước gửi duyệt riêng để đưa phiên bản lên production không, và tên chính xác của trang/nút đó. Cho biết bản gửi duyệt lấy từ Testing hay Development, và số lần upload đã dùng (Q3). Chụp mô tả bằng chữ, không gửi ảnh có tài khoản.
+7. [Chưa làm; tùy chọn] Nếu được phép: trên bản sao repo (không phải repo chính), chạy `npm run build` rồi `npx zmp deploy --existing -o dist -p -m "spike" --app-id ...`. Gửi exit code và output đã che bí mật. Lưu ý E6: CLI đọc `app-config.json` ở thư mục gốc trước, nên file này phải có danh sách asset (do plugin sinh khi build).
 
-Tên secret/variable để thay placeholder (sau khi bước 2 và 7 xác nhận):
-- `ZMP_TOKEN`: Secret, environment `production`. CLI đọc tên này qua env (suy ra từ mã nguồn, chưa xác minh chạy).
-- `ZMP_APP_ID`: Variable, environment `production`. Trong job cần truyền sang CLI bằng `APP_ID` hoặc `--app-id "$ZMP_APP_ID"`. Tên `APP_ID` là tên CLI đọc khi không có cờ (xác minh từ mã nguồn).
+Tên secret/variable (đã đối chiếu với `.github/workflows/deploy.yml` ngày 2026-10-10; xem `docs/ci-cd-setup.md` mục 3). Chưa xác minh bằng chạy thật; xác nhận ở bước 2 và 7:
+- `ZMP_TOKEN`: Secret, environment `production-deploy`. Bản trước ghi `production`; đó là sai, job `zalo` dùng `production-deploy`.
+- `ZMP_APP_ID`: Variable, environment `production-deploy`. Pipeline truyền tường minh `--app-id "$ZMP_APP_ID"` (đã đọc trong `scripts/ci/zalo-deploy.sh`), nên không cần đặt tên `APP_ID` (E2 làm việc đó không bắt buộc).
+- `ZMP_TOKEN_KIND`: Variable, tùy chọn, mặc định `access`. `ZALO_PUSH_MODE`: Variable, tùy chọn, mặc định `check`.
+
+## Bổ sung từ đọc mã nguồn (2026-10-10)
+
+Nguồn: đọc `zmp-cli@4.0.3`, `zmp-cli-core@1.1.4` và `zmp-vite-plugin@1.1.6` trong thư mục scratchpad (chỉ đọc). Có một lần chạy `zmp deploy` trong thư mục rỗng, không token. Không chạy đăng nhập hay upload thật; không gọi API Zalo. Mọi điều dưới đây là "đọc từ mã nguồn" trừ khi ghi khác.
+
+Mức chắc chắn lấy từ bảng E trong plan (mục 0). Cột "Chạy thật" cho biết bậc nào của thang kiểm chứng (`docs/ci-cd-setup.md` mục 8.5) sẽ xác minh.
+
+| # | Điểm | Căn cứ | Trạng thái | Chạy thật |
+|---|---|---|---|---|
+| E1 | `zmp login` không lưu token thô; ghi `APP_ID` và `ZMP_TOKEN=<jwt>` vào `.env` ở cwd. | Mã nguồn (chắc) | Chưa chạy thật | Bậc 3 |
+| E2 | `process.env` được đọc trước `.env`. | Mã nguồn (chắc) | Chưa chạy thật | Bậc 3 |
+| E3 | Login lỗi vẫn thoát mã 0. Pipeline kiểm `.env` thay vì exit code. | Mã nguồn (chắc) | Chưa chạy thật | Bậc 3 |
+| E4 | CLI tạo `.env` rỗng ở cwd khi khởi động. | Quan sát cục bộ (thư mục rỗng, không token) | Đã thấy | Bậc 3 (dùng thư mục staging) |
+| E5 | `-e` bỏ build của CLI; `-o` có hiệu lực; `-p` bỏ prompt; `-t` là Testing; không `-t` là Development. Lỗi cấu hình thoát mã 1. | Mã nguồn và `--help`; lỗi cấu hình quan sát được | Đường thành công chưa chạy | Bậc 4 |
+| E6 | `-e` đọc `app-config.json` ở cwd trước, rồi mới đọc `www/app-config.json` (cứng). Nếu danh sách asset rỗng: lỗi "no asset defined" sau khi đã gọi `app/request-upload`. Nếu file gốc được đọc, nó bị ghi đè vào `<outDir>/app-config.json`. | Mã nguồn (chắc) | Chưa chạy thật | Bậc 4 |
+| E7 | `index.html` không được upload. Chỉ file có đuôi được phép; tối đa 3 MB mỗi file, 10 MB mỗi zip. Trang tải khai báo qua `listCSS`/`listSyncJS`/`listAsyncJS`. | Mã nguồn (chắc) | Chưa chạy thật | Bậc 4 |
+| E8 | `zmp-vite-plugin@1.1.6` đọc `app-config.json`, ép `base: './'`, `outDir` mặc định `www` (dùng `build.outDir` nếu đặt), sinh `<outDir>/app-config.json` với `app`, `listCSS`, `listSyncJS`, `listAsyncJS`, `pages: []`. Export mặc định, tên npm `zmp-vite-plugin`. | Mã nguồn (chắc) | Chưa chạy thật | Bậc 0 và bậc 4 |
+| E9 | Hạn mức upload: Development 300, Testing 60; chu kỳ reset không rõ. Enum `AppVersion.status` không có DEVELOPMENT. | Hằng số và kiểu trong thư viện (trung bình) | Chưa đối chiếu console | Q3 |
+| E10 | `deploy` không gọi kiểm tra cập nhật CLI (chỉ `init` có). | Mã nguồn (trung bình) | Chưa chạy thật | Bậc 4 (log) |
+| E11 | `zmp-cli` kéo `vite@2.6.14`, `browser-sync`, `express` và nhiều plugin webpack cũ; nhiều dependency dùng `^`/`~`. | Mã nguồn (chắc) | Cần lockfile riêng (`tools/zmp-cli/`) | `npm ci` và bậc 0 |
+
+Điều đã làm rõ so với các mục cũ ở trên (các mục cũ giữ nguyên):
+- Mục (b) cũ nói App ID là biến `APP_ID`: đúng với CLI, nhưng pipeline không phụ thuộc vào đó, vì truyền `--app-id` tường minh (E2).
+- Mục (c) cũ nói chưa rõ output build: E8 cho biết plugin ghi `outDir` theo `build.outDir`, và `-e` đọc `app-config.json` ở gốc (E6). Vẫn cần bậc 4 để xác nhận.
+- Mục "Tên secret/variable" cũ ghi environment `production`: đã sửa thành `production-deploy` (theo `deploy.yml`).
+
+Còn lại chưa chạy thật (cần người dùng hoặc bậc kiểm chứng):
+- Đăng nhập bằng token thật, loại token (access hay JWT), thời hạn token, phạm vi quyền (E1-E3, Q1-Q2).
+- Upload thật, kiểm lỗi `-e`/asset, và giao diện trên điện thoại (E5-E8, bậc 4).
+- Hạn mức và chu kỳ reset (E9, Q3).
+- Node tối thiểu của zmp-cli (chưa xác minh; `.nvmrc` của repo là 22).
+- Đường dẫn chính xác lấy token và trang gửi duyệt trên Zalo Developers (chưa đọc được tài liệu chính thức).

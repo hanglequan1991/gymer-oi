@@ -1,0 +1,10 @@
+{
+  "name": "gymer-oi-zmp-cli",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Công cụ zmp-cli được pin để dùng trong CI deploy Zalo Mini App. Cài riêng, không dùng lockfile của app.",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "zmp-cli": "4.0.3"
+  }
+}

@@ -16,3 +16,13 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+
+  # Công cụ zmp-cli dùng khi deploy Zalo, có lockfile riêng (tools/zmp-cli). Cùng luật bỏ qua major như mục gốc.
+  - package-ecosystem: "npm"
+    directory: "/tools/zmp-cli"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]

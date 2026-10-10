@@ -61,3 +61,6 @@ jobs:
             exit 1
           fi
           echo "dist/ không chứa service_role."
+
+      - name: Kiểm gói Zalo (zalo-check)
+        run: bash scripts/ci/zalo-check.sh dist
