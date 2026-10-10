@@ -14,17 +14,17 @@ Giả định (sai thì plan đổi):
 - G4. Mọi thao tác đều cần đăng nhập Zalo; `anon` không có quyền gì (xem Q3).
 
 Đã chốt (nguồn: người dùng trả lời 2026-10-10):
-- Q1. Bỏ gói 10 buổi (khách và Gymer tự thương lượng ngoài app; không có cột, không có dòng giá này trong app). Người dùng không nhắc các mục khác của Q1 nên GIẢ ĐỊNH đồng ý mặc định: cắt khỏi v1 áp dụng hàng loạt, chọn thời lượng buổi (cố định 60 phút), upload file chứng chỉ, upload ảnh đại diện (dùng ảnh Zalo), sửa/xoá đánh giá. Giả định này CHƯA được xác nhận rõ; người dùng sửa nếu muốn giữ mục nào (mục 2.8).
-- Q2. Gymer dạy ở phòng tập công cộng. Giữ làm tròn toạ độ 3 chữ số (~110 m) và Gymer chọn "điểm hoạt động" là phòng tập (mục 2.3).
+- Q1. Bỏ gói 10 buổi (khách và Gymer tự thương lượng ngoài app; không có cột, không có dòng giá này trong app). Các mục còn lại của Q1 người dùng không phản đối nên coi là ĐÃ ĐƯỢC XÁC NHẬN NGẦM (người dùng trả lời 2026-10-10): cắt khỏi v1 áp dụng hàng loạt, chọn thời lượng buổi (cố định 60 phút), upload file chứng chỉ, upload ảnh đại diện (dùng ảnh Zalo), sửa/xoá đánh giá (mục 2.8).
+- Q2. Gymer dạy ở phòng tập công cộng. Giữ làm tròn toạ độ 3 chữ số (~110 m); "điểm hoạt động" là phòng tập (mục 2.3). Rủi ro Gymer nhập nhầm nhà riêng làm phòng tập: người dùng chấp nhận, "người dùng phải tự verify"; không thêm cơ chế kiểm duyệt (người dùng trả lời 2026-10-10).
 - Q3. KHÔNG cho xem danh sách Gymer trước khi đăng nhập: `anon` không đọc gì.
-- Q4. Khách được tự huỷ lịch, quy tắc ở mục 2.4A.
-- Q8. KHÔNG xác minh chứng chỉ ở v1 (làm sau). Hệ quả: không có huy hiệu "đã xác minh"; chứng chỉ v1 chỉ là thông tin Gymer tự khai (mục 2.7, cần đổi UI/mock ở T10).
+- Q4. Huỷ lịch, ĐÃ ĐƠN GIẢN HOÁ (người dùng trả lời 2026-10-10): khách huỷ được khi `starts_at > now()`; Gymer huỷ được mọi lúc; quy tắc ở mục 2.4A. Q12 (Gymer huỷ buổi `confirmed`) = ĐƯỢC, đã đóng.
+- Q8. KHÔNG xác minh chứng chỉ ở v1 (làm sau). Người dùng ĐỒNG Ý phương án "tự khai" (2026-10-10): Gymer tự nhập tên chứng chỉ, nhãn "Tự khai", KHÔNG tick, KHÔNG chữ "đã xác minh". Mục chứng chỉ đã đóng; việc UI/mock cần đổi ở mục 2.7 và T10.
 - Q7. Khớp Q8: hồ sơ công khai hiện tên chứng chỉ tự khai, gắn nhãn "Tự khai, chưa xác minh". Không có cờ xác minh. (Khác bản đầu của yêu cầu 5 "chứng chỉ chỉ owner + cờ xác minh công khai": không còn xác minh nên cờ không có nghĩa.)
 - Q11. Region Singapore (`ap-southeast-1`) được người dùng chấp nhận. Dữ liệu vẫn nằm ngoài Việt Nam; xem cảnh báo mục 2.9.
 - Q5, Q6, Q9, Q10: người dùng không đổi, giữ mặc định: Q5 đặt sau hiện tại ít nhất 2 giờ và nhiều nhất 60 ngày; Q6 Gymer tối thiểu 18 tuổi (trigger), khách không thu tuổi; Q9 hiện tên người đánh giá như tên Zalo của họ; Q10 không có luồng xoá tài khoản, xử lý thủ công theo yêu cầu.
 
-Còn mở (một câu, phát sinh khi chốt Q4):
-- Q12. Gymer có được huỷ buổi đã `confirmed` trong app không? Mockup không có. (mặc định: KHÔNG ở v1; Gymer liên hệ khách ngoài app. Rủi ro: khách vẫn thấy lịch `confirmed` của buổi Gymer đã bỏ; cần xử lý thủ công hoặc bổ sung `cancel_booking` cho Gymer sau.)
+Còn mở (một câu thật sự cần người dùng quyết, phát sinh từ quy tắc huỷ mới):
+- Q13. Gymer huỷ được booking trong quá khứ dễ bị lạm dụng để xoá dấu vết buổi tập hoặc chặn đánh giá (mục 2.4A, "Hệ quả lên đánh giá"). Chọn một: (a) KHUYẾN NGHỊ: giữ nguyên quy tắc thời gian, nhưng Gymer KHÔNG huỷ được booking đã có đánh giá (`HAS_REVIEW`), không tạo đánh giá mới cho booking `cancelled`, và ghi `cancelled_by`/`cancelled_at` để khách thấy "Gymer đã huỷ"; (b) đúng nguyên văn quy tắc, không chặn `HAS_REVIEW` (Gymer huỷ được cả booking đã có đánh giá; đánh giá vẫn giữ); (c) Gymer chỉ huỷ được khi `ends_at > now()` (trái quyết định hiện tại của người dùng, chỉ nêu để so sánh). Mặc định nếu người dùng không trả lời: (a). (a) và (b) đều KHÔNG chặn việc Gymer huỷ buổi quá khứ TRƯỚC khi khách kịp đánh giá; lỗ hổng này chỉ giảm nhờ lịch sử `cancelled_by`.
 
 ## 1. Mục tiêu và phạm vi
 
@@ -80,7 +80,7 @@ Loại: PostGIS ngay (chính xác hơn, có KNN, nhưng thêm extension chưa ki
 Quyền riêng tư vị trí:
 - Vị trí khách: KHÔNG lưu. App gửi `p_lat`, `p_lng` làm tròn 3 chữ số (~110 m) qua `supabase.rpc` (POST, tham số trong body, không nằm trong URL). Việc log request phía Supabase: chưa kiểm; cần xem cấu hình log, không dùng GET.
 - Vị trí Gymer: bảng `gymer_locations` chỉ chủ sở hữu đọc/ghi. Không có đường nào trả lat/lng của Gymer ra client; RPC chỉ trả `distance_km` làm tròn 0.1 km. Toạ độ ép làm tròn 3 chữ số bằng trigger. Gymer dạy ở phòng tập công cộng (Q2) nên "điểm hoạt động" là địa điểm công khai; giữ 3 chữ số (sai số ~110 m so với bán kính nhỏ nhất 1 km là chấp nhận được) như lớp phòng thủ phụ nếu Gymer lỡ nhập nhà riêng.
-- Rủi ro còn lại, nói thẳng: kẻ gọi RPC nhiều lần từ nhiều toạ độ giả có thể dò (trilateration) ra điểm của Gymer với sai số ~vài chục mét. Giảm: làm tròn khoảng cách, bán kính tối đa 10 km, giới hạn tối đa 50 kết quả; rate limit thật chưa có (cần cơ chế khác, ngoài v1). Với điểm là phòng tập công cộng (Q2), dò ra điểm này không tiết lộ nhà ở; rủi ro còn lại chủ yếu là Gymer nhập nhầm địa chỉ nhà làm "phòng tập": giảm bằng chữ hướng dẫn trên form ("chọn phòng tập, không nhập nhà riêng"), schema không ép được. Chấp nhận.
+- Rủi ro còn lại, nói thẳng: kẻ gọi RPC nhiều lần từ nhiều toạ độ giả có thể dò (trilateration) ra điểm của Gymer với sai số ~vài chục mét. Giảm: làm tròn khoảng cách, bán kính tối đa 10 km, giới hạn tối đa 50 kết quả; rate limit thật chưa có (cần cơ chế khác, ngoài v1). Với điểm là phòng tập công cộng (Q2), dò ra điểm này không tiết lộ nhà ở; rủi ro còn lại là Gymer nhập nhầm địa chỉ nhà làm "phòng tập". Người dùng ĐÃ CHẤP NHẬN rủi ro này ("người dùng phải tự verify"); không thêm cơ chế kiểm duyệt. Việc rẻ duy nhất: UX copy trên form địa điểm, ví dụ nhãn "Phòng tập / địa điểm công cộng bạn dạy" và ghi chú "Không nhập địa chỉ nhà riêng. Vị trí này hiện trong kết quả tìm kiếm (làm tròn khoảng 100 m).". Đưa vào T10/UI khi dựng màn hồ sơ Gymer.
 
 RPC minh hoạ (rút gọn, không phải bản cuối):
 
@@ -152,18 +152,27 @@ Thời gian:
 - T7/CN: `extract(isodow from day) in (6, 7)`; tính trên `date` nên không dính múi giờ.
 - Giá: `create_booking` tính ở server: `day_overrides.price_vnd` nếu có, không thì `price_weekend_vnd` (T7/CN) hoặc `price_weekday_vnd`; ghi vào `bookings.price_vnd` (integer VND, `check (>= 0)`). Client gửi `p_expected_price`; lệch thì ném `PRICE_CHANGED` để khách thấy giá mới trước khi xác nhận lại. Sau đó giá Gymer đổi không ảnh hưởng booking đã tạo.
 
-### 2.4A Khách huỷ lịch (Q4 đã chốt: được huỷ)
+### 2.4A Huỷ lịch (Q4, Q12: người dùng chốt đơn giản hoá, 2026-10-10)
 
-RPC `cancel_booking(p_booking_id)`, chỉ khách của booking:
-- `pending` (chưa hết hạn): huỷ được bất cứ lúc nào trước `starts_at`.
-- `confirmed`: huỷ được khi còn ít nhất 2 giờ trước `starts_at` (hằng số do sen1 đề xuất, trùng mức đặt trước tối thiểu Q5; người dùng chưa nói con số này). Sát giờ hơn thì RPC ném `TOO_LATE`; khách phải liên hệ Gymer ngoài app.
-- Trạng thái khác (`rejected`, `cancelled`, `expired`) hoặc đã qua `starts_at`: `FORBIDDEN`/`BOOKING_EXPIRED`.
-Hệ quả:
-- Khung giờ trống lại NGAY: ràng buộc loại trừ chỉ tính `pending`/`confirmed`, nên người khác đặt lại được; `get_day_slots` trả `available` (trừ khi Gymer tự đóng khung).
-- Quyền đọc ghi chú sức khoẻ: Gymer MẤT quyền đọc ngay khi booking sang `cancelled` (policy chỉ cho `pending`/`confirmed`). Khách vẫn đọc ghi chú của chính mình. Hàng booking giữ lại làm lịch sử, không xoá.
-- Không có thông báo đẩy ở v1: Gymer chỉ thấy khi mở app; với `confirmed` huỷ trước giờ ít nhất 2 giờ thì rủi ro Gymer đến buổi trống được giảm nhưng không loại bỏ. Mapper phía Gymer ẩn hoặc gắn nhãn "Đã huỷ".
-- Không có phạt/hạn chế huỷ nhiều lần (thanh toán ngoài app). Khách có thể đặt rồi huỷ liên tục làm nhiễu lịch Gymer; giới hạn 3 `pending` chỉ chặn một phần. Chấp nhận ở v1.
-- Gymer huỷ buổi đã `confirmed`: chưa có (Q12).
+Một RPC `cancel_booking(p_booking_id uuid)`; vai trò của người gọi được xác định ở server (`auth.uid()`), không tin client. Cột thời gian bắt đầu trong plan tên `starts_at` (người dùng ghi `start_at`; cùng ý, kiểu `timestamptz`, so với `now()` của server).
+- Khách (`customer_id = auth.uid()`): huỷ được khi `status in ('pending','confirmed')` VÀ `starts_at > now()`. Booking đã bắt đầu hoặc đã qua: `ALREADY_STARTED` (tạm map `FORBIDDEN`). Không có cửa sổ tối thiểu (bỏ quy tắc 2 giờ).
+- Gymer (`gymer_id = auth.uid()`): huỷ được ở mọi thời điểm, kể cả quá khứ và đang diễn ra, không kiểm thời gian (với các ràng buộc ở Q13 nếu người dùng chọn (a)).
+- Cả hai: chỉ từ `pending` hoặc `confirmed` sang `cancelled`; trạng thái khác (`rejected`, `cancelled`, `expired`) là `FORBIDDEN`; người khác là `FORBIDDEN`/`NOT_FOUND`. Ghi `cancelled_at = now()`, `cancelled_by = auth.uid()` (hai cột mới trên `bookings`, ràng buộc `(status = 'cancelled') = (cancelled_at is not null)`).
+- Không có UPDATE trực tiếp trên `bookings` cho client: huỷ chỉ qua RPC (SECURITY DEFINER, quyền kiểm trong thân hàm).
+Hệ quả chắc chắn:
+- Khung giờ trống lại NGAY: ràng buộc loại trừ chỉ tính `pending`/`confirmed`; `get_day_slots` trả `available` (trừ khi Gymer tự đóng khung).
+- Gymer MẤT quyền đọc ghi chú sức khoẻ ngay khi `cancelled` (policy chỉ cho `pending`/`confirmed`), kể cả khi chính Gymer huỷ. Khách vẫn đọc ghi chú của mình. Hàng booking giữ lại làm lịch sử, không xoá.
+- Không có thông báo đẩy ở v1: bên kia chỉ thấy khi mở app. Mapper hiển thị "Đã huỷ" kèm ai huỷ.
+
+Hệ quả lên đánh giá (nói thẳng, cần Q13):
+- `create_review` yêu cầu `status = 'confirmed'` và `ends_at < now()`. Gymer huỷ booking đã qua sẽ làm khách MẤT khả năng đánh giá buổi đó (booking thành `cancelled`), và nếu đã có đánh giá thì hàng `reviews` vẫn còn (khoá ngoại tới booking giữ nguyên), `rating_avg` không đổi vì trigger chỉ chạy khi `reviews` đổi. Nghĩa là: đánh giá đã có KHÔNG bị xoá theo, nhưng "buổi đã xảy ra" có thể bị đổi thành "đã huỷ", làm đánh giá mất bằng chứng buổi tập, và Gymer có thể huỷ trước khi khách kịp đánh giá để né đánh giá xấu.
+- Đề xuất đơn giản và an toàn nhất (Q13 phương án a): `create_review` không nhận booking `cancelled` (đã có sẵn do yêu cầu `confirmed`); `cancel_booking` do Gymer gọi bị chặn bằng `HAS_REVIEW` khi booking đã có đánh giá; lưu `cancelled_by` để khách và người duyệt thấy ai huỷ. Không giải quyết được trường hợp Gymer huỷ buổi quá khứ trước khi khách đánh giá: muốn chặn hẳn phải hạn chế Gymer theo `ends_at` (phương án c), trái quyết định hiện tại. Nói thẳng đây là lỗ hổng còn lại.
+
+Rủi ro chấp nhận (không cơ chế phạt ở v1):
+- Khách huỷ `confirmed` sát giờ hoặc phút chót (chỉ cần `starts_at > now()`): Gymer có thể bị bỏ trống khung mà không kịp biết (không có push). Chấp nhận.
+- Khách đặt rồi huỷ liên tục làm nhiễu lịch Gymer; giới hạn 3 `pending` chỉ chặn một phần. Chấp nhận.
+
+Ảnh hưởng thống kê phía Gymer: các số "buổi tuần này", "buổi hôm nay" chỉ đếm `status = 'confirmed'`; "yêu cầu mới/chờ duyệt" chỉ đếm `pending` chưa hết hạn; `cancelled`, `expired`, `rejected` không đếm. Nếu Gymer huỷ buổi quá khứ thì số buổi tuần này giảm theo (đúng ý, nhưng lịch sử thống kê của tuần đã qua bị thay đổi sau khi xảy ra). Các số này tính bằng truy vấn ở tầng repository, không có bảng thống kê riêng ở v1.
 
 ### 2.5 RLS, quyền, SECURITY DEFINER
 
@@ -209,7 +218,7 @@ RPC SECURITY DEFINER (mỗi cái kèm lý do trong comment):
 - `search_gymers`, `get_day_slots`, `get_month_calendar`: cần đọc bảng mà client bị chặn (toạ độ, ngoại lệ lịch, booking của người khác để tính khung bận), chỉ trả dữ liệu công khai/đã lọc. `get_day_slots` chỉ trả `booked_by` (tên khách) khi người gọi chính là Gymer đó.
 - `create_booking`, `respond_booking`, `cancel_booking`, `create_review`: kiểm điều kiện nghiệp vụ và ghi vào bảng mà client không có quyền ghi.
 - Trigger `private.recompute_rating` (sau thay đổi `reviews`): cập nhật cột client không được ghi.
-Lỗi nghiệp vụ ném bằng `raise exception 'MÃ'` (ví dụ `SLOT_TAKEN`, `SLOT_NOT_OPEN`, `PRICE_CHANGED`, `FORBIDDEN`, `NOT_FOUND`, `BOOKING_EXPIRED`, `LIMIT_REACHED`, `VALIDATION`); mapper ở tầng services chuyển sang `AppError`. Khớp `ErrorCode` hiện có, hai mã mới (`PRICE_CHANGED`, `SLOT_NOT_OPEN`) tạm map về `VALIDATION`/`SLOT_TAKEN` (mục 5).
+Lỗi nghiệp vụ ném bằng `raise exception 'MÃ'` (ví dụ `SLOT_TAKEN`, `SLOT_NOT_OPEN`, `PRICE_CHANGED`, `FORBIDDEN`, `NOT_FOUND`, `BOOKING_EXPIRED`, `LIMIT_REACHED`, `ALREADY_STARTED`, `HAS_REVIEW`, `VALIDATION`); mapper ở tầng services chuyển sang `AppError`. Khớp `ErrorCode` hiện có, các mã mới (`PRICE_CHANGED`, `SLOT_NOT_OPEN`, `ALREADY_STARTED`, `HAS_REVIEW`) tạm map về `VALIDATION`/`SLOT_TAKEN`/`FORBIDDEN` (mục 5).
 
 ### 2.6 Đánh giá
 
@@ -234,7 +243,7 @@ Giảm nhẹ trong DB: tên tối đa 100 ký tự, tối đa 10 chứng chỉ m
 Khi làm xác minh sau (expand, không phá): thêm cột `status` (mặc định `unverified`), `file_path`, `verified_at`, bucket private `certificates` + policy `storage.objects` (schema do Supabase quản lý, rủi ro riêng) + quy trình người xác minh; làm ở plan riêng.
 Loại: giữ trạng thái xác minh thủ công "dựa trên niềm tin" (người dùng đã quyết không làm); bỏ hẳn chứng chỉ khỏi v1 (an toàn hơn về hiểu nhầm, nhưng mất thông tin hữu ích và mockup có sẵn; để người dùng chọn nếu thấy rủi ro khai gian lớn hơn lợi ích).
 
-### 2.8 Phạm vi v1: cắt (Q1: gói 10 buổi do người dùng chốt; các mục còn lại là GIẢ ĐỊNH đồng ý mặc định, chưa xác nhận)
+### 2.8 Phạm vi v1: cắt (Q1: gói 10 buổi do người dùng chốt; các mục còn lại đã được xác nhận ngầm, không phản đối)
 
 | Mục | Đề xuất | Lý do | Nếu cần sau |
 |---|---|---|---|
@@ -245,8 +254,8 @@ Loại: giữ trạng thái xác minh thủ công "dựa trên niềm tin" (ngư
 | Upload ảnh đại diện | Cắt (dùng URL ảnh Zalo) | Cần bucket public + policy | Bucket `avatars` |
 | Sửa/xoá đánh giá | Cắt | | Policy + trigger đã sẵn sàng tính lại |
 | Sửa mẫu giờ mở theo thứ trong tuần | Cắt (mẫu giống nhau mọi ngày, đóng/mở bằng ngoại lệ) | Mockup không có màn sửa mẫu | Thêm cột `weekday` (expand) |
-| Huỷ lịch bởi khách | GIỮ (người dùng chốt Q4) | Quy tắc mục 2.4A | |
-| Gymer huỷ buổi đã xác nhận | Cắt (Q12 còn mở) | Mockup không có | RPC bổ sung |
+| Huỷ lịch bởi khách | GIỮ (người dùng chốt Q4, `starts_at > now()`) | Quy tắc mục 2.4A | |
+| Gymer huỷ booking (cả đã xác nhận, cả quá khứ) | GIỮ (người dùng chốt Q12 = được) | Mockup không có; cùng RPC `cancel_booking`; xem Q13 | |
 | Xoá tài khoản tự phục vụ | Cắt (Q10) | Cần quy tắc giữ lịch sử | |
 
 ### 2.9 Dữ liệu cá nhân
@@ -298,7 +307,7 @@ Bảng và cột chính (chỉ cột đáng nói; `created_at/updated_at timesta
 - `gymer_open_hours`: `pk (gymer_id, start_time)`, `start_time time not null check (date_part('minute', start_time) = 0 and date_part('second', start_time) = 0)`.
 - `gymer_day_overrides`: `pk (gymer_id, day)`, `day date not null`, `is_open boolean not null default true`, `price_vnd int check (between 0 and 5000000)`.
 - `gymer_slot_overrides`: `pk (gymer_id, day, start_time)`, `is_open boolean not null`; cùng check giờ chẵn.
-- `bookings`: `id uuid pk default gen_random_uuid()`, `gymer_id uuid not null references gymer_profiles(user_id) on delete restrict`, `customer_id uuid not null references profiles(id) on delete restrict`, `starts_at timestamptz not null`, `ends_at timestamptz not null`, `goal text check (char_length <= 200)`, `price_vnd int not null check (>= 0)`, `status booking_status not null default 'pending'`, `expires_at timestamptz not null`, `responded_at timestamptz`. Check: `ends_at = starts_at + interval '60 minutes'`, `customer_id <> gymer_id`. Ràng buộc loại trừ ở 2.4. Index: `(customer_id, starts_at desc)`, `(gymer_id, status, starts_at)`.
+- `bookings`: `id uuid pk default gen_random_uuid()`, `gymer_id uuid not null references gymer_profiles(user_id) on delete restrict`, `customer_id uuid not null references profiles(id) on delete restrict`, `starts_at timestamptz not null`, `ends_at timestamptz not null`, `goal text check (char_length <= 200)`, `price_vnd int not null check (>= 0)`, `status booking_status not null default 'pending'`, `expires_at timestamptz not null`, `responded_at timestamptz`, `cancelled_at timestamptz`, `cancelled_by uuid references profiles(id) on delete restrict`. Check: `(status = 'cancelled') = (cancelled_at is not null)`, `ends_at = starts_at + interval '60 minutes'`, `customer_id <> gymer_id`. Ràng buộc loại trừ ở 2.4. Index: `(customer_id, starts_at desc)`, `(gymer_id, status, starts_at)`.
 - `booking_health_notes`: `booking_id uuid pk references bookings on delete cascade`, `note text not null check (char_length between 1 and 1000)`.
 - `reviews`: `id uuid pk`, `booking_id uuid not null unique references bookings`, `gymer_id`, `author_id`, `author_name text not null`, `rating smallint not null check (between 1 and 5)`, `body text check (<= 500)`. Index `(gymer_id, created_at desc)`.
 
@@ -351,7 +360,7 @@ Danh sách kiểm cho từng đợt:
 8. Trước đợt C: xác nhận đã có kết quả test cục bộ (báo cáo của dev kèm đầu ra) và Supabase có bật backup/PITR (database trống nên rủi ro mất dữ liệu thấp, nhưng nên giữ thói quen theo `docs/supabase-migrations.md`).
 9. Không có dấu vết xác minh chứng chỉ: grep `certificate_status`, `is_certified`, `verified` trong `supabase/migrations/` => kỳ vọng không có. Đợt B/C: `certificates` chỉ có `id`, `gymer_id`, `name` (+ cột thời gian).
 10. Đợt C: grep policy có `anon` => không có (Q3); mọi `grant select` cho `authenticated` đúng ma trận 2.5; policy ghi chú sức khoẻ chỉ cho Gymer khi `pending`/`confirmed`.
-11. Đợt D: `cancel_booking` đúng 2.4A (confirmed cần >= 2 giờ); không có RPC nào trả lat/lng.
+11. Đợt D: `cancel_booking` đúng 2.4A: vai khách có điều kiện `starts_at > now()`, vai Gymer không kiểm thời gian (và `HAS_REVIEW` nếu Q13 = a); không có hằng số "2 giờ" nào trong huỷ lịch; chỉ chuyển từ `pending`/`confirmed`; set `cancelled_at`, `cancelled_by`; không có RPC nào trả lat/lng. Đợt B: `bookings` có `cancelled_at`, `cancelled_by` và check nhất quán.
 
 ## 4. Rủi ro và cách giảm
 
@@ -368,6 +377,8 @@ Danh sách kiểm cho từng đợt:
 | R9 | `unaccent`/"đ", haversine tại cực, kết quả rỗng sai | Thấp | Ca test cụ thể |
 | R10 | Mô hình lịch suy ra sai (đặc biệt ngày T7/CN, ranh giới nửa đêm, múi giờ) | Trung bình | Test với `timezone = 'UTC'` và `'Asia/Ho_Chi_Minh'`; giờ chẵn 19:00 VN = 12:00 UTC cùng ngày; 07:00 VN = 00:00 UTC cùng ngày; không có giờ nào vượt ngày |
 | R11 | Pháp lý/riêng tư (mục 2.9) | Cao (ngoài kỹ thuật) | Người dùng tìm tư vấn pháp lý trước khi có người dùng thật; chặn `is_listed` cho đến khi có chính sách |
+| R14 | Huỷ phút chót của khách, không cửa sổ tối thiểu | Thấp-TB | Người dùng chấp nhận (2.4A); không phạt ở v1; có `cancelled_by/at` để sau này thống kê |
+| R15 | Gymer huỷ buổi quá khứ để né/xoá đánh giá | Trung bình | Q13: `HAS_REVIEW`, không đánh giá cho booking `cancelled`, ghi `cancelled_by`; lỗ hổng "huỷ trước khi khách đánh giá" còn lại nếu không chọn (c) |
 | R13 | Hiển thị chứng chỉ tự khai bị hiểu là đã xác minh, hoặc khai gian | Trung bình | Mục 2.7: không huy hiệu/tick xanh, nhãn "Tự khai", tiêu đề rõ; T10 bỏ `certified`/`verified`; cập nhật mockup trong Project; người duyệt UI kiểm khi nối dữ liệu thật |
 | R12 | `database.types.ts` lệch schema | Trung bình | Sinh bằng công cụ (mục 5, T9), không viết tay; kiểm typecheck |
 
@@ -442,7 +453,7 @@ Xác minh: nếu supabase/tests/local/run.sh đã có thì chạy nó và đưa 
 ### T6 — Migration M7 + test RLS (dev3, đợt 2)
 - File được phép: tạo `supabase/migrations/20261010100600_rls_booking_review.sql`, `supabase/tests/local/cases/10_rls.sql`.
 - M7: policy `bookings`, `booking_health_notes` (như ví dụ 2.5), `reviews`; policy bổ sung `SELECT` cho `profiles` (Gymer đọc hồ sơ khách có booking gửi cho mình) và `gymer_profiles` (khách đọc Gymer mình có booking dù đã `is_listed=false`). `grant select` cho `authenticated` trên 3 bảng; KHÔNG grant insert/update/delete.
-- `10_rls.sql`: tạo hai khách A, B, hai Gymer G1, G2 (dữ liệu gieo bằng role superuser/`service_role`); với từng vai (`set local role authenticated; set local request.jwt.claim.sub = ...`), assert: A chỉ thấy booking của A; G1 chỉ thấy booking gửi G1; B không đọc `booking_health_notes` của A; G2 không đọc; G1 đọc được khi `pending/confirmed`, không đọc sau `rejected` hoặc `cancelled`; chứng chỉ của Gymer `is_listed=false` không đọc được bởi khách không có booking, người khác không ghi/xoá được chứng chỉ của G1; `anon` không đọc/ghi bảng nào; không ai ghi được `bookings`/`reviews` trực tiếp; client không ghi được `rating_avg`; `gymer_locations` của G1 không đọc được bởi A.
+- `10_rls.sql`: tạo hai khách A, B, hai Gymer G1, G2 (dữ liệu gieo bằng role superuser/`service_role`); với từng vai (`set local role authenticated; set local request.jwt.claim.sub = ...`), assert: A chỉ thấy booking của A; G1 chỉ thấy booking gửi G1; B không đọc `booking_health_notes` của A; G2 không đọc; G1 đọc được khi `pending/confirmed`, không đọc sau `rejected` hoặc `cancelled` (kể cả khi chính G1 huỷ); chứng chỉ của Gymer `is_listed=false` không đọc được bởi khách không có booking, người khác không ghi/xoá được chứng chỉ của G1; `anon` không đọc/ghi bảng nào; không ai ghi được `bookings`/`reviews` trực tiếp; client không ghi được `rating_avg`; `gymer_locations` của G1 không đọc được bởi A.
 - Hoàn thành: `bash supabase/tests/local/run.sh` xanh, đầu ra kèm; mỗi assert có thông điệp rõ.
 - Phụ thuộc: T2, T4, T5 (bảng và M6) để chạy.
 
@@ -457,7 +468,7 @@ Xác minh: nếu supabase/tests/local/run.sh đã có thì chạy nó và đưa 
 - Nội dung:
   - `create_booking(p_gymer_id uuid, p_starts_at timestamptz, p_goal text, p_health_note text, p_expected_price int) returns uuid`: kiểm đã đăng nhập; Gymer `is_listed` và `accepts_requests`; không tự đặt; thời điểm hợp lệ (mặc định sau hiện tại >= 2 giờ, <= 60 ngày; Q5); khung đang mở theo 2.4 (giờ VN); lấy advisory lock theo Gymer; chuyển `pending` quá hạn chồng khung sang `expired`; giới hạn 3 `pending`/khách (`LIMIT_REACHED`); tính giá ở server, lệch `p_expected_price` => `PRICE_CHANGED`; chèn `bookings` (`ends_at = starts_at + 60 phút`, `expires_at = least(now() + 24h, starts_at)`) và `booking_health_notes` nếu có ghi chú; bắt `exclusion_violation` => `SLOT_TAKEN`.
   - `respond_booking(p_booking_id uuid, p_decision text)`: chỉ Gymer của booking; chỉ từ `pending` chưa hết hạn (quá hạn => `BOOKING_EXPIRED` và chuyển `expired`); `p_decision` thuộc `confirmed|rejected`.
-  - `cancel_booking(p_booking_id uuid)`: chỉ khách của booking; quy tắc đúng mục 2.4A: `pending` huỷ được trước `starts_at`; `confirmed` chỉ khi còn >= 2 giờ, sát giờ hơn ném `TOO_LATE`; trạng thái khác `FORBIDDEN`; sang `cancelled`, khung trống lại ngay. Mã lỗi `TOO_LATE` tạm map về `FORBIDDEN` ở tầng services.
+  - `cancel_booking(p_booking_id uuid)`: đúng mục 2.4A. Xác định vai bằng `auth.uid()` so với `customer_id`/`gymer_id` của booking (khoá hàng `for update`); khách: `pending|confirmed` và `starts_at > now()` nếu không `ALREADY_STARTED`; Gymer: `pending|confirmed`, không kiểm thời gian; nếu Q13 = (a) thêm: Gymer gọi khi booking đã có hàng trong `reviews` => `HAS_REVIEW`. Set `status='cancelled'`, `cancelled_at=now()`, `cancelled_by=auth.uid()`. Trạng thái khác hoặc người lạ => `FORBIDDEN`. Không có hằng số cửa sổ giờ.
   - `create_review(p_booking_id uuid, p_rating int, p_body text) returns uuid`: chỉ khách của booking, `confirmed` và `ends_at < now()`, chưa có đánh giá; chụp `author_name` từ `profiles.display_name`.
   - Trigger BEFORE INSERT/UPDATE trên `gymer_day_overrides` và `gymer_slot_overrides` (đặt `is_open = false`): nếu có booking `pending|confirmed` giữ khung/ngày đó => `SLOT_HAS_BOOKING`; dùng cùng advisory lock.
   - Mã lỗi đúng danh sách 2.5, ném bằng `raise exception '<MÃ>'`.
@@ -466,7 +477,7 @@ Xác minh: nếu supabase/tests/local/run.sh đã có thì chạy nó và đưa 
 
 ### T9 — Test nghiệp vụ (dev3, đợt 3)
 - File được phép: tạo `supabase/tests/local/cases/20_booking.sql`, `30_schedule_pricing.sql`, `40_search.sql`, `50_reviews_rating.sql`.
-- Nội dung (mỗi file là chuỗi assert với dữ liệu gieo riêng, dọn sau mình): chống trùng (kể cả 2 kết nối psql thực sự song song dùng `pg_sleep`/hai tiến trình nền nếu làm được trong `run.sh` mà không sửa nó; nếu không, ghi rõ chỉ kiểm tuần tự); giá T7/CN và override ngày; snapshot giá không đổi khi Gymer đổi giá sau; múi giờ: chạy cùng ca với `set timezone = 'UTC'` và `'Asia/Ho_Chi_Minh'`; hết hạn pending giải phóng khung; giới hạn 3 pending; huỷ lịch theo 2.4A (`pending` huỷ được; `confirmed` còn >= 2 giờ huỷ được; < 2 giờ bị `TOO_LATE`; sau huỷ người khác đặt lại được khung; huỷ booking của người khác bị chặn); certificates: tối đa 10 dòng/Gymer; tìm: bán kính 1/2/3/5, hộp bao ở vĩ độ khác, `unaccent` với "đ", Gymer không `is_listed` không xuất hiện, bộ lọc rating/tuổi/giá; rating: trigger tính lại khi thêm đánh giá, đánh giá chỉ khi `confirmed` và đã qua giờ, mỗi booking một đánh giá; huỷ lịch/`BOOKING_EXPIRED`.
+- Nội dung (mỗi file là chuỗi assert với dữ liệu gieo riêng, dọn sau mình): chống trùng (kể cả 2 kết nối psql thực sự song song dùng `pg_sleep`/hai tiến trình nền nếu làm được trong `run.sh` mà không sửa nó; nếu không, ghi rõ chỉ kiểm tuần tự); giá T7/CN và override ngày; snapshot giá không đổi khi Gymer đổi giá sau; múi giờ: chạy cùng ca với `set timezone = 'UTC'` và `'Asia/Ho_Chi_Minh'`; hết hạn pending giải phóng khung; giới hạn 3 pending; huỷ lịch theo 2.4A: khách huỷ `pending` và `confirmed` khi `starts_at > now()` được; khách huỷ booking đã bắt đầu/đã qua => `ALREADY_STARTED`; Gymer huỷ `confirmed` trong quá khứ và đang diễn ra được; Gymer huỷ booking đã có đánh giá => `HAS_REVIEW` (nếu Q13 = a; nếu b thì được và đánh giá còn nguyên, `rating_avg` không đổi); huỷ `rejected`/`expired`/`cancelled` => `FORBIDDEN`; người thứ ba huỷ => `FORBIDDEN`; sau huỷ người khác đặt lại được khung và Gymer mất quyền đọc ghi chú sức khoẻ; `create_review` cho booking `cancelled` => lỗi; thống kê `confirmed` không đếm booking đã huỷ; certificates: tối đa 10 dòng/Gymer; tìm: bán kính 1/2/3/5, hộp bao ở vĩ độ khác, `unaccent` với "đ", Gymer không `is_listed` không xuất hiện, bộ lọc rating/tuổi/giá; rating: trigger tính lại khi thêm đánh giá, đánh giá chỉ khi `confirmed` và đã qua giờ, mỗi booking một đánh giá; huỷ lịch/`BOOKING_EXPIRED`.
 - Hoàn thành: `run.sh` xanh kèm đầu ra; mỗi ca có tên; ca nào không kiểm được (ví dụ song song thật) ghi rõ trong đầu ra.
 - Phụ thuộc: T7, T8 để chạy; có thể viết trước.
 
@@ -479,6 +490,8 @@ Các lệch giữa UI hiện tại và schema, kèm bên đổi (đề xuất; u
 | `endIso` thừa | `BookingCreateInput.endIso` | App bỏ `endIso` (server tính +60 phút); thêm `expectedPrice: number`, `healthNote?: string` (đã có `note`; đổi tên thành `healthNote` để không nhầm) |
 | Thiếu danh sách booking của khách | `BookingRepository` chỉ có `create` | App thêm `listMine(): Promise<MyBooking[]>` (kiểu mới `MyBooking` có `gymerName`, `status: BookingStatus`) |
 | Chứng chỉ không xác minh (Q8) | `Gymer.certified: boolean`; `Certificate.verified: boolean`; mock có `certified`/`verified`; gallery có Tag "Đã xác minh" | Bỏ `Gymer.certified` và `Certificate.verified` (còn `{ id, name }`); mock bỏ hai trường; Tag ví dụ ở gallery đổi sang "Tự khai" không dấu tick; UI hồ sơ khi dựng phải theo mục 2.7 |
+| Form địa điểm Gymer (Q2) | Chưa có màn thật | Khi dựng: nhãn "Phòng tập / địa điểm công cộng bạn dạy" và ghi chú không nhập nhà riêng (mục 2.3); không thêm kiểm duyệt |
+| Huỷ lịch (Q4) | `RequestRepository` chỉ có `respond` | Thêm `cancel(bookingId)` dùng chung hai phía (ở `BookingRepository` hoặc `RequestRepository`, chọn một khi làm); `MyBooking`/`BookingRequest` có `cancelledBy?: 'customer'|'gymer'`; lỗi `ALREADY_STARTED`, `HAS_REVIEW` map về `FORBIDDEN` |
 | Gói 10 buổi (Q1) | Mockup có dòng bảng giá "gói 10 buổi"; type và mock không có | Không đổi type; chỉ nhắc: không dựng dòng này khi làm màn hồ sơ |
 | Trạng thái thêm | `RequestStatus` 3 giá trị | Giữ nguyên; thêm `BookingStatus = RequestStatus | 'cancelled' | 'expired'` dùng cho phía khách; mapper phía Gymer lọc `cancelled` khỏi danh sách |
 | `distanceKm` bắt buộc | `Gymer.distanceKm: number` | `getDetail` không có tâm tìm kiếm => đổi thành `distanceKm?: number`; `GymerCard` ẩn đoạn "cách ..." khi vắng |
@@ -518,7 +531,7 @@ CHỈ kiểm được khi chạy pipeline thật (hoặc trên stack Supabase th
 
 ## 7. Thứ tự thực hiện và điểm kiểm tra
 
-1. Người dùng đã trả lời Q1–Q4, Q7, Q8, Q11 (mục 0). Còn: duyệt plan, xác nhận giả định Q1 (các mục cắt ngoài gói 10 buổi), con số 2 giờ ở 2.4A, chọn "tự khai" hay "bỏ hẳn" chứng chỉ (2.7), và Q12. sen1 cập nhật plan nếu đổi; trạng thái về `CHỜ APPROVE` sau mỗi lần sửa.
+1. Người dùng đã trả lời Q1–Q4, Q7, Q8, Q11, Q12 và các điểm xác nhận (mục 0). Còn lại: duyệt plan và quyết Q13 (mặc định a). sen1 cập nhật plan nếu đổi; trạng thái về `CHỜ APPROVE` sau mỗi lần sửa.
 2. Đợt viết 1 (T1–T3). Kiểm tra: T3 có đầu ra thật chứng minh harness chạy hoặc báo lỗi nguyên văn. sen1 review.
 3. Merge ĐỢT A (M1 một mình). Kiểm tra: mục 3.2 điểm 1–4; ghi lại output thật của dry-run vào `docs/ci-cd-setup.md` hoặc báo lại (xác nhận/bác bỏ giả định "dry-run chỉ in tên file").
 4. Đợt viết 2 (T4–T6), review. Merge ĐỢT B (M2–M5) sau khi harness xanh. Kiểm tra: bảng đủ, RLS bật, advisor.
