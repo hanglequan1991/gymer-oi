@@ -134,3 +134,101 @@ describe('SessionProvider', () => {
     expect(signOut).toHaveBeenCalledTimes(1);
   });
 });
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
+describe('SessionProvider: đăng nhập lại (N1)', () => {
+  it('đang ready: reauthenticate giữ trạng thái ready trong lúc chờ, không chuyển sang loading', async () => {
+    const pending = deferred<{ userId: string }>();
+    const signIn = vi.fn(() => pending.promise);
+    renderProvider({ getSession: vi.fn(async () => ({ userId: 'u1' })), signIn });
+    expect(await screen.findByTestId('user')).toHaveTextContent('u1');
+
+    fireEvent.click(screen.getByRole('button', { name: 'reauth' }));
+    await waitFor(() => expect(signIn).toHaveBeenCalledTimes(1));
+    expect(screen.getByTestId('status')).toHaveTextContent('ready');
+    expect(screen.getByTestId('user')).toHaveTextContent('u1');
+
+    pending.resolve({ userId: 'u2' });
+    expect(await screen.findByText('u2')).toBeInTheDocument();
+    expect(screen.getByTestId('status')).toHaveTextContent('ready');
+  });
+
+  it('đang ready: reauthenticate xoá phiên cục bộ trước khi đăng nhập lại', async () => {
+    const order: string[] = [];
+    const signOut = vi.fn(async () => {
+      order.push('signOut');
+    });
+    const signIn = vi.fn(async () => {
+      order.push('signIn');
+      return { userId: 'u2' };
+    });
+    renderProvider({ getSession: vi.fn(async () => ({ userId: 'u1' })), signIn, signOut });
+    expect(await screen.findByTestId('user')).toHaveTextContent('u1');
+
+    fireEvent.click(screen.getByRole('button', { name: 'reauth' }));
+    expect(await screen.findByText('u2')).toBeInTheDocument();
+    expect(order).toEqual(['signOut', 'signIn']);
+  });
+
+  it('đang ready: đăng nhập lại thất bại UNAUTHENTICATED thì chuyển sang error với hành động relogin', async () => {
+    const signIn = vi.fn(async () => {
+      throw unauth();
+    });
+    renderProvider({ getSession: vi.fn(async () => ({ userId: 'u1' })), signIn });
+    expect(await screen.findByTestId('user')).toHaveTextContent('u1');
+
+    fireEvent.click(screen.getByRole('button', { name: 'reauth' }));
+    expect(await screen.findByTestId('action')).toHaveTextContent('relogin');
+    expect(screen.getByTestId('status')).toHaveTextContent('error');
+  });
+
+  it('đang ready: đăng nhập lại thất bại NETWORK hết lượt tự thử thì chuyển sang error với hành động retry', async () => {
+    const signIn = vi.fn(async () => {
+      throw network();
+    });
+    renderProvider({ getSession: vi.fn(async () => ({ userId: 'u1' })), signIn });
+    expect(await screen.findByTestId('user')).toHaveTextContent('u1');
+
+    fireEvent.click(screen.getByRole('button', { name: 'reauth' }));
+    expect(await screen.findByTestId('action')).toHaveTextContent('retry');
+    // 1 lần đầu + 2 lần tự thử (retryDelaysMs có 2 phần tử).
+    expect(signIn).toHaveBeenCalledTimes(3);
+  });
+
+  it('đang error: reauthenticate chuyển sang loading rồi sang ready', async () => {
+    const pending = deferred<{ userId: string }>();
+    const signIn = vi
+      .fn()
+      .mockRejectedValueOnce(new AppError('FORBIDDEN', 'chưa cấp quyền'))
+      .mockImplementationOnce(() => pending.promise);
+    renderProvider({ signIn });
+    expect(await screen.findByTestId('action')).toHaveTextContent('grant');
+
+    fireEvent.click(screen.getByRole('button', { name: 'reauth' }));
+    expect(await screen.findByTestId('status')).toHaveTextContent('loading');
+
+    pending.resolve({ userId: 'u9' });
+    expect(await screen.findByTestId('user')).toHaveTextContent('u9');
+  });
+
+  it('đang ready: retry không giữ ready, vẫn chuyển sang loading như cũ', async () => {
+    const pending = deferred<{ userId: string }>();
+    const signIn = vi.fn(() => pending.promise);
+    renderProvider({ getSession: vi.fn(async () => ({ userId: 'u1' })), signIn });
+    expect(await screen.findByTestId('user')).toHaveTextContent('u1');
+
+    fireEvent.click(screen.getByRole('button', { name: 'retry' }));
+    expect(await screen.findByTestId('status')).toHaveTextContent('loading');
+    pending.resolve({ userId: 'u3' });
+    expect(await screen.findByTestId('user')).toHaveTextContent('u3');
+  });
+});

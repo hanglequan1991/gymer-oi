@@ -47,6 +47,9 @@ export function SessionProvider({ retryDelaysMs = DEFAULT_RETRY_DELAYS_MS, child
   const runRef = useRef(0);
   const delaysRef = useRef(retryDelaysMs);
   delaysRef.current = retryDelaysMs;
+  // Trạng thái hiện tại để reauthenticate biết có đang ở 'ready' không (đọc lúc gọi, không đưa vào deps).
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
   const isCurrent = useCallback((runId: number) => runRef.current === runId, []);
 
@@ -115,9 +118,11 @@ export function SessionProvider({ retryDelaysMs = DEFAULT_RETRY_DELAYS_MS, child
     await signInWithPolicy(runId);
   }, [signInWithPolicy]);
 
+  // Đang 'ready' thì giữ nguyên trạng thái trong lúc đăng nhập lại: cây giao diện (children) không bị gỡ,
+  // ô nhập và nội dung đang soạn còn nguyên. Chỉ khi thất bại mới chuyển sang 'error' (signInWithPolicy lo việc đó).
   const reauthenticate = useCallback(async () => {
     const runId = ++runRef.current;
-    setState({ status: 'loading' });
+    if (stateRef.current.status !== 'ready') setState({ status: 'loading' });
     try {
       await session.signOut();
     } catch {

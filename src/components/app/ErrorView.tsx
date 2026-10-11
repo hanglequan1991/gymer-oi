@@ -1,6 +1,6 @@
 // Thông báo lỗi tải dữ liệu kèm nút phù hợp: "Đăng nhập lại" với lỗi phiên, "Thử lại" với lỗi tạm thời.
 // Lỗi NOT_FOUND và lỗi nghiệp vụ không có nút (không thử lại được).
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GButton, Notice } from '@/components/ui';
 import { useSession } from '@/hooks';
 import { isAuthError, isRetryableError, messageFromError, vi, type ErrorContext } from '@/i18n';
@@ -15,6 +15,14 @@ export interface ErrorViewProps {
 export function ErrorView({ error, context, onRetry }: ErrorViewProps) {
   const { reauthenticate } = useSession();
   const [busy, setBusy] = useState(false);
+  // Đăng nhập lại thất bại làm AuthGate gỡ màn này: không gọi setBusy trên component đã unmount.
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const authError = isAuthError(error);
   const canRetry = !authError && isRetryableError(error) && onRetry !== undefined;
@@ -23,9 +31,9 @@ export function ErrorView({ error, context, onRetry }: ErrorViewProps) {
     setBusy(true);
     try {
       await reauthenticate();
-      onRetry?.();
+      if (mountedRef.current) onRetry?.();
     } finally {
-      setBusy(false);
+      if (mountedRef.current) setBusy(false);
     }
   }
 

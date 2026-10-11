@@ -292,6 +292,44 @@ describe('BookingConfirmPage', () => {
     expect(screen.getByTestId('page-header')).toHaveTextContent('Xác nhận đặt lịch');
   });
 
+  it('đặt xong thì sang thành công và nháp bị xoá không đẩy về chi tiết Gymer', async () => {
+    renderConfirm();
+    await waitLoaded();
+    fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }));
+    await screen.findByText('trang thành công');
+    // Chờ một vòng effect để chắc chắn không có chuyển hướng muộn.
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(screen.getByText('trang thành công')).toBeInTheDocument();
+    expect(screen.queryByText('trang chi tiết')).not.toBeInTheDocument();
+    expect(useBookingDraft.getState().slotId).toBeUndefined();
+  });
+
+  it('lỗi mạng rồi đối chiếu thấy lượt sẵn có: sang thành công và không về chi tiết Gymer', async () => {
+    const create = vi.fn(async () => {
+      throw new AppError('NETWORK', 'net');
+    });
+    renderConfirm({ create, listMine: vi.fn(async () => [pending]) });
+    await waitLoaded();
+    fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Thử lại' }));
+    await screen.findByText('trang thành công');
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(screen.queryByText('trang chi tiết')).not.toBeInTheDocument();
+  });
+
+  it('lỗi mạng và lượt đã được Gymer xác nhận: không gọi create lần hai, sang thành công', async () => {
+    const create = vi.fn(async () => {
+      throw new AppError('NETWORK', 'net');
+    });
+    const confirmed: MyBooking = { ...pending, id: 'b-conf', status: 'confirmed' };
+    renderConfirm({ create, listMine: vi.fn(async () => [confirmed]) });
+    await waitLoaded();
+    fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Thử lại' }));
+    await screen.findByText('trang thành công');
+    expect(create).toHaveBeenCalledTimes(1);
+  });
+
   it('không có nháp thì chuyển về chi tiết Gymer', async () => {
     useBookingDraft.getState().clear();
     renderConfirm();

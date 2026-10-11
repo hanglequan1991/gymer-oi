@@ -9,6 +9,7 @@
 
 import type { Gender } from '@/types/domain';
 import { VN_WEEKDAYS } from '@/utils/date';
+import { formatVNTime, formatVNWeekdayDate } from '@/utils/booking';
 
 const GENDER_LABEL: Record<Gender, string> = {
   female: 'Nữ',
@@ -43,24 +44,31 @@ export function genderLabel(g: Gender): string {
   return GENDER_LABEL[g];
 }
 
-/** "Thứ 7" hoặc "CN". */
+/**
+ * "Thứ 7" hoặc "CN" theo lịch địa phương của `d`.
+ * Chỉ dùng cho ngày lịch (đối tượng Date đã là ngày cần hiển thị, ví dụ ô lịch).
+ * KHÔNG dùng cho thời điểm tuyệt đối (ISO từ server): dùng formatVNWeekdayDate trong utils/booking.ts.
+ */
 export function weekdayVN(d: Date): string {
   return VN_WEEKDAYS[d.getDay()];
 }
 
-/** "17/10" (ngày/tháng, có số 0 đứng đầu). */
+/**
+ * "17/10" (ngày/tháng, có số 0 đứng đầu) theo lịch địa phương của `d`.
+ * Chỉ dùng cho ngày lịch, KHÔNG dùng cho thời điểm tuyệt đối (xem ghi chú của weekdayVN).
+ */
 export function formatDateVN(d: Date): string {
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   return `${dd}/${mm}`;
 }
 
-/** "Thứ 7, 17/10 · 09:00 – 10:00" từ hai chuỗi ISO. */
+/**
+ * "Thứ 7, 17/10 · 09:00 – 10:00" từ hai chuỗi ISO, theo giờ Việt Nam (UTC+7) bất kể giờ máy.
+ * Mốc bắt đầu quyết định ngày hiển thị; giờ kết thúc chỉ lấy HH:mm.
+ */
 export function formatTimeRange(startIso: string, endIso: string): string {
-  const start = new Date(startIso);
-  const end = new Date(endIso);
-  const hhmm = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-  return `${weekdayVN(start)}, ${formatDateVN(start)} · ${hhmm(start)} – ${hhmm(end)}`;
+  return `${formatVNWeekdayDate(startIso)} · ${formatVNTime(startIso)} – ${formatVNTime(endIso)}`;
 }
 
 /** "Tháng 10/2026" với month 0-based. */

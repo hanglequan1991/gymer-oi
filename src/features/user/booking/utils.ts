@@ -33,7 +33,8 @@ export function errorCodeOf(err: unknown): string | null {
 }
 
 /**
- * Tìm lượt đã gửi trước đó khớp với lần gửi vừa lỗi mạng: cùng Gymer, cùng giờ bắt đầu, còn chờ duyệt.
+ * Tìm lượt đã gửi trước đó khớp với lần gửi vừa lỗi mạng: cùng Gymer, cùng giờ bắt đầu,
+ * đang chờ duyệt hoặc đã được xác nhận (Gymer có thể xác nhận ngay trước khi khách thử lại).
  * So sánh theo thời điểm (getTime) để không lệch vì khác cách viết offset.
  */
 export function findSubmittedMatch(
@@ -43,7 +44,10 @@ export function findSubmittedMatch(
 ): MyBooking | undefined {
   const target = new Date(startIso).getTime();
   return mine.find(
-    (b) => b.gymerId === gymerId && b.status === 'pending' && new Date(b.start).getTime() === target,
+    (b) =>
+      b.gymerId === gymerId &&
+      (b.status === 'pending' || b.status === 'confirmed') &&
+      new Date(b.start).getTime() === target,
   );
 }
 

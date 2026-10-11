@@ -55,6 +55,20 @@ describe('findSubmittedMatch', () => {
       findSubmittedMatch([{ ...base, status: 'cancelled' }], 'g1', '2026-10-17T09:00:00+07:00'),
     ).toBeUndefined();
   });
+
+  it('khớp lượt đã confirmed (Gymer xác nhận trước khi khách thử lại)', () => {
+    const confirmed = { ...base, id: 'b2', status: 'confirmed' as const };
+    expect(findSubmittedMatch([confirmed], 'g1', '2026-10-17T09:00:00+07:00')?.id).toBe('b2');
+  });
+
+  it('không khớp rejected, expired, và khi có nhiều lượt thì chọn lượt cùng Gymer và giờ', () => {
+    const iso = '2026-10-17T09:00:00+07:00';
+    expect(findSubmittedMatch([{ ...base, status: 'rejected' }], 'g1', iso)).toBeUndefined();
+    expect(findSubmittedMatch([{ ...base, status: 'expired' }], 'g1', iso)).toBeUndefined();
+    const other = { ...base, id: 'b3', gymerId: 'g2', status: 'confirmed' as const };
+    const match = { ...base, id: 'b4', status: 'confirmed' as const };
+    expect(findSubmittedMatch([other, match], 'g1', iso)?.id).toBe('b4');
+  });
 });
 
 describe('priceOfDay', () => {

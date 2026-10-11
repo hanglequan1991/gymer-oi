@@ -1,8 +1,11 @@
 // Kiểm thử AuthGate: ba trạng thái, nút theo hành động của phiên, chế độ bypass của mock.
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { SessionContext, type SessionApi, type SessionState } from '@/hooks/useSession';
+import { ServicesContext } from '@/hooks/useServices';
+import { SessionContext, useSession, type SessionApi, type SessionState } from '@/hooks/useSession';
+import { SessionProvider } from '@/providers/SessionProvider';
 import { AppError } from '@/services/errors';
+import { createStubServices } from '@/test/stubServices';
 import { AuthGate } from './AuthGate';
 
 function renderGate(state: SessionState, { bypass = false }: { bypass?: boolean } = {}) {
@@ -58,5 +61,64 @@ describe('AuthGate', () => {
     renderGate({ status: 'error', error: new Error('x'), action: 'retry' }, { bypass: true });
     expect(screen.getByText('nội dung app')).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+});
+
+// Tích hợp N1: đăng nhập lại khi đang ready không được gỡ cây, ô nhập giữ nội dung.
+describe('AuthGate với SessionProvider thật (N1)', () => {
+  function renderWithProvider(signIn: () => Promise<{ userId: string }>, signOut = vi.fn(async () => undefined)) {
+    const services = createStubServices({
+      session: { getSession: vi.fn(async () => ({ userId: 'u1' })), signIn, signOut },
+    });
+    function Screen() {
+      const { reauthenticate } = useSession();
+      return (
+        <div>
+          <input aria-label="ghi chú" />
+          <button onClick={() => void reauthenticate()}>đăng nhập lại</button>
+        </div>
+      );
+    }
+    render(
+      <ServicesContext.Provider value={services}>
+        <SessionProvider retryDelaysMs={[0, 0]}>
+          <AuthGate>
+            <Screen />
+          </AuthGate>
+        </SessionProvider>
+      </ServicesContext.Provider>,
+    );
+  }
+
+  it('ô nhập giữ nguyên nội dung và không bị remount khi đăng nhập lại thành công', async () => {
+    let finish!: (v: { userId: string }) => void;
+    const signIn = vi.fn(() => new Promise<{ userId: string }>((resolve) => (finish = resolve)));
+    renderWithProvider(signIn);
+
+    const input = (await screen.findByLabelText('ghi chú')) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'đau gối trái' } });
+    fireEvent.click(screen.getByRole('button', { name: 'đăng nhập lại' }));
+
+    await waitFor(() => expect(signIn).toHaveBeenCalledTimes(1));
+    // Đang chờ đăng nhập: vẫn là cùng một ô, nội dung còn nguyên.
+    expect(screen.getByLabelText('ghi chú')).toBe(input);
+    expect(input.value).toBe('đau gối trái');
+
+    finish({ userId: 'u2' });
+    await waitFor(() => expect(signIn).toHaveReturnedTimes(1));
+    expect(screen.getByLabelText('ghi chú')).toBe(input);
+    expect(input.value).toBe('đau gối trái');
+  });
+
+  it('đăng nhập lại thất bại: AuthGate hiện màn lỗi thay cho nội dung', async () => {
+    const signIn = vi.fn(async () => {
+      throw new AppError('UNAUTHENTICATED', 'token hỏng');
+    });
+    renderWithProvider(signIn);
+
+    await screen.findByLabelText('ghi chú');
+    fireEvent.click(screen.getByRole('button', { name: 'đăng nhập lại' }));
+    expect(await screen.findByTestId('auth-gate-error')).toBeInTheDocument();
+    expect(screen.queryByLabelText('ghi chú')).not.toBeInTheDocument();
   });
 });

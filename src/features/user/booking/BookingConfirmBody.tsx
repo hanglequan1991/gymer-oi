@@ -30,9 +30,11 @@ type Feedback =
 
 export interface BookingConfirmBodyProps {
   draft: ReadyDraft;
+  /** Gọi đúng lúc đặt xong, trước khi xoá nháp, để trang cha không chuyển hướng về chi tiết Gymer. */
+  onCompleted?: () => void;
 }
 
-export function BookingConfirmBody({ draft }: BookingConfirmBodyProps) {
+export function BookingConfirmBody({ draft, onCompleted }: BookingConfirmBodyProps) {
   const { gymers, schedule, bookings } = useServices();
   const navigate = useNavigate();
   const t = vi.booking;
@@ -58,8 +60,12 @@ export function BookingConfirmBody({ draft }: BookingConfirmBodyProps) {
     return { gymer: detail.gymer, price: priceOfDay(days, dateIso) };
   }, [gymerId, dateIso]);
 
-  /** Sau khi đã xoá nháp, chuyển sang màn thành công. Chuyển trước rồi mới xoá nháp để màn không bị đẩy về chi tiết. */
+  /**
+   * Chuyển sang màn thành công rồi mới xoá nháp. Báo trang cha trước (đồng bộ) để effect chuyển hướng
+   * của trang đó bỏ qua khi nháp bị xoá, tránh ghi đè màn thành công.
+   */
   function finish(bookingId: string) {
+    onCompleted?.();
     navigate(bookingSuccess(bookingId), { replace: true });
     useBookingDraft.getState().clear();
   }
