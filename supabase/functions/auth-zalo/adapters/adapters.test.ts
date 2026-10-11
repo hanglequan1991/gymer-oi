@@ -1,7 +1,7 @@
 // @vitest-environment node
 // Test các adapter của auth-zalo bằng client giả. Không gọi mạng, không gọi Supabase thật.
 import { describe, it, expect } from 'vitest';
-import { createZaloVerifier, parseZaloMe } from './zaloVerifier.ts';
+import { createZaloVerifier, parseZaloMeText } from './zaloVerifier.ts';
 import type { FetchFn } from './zaloVerifier.ts';
 import { createUserStore, StoreError } from './userStore.ts';
 import type { AdminUsersLike, DbError, DbLike } from './userStore.ts';
@@ -26,17 +26,26 @@ async function catchError(p: Promise<unknown>): Promise<unknown> {
   }
 }
 
-describe('parseZaloMe', () => {
+/** Lấy mã lỗi ZaloAuthError (hoặc undefined nếu không ném). */
+function codeOf(fn: () => unknown): string | undefined {
+  try {
+    fn();
+    return undefined;
+  } catch (e) {
+    expect(e).toBeInstanceOf(ZaloAuthError);
+    return (e as ZaloAuthError).code;
+  }
+}
+
+describe('parseZaloMeText', () => {
   it('lấy id dạng chuỗi, name và picture.data.url', () => {
-    expect(parseZaloMe({ id: 'abc', name: 'An', picture: { data: { url: 'https://x/y.png' } } })).toEqual({
-      zaloId: 'abc',
-      name: 'An',
-      avatarUrl: 'https://x/y.png',
-    });
+    expect(
+      parseZaloMeText('{"id":"123","name":"An","picture":{"data":{"url":"https://x/y.png"}}}'),
+    ).toEqual({ zaloId: '123', name: 'An', avatarUrl: 'https://x/y.png' });
   });
 
-  it('chấp nhận id số nguyên an toàn và picture dạng chuỗi', () => {
-    expect(parseZaloMe({ id: 42, name: 'B', picture: 'https://x/z.png' })).toEqual({
+  it('chấp nhận id số an toàn và picture dạng chuỗi', () => {
+    expect(parseZaloMeText('{"id":42,"name":"B","picture":"https://x/z.png"}')).toEqual({
       zaloId: '42',
       name: 'B',
       avatarUrl: 'https://x/z.png',
@@ -44,51 +53,65 @@ describe('parseZaloMe', () => {
   });
 
   it('id chuỗi 19 chữ số giữ nguyên từng ký tự', () => {
-    expect(parseZaloMe({ id: '9007199254740993', name: 'D' }).zaloId).toBe('9007199254740993');
-    expect(parseZaloMe({ id: '12345678901234567890', name: 'D' }).zaloId).toBe('12345678901234567890');
+    expect(parseZaloMeText('{"id":"9007199254740993","name":"D"}').zaloId).toBe('9007199254740993');
+    expect(parseZaloMeText('{"id":"1234567890123456789","name":"D"}').zaloId).toBe('1234567890123456789');
   });
 
-  it('id số lớn hơn 2^53 là UNAVAILABLE (đã mất độ chính xác khi parse)', () => {
-    // 2^53 + 1 không biểu diễn chính xác được dưới dạng số: JSON.parse làm tròn về 2^53, và 2^53 không phải safe integer.
-    expect(() => parseZaloMe({ id: 2 ** 53, name: 'E' })).toThrow(ZaloAuthError);
-    expect(() => parseZaloMe({ id: 2 ** 60, name: 'E' })).toThrow(ZaloAuthError);
-    const err = (() => {
-      try {
-        parseZaloMe({ id: 2 ** 60, name: 'E' });
-      } catch (e) {
-        return e;
-      }
-      return undefined;
-    })();
-    expect((err as ZaloAuthError).code).toBe('UNAVAILABLE');
+  it('id số 19 chữ số (không có nháy) giữ nguyên từng chữ số, không bị làm tròn', () => {
+    // Số này vượt 2^53 nên JSON.parse sẽ làm tròn; id trích từ văn bản gốc thì không.
+    expect(parseZaloMeText('{"id":9007199254740993,"name":"E"}').zaloId).toBe('9007199254740993');
+    expect(parseZaloMeText('{"id":1234567890123456789,"name":"E"}').zaloId).toBe('1234567890123456789');
   });
 
-  it('id số không nguyên hoặc không hữu hạn là UNAVAILABLE', () => {
-    expect(() => parseZaloMe({ id: 1.5, name: 'F' })).toThrow(ZaloAuthError);
-    expect(() => parseZaloMe({ id: Number.NaN, name: 'F' })).toThrow(ZaloAuthError);
-    expect(() => parseZaloMe({ id: Number.POSITIVE_INFINITY, name: 'F' })).toThrow(ZaloAuthError);
+  it('hai id 19 chữ số chỉ khác chữ số cuối cho ra hai zaloId khác nhau (cả dạng số và chuỗi)', () => {
+    // Sanity: qua JSON.parse hai số này trùng nhau, nên nếu dùng parsed.id thì sẽ gộp hai người dùng.
+    expect(Number('1234567890123456789')).toBe(Number('1234567890123456788'));
+
+    const numA = parseZaloMeText('{"id":1234567890123456789,"name":"A"}').zaloId;
+    const numB = parseZaloMeText('{"id":1234567890123456788,"name":"B"}').zaloId;
+    expect(numA).toBe('1234567890123456789');
+    expect(numB).toBe('1234567890123456788');
+    expect(numA).not.toBe(numB);
+
+    const strA = parseZaloMeText('{"id":"1234567890123456789","name":"A"}').zaloId;
+    const strB = parseZaloMeText('{"id":"1234567890123456788","name":"B"}').zaloId;
+    expect(strA).not.toBe(strB);
   });
 
-  it('id kiểu khác (boolean, object) là UNAVAILABLE', () => {
-    expect(() => parseZaloMe({ id: true, name: 'G' })).toThrow(ZaloAuthError);
-    expect(() => parseZaloMe({ id: { v: 1 }, name: 'G' })).toThrow(ZaloAuthError);
+  it('error = 0 là thành công', () => {
+    expect(parseZaloMeText('{"error":0,"id":"7","name":"Z"}')).toEqual({ zaloId: '7', name: 'Z' });
   });
 
-  it('body có error khác 0 là INVALID_TOKEN', () => {
-    const err = (() => {
-      try {
-        parseZaloMe({ error: -216, message: 'invalid' });
-      } catch (e) {
-        return e;
-      }
-      return undefined;
-    })();
-    expect(err).toBeInstanceOf(ZaloAuthError);
-    expect((err as ZaloAuthError).code).toBe('INVALID_TOKEN');
+  it('error = 452 là INVALID_TOKEN', () => {
+    expect(codeOf(() => parseZaloMeText('{"error":452,"message":"invalid"}'))).toBe('INVALID_TOKEN');
   });
 
-  it('thiếu id là UNAVAILABLE, không ném lỗi trần', () => {
-    expect(() => parseZaloMe({ name: 'C' })).toThrow(ZaloAuthError);
+  it('error khác 0 và khác 452 (mã lạ) là UNAVAILABLE, không phải INVALID_TOKEN', () => {
+    expect(codeOf(() => parseZaloMeText('{"error":-216,"message":"x"}'))).toBe('UNAVAILABLE');
+    expect(codeOf(() => parseZaloMeText('{"error":500,"message":"x"}'))).toBe('UNAVAILABLE');
+    expect(codeOf(() => parseZaloMeText('{"error":-1,"id":"9","name":"x"}'))).toBe('UNAVAILABLE');
+  });
+
+  it('thiếu id là UNAVAILABLE, kể cả khi error = 0', () => {
+    expect(codeOf(() => parseZaloMeText('{"name":"C"}'))).toBe('UNAVAILABLE');
+    expect(codeOf(() => parseZaloMeText('{"error":0,"name":"C"}'))).toBe('UNAVAILABLE');
+  });
+
+  it('id không phải chữ số, số thực, boolean hoặc object là UNAVAILABLE', () => {
+    expect(codeOf(() => parseZaloMeText('{"id":"abc","name":"F"}'))).toBe('UNAVAILABLE');
+    expect(codeOf(() => parseZaloMeText('{"id":1.5,"name":"F"}'))).toBe('UNAVAILABLE');
+    expect(codeOf(() => parseZaloMeText('{"id":true,"name":"G"}'))).toBe('UNAVAILABLE');
+    expect(codeOf(() => parseZaloMeText('{"id":{"v":1},"name":"G"}'))).toBe('UNAVAILABLE');
+  });
+
+  it('nhiều khoá "id" trong thân là UNAVAILABLE (không đoán)', () => {
+    expect(codeOf(() => parseZaloMeText('{"id":"1","picture":{"data":{"id":"2"}}}'))).toBe('UNAVAILABLE');
+    expect(codeOf(() => parseZaloMeText('{"id":"1","id":"2"}'))).toBe('UNAVAILABLE');
+  });
+
+  it('JSON hỏng hoặc không phải object là UNAVAILABLE', () => {
+    expect(codeOf(() => parseZaloMeText('{không phải json'))).toBe('UNAVAILABLE');
+    expect(codeOf(() => parseZaloMeText('[1,2]'))).toBe('UNAVAILABLE');
   });
 });
 
@@ -97,12 +120,12 @@ describe('createZaloVerifier', () => {
     const calls: Array<{ url: string; init?: RequestInit }> = [];
     const fetchFn: FetchFn = async (url, init) => {
       calls.push({ url, init });
-      return jsonResponse(200, { id: 'z1', name: 'An', picture: 'https://a/b.png', extra: 'bỏ qua' });
+      return jsonResponse(200, { id: '1001', name: 'An', picture: 'https://a/b.png', extra: 'bỏ qua' });
     };
     const verifier = createZaloVerifier(fetchFn, { appSecret: APP_SECRET });
     const user = await verifier.verify(TOKEN);
 
-    expect(user).toEqual({ zaloId: 'z1', name: 'An', avatarUrl: 'https://a/b.png' });
+    expect(user).toEqual({ zaloId: '1001', name: 'An', avatarUrl: 'https://a/b.png' });
     expect(calls).toHaveLength(1);
     expect(calls[0].url).toBe('https://graph.zalo.me/v2.0/me?fields=id,name,picture');
     const headers = calls[0].init?.headers as Record<string, string>;
@@ -118,14 +141,55 @@ describe('createZaloVerifier', () => {
     expect((err as ZaloAuthError).code).toBe('INVALID_TOKEN');
   });
 
-  it('HTTP 200 kèm error khác 0 là INVALID_TOKEN', async () => {
-    const verifier = createZaloVerifier(async () => jsonResponse(200, { error: -216 }), { appSecret: APP_SECRET });
+  it('HTTP 200 kèm error = 452 là INVALID_TOKEN', async () => {
+    const verifier = createZaloVerifier(async () => jsonResponse(200, { error: 452 }), { appSecret: APP_SECRET });
     const err = await catchError(verifier.verify(TOKEN));
     expect((err as ZaloAuthError).code).toBe('INVALID_TOKEN');
   });
 
+  it('HTTP 200 kèm error mã lạ là UNAVAILABLE (fail-closed, không cấp phiên)', async () => {
+    const verifier = createZaloVerifier(async () => jsonResponse(200, { error: -216 }), { appSecret: APP_SECRET });
+    const err = await catchError(verifier.verify(TOKEN));
+    expect((err as ZaloAuthError).code).toBe('UNAVAILABLE');
+  });
+
+  it('HTTP 200 thiếu id là UNAVAILABLE', async () => {
+    const verifier = createZaloVerifier(async () => jsonResponse(200, { error: 0, name: 'x' }), { appSecret: APP_SECRET });
+    const err = await catchError(verifier.verify(TOKEN));
+    expect((err as ZaloAuthError).code).toBe('UNAVAILABLE');
+  });
+
+  it('HTTP 200 với id 19 chữ số dạng số: giữ nguyên chữ số qua verifier', async () => {
+    const verifier = createZaloVerifier(
+      async () => new Response('{"error":0,"id":1234567890123456789,"name":"H"}', { status: 200 }),
+      { appSecret: APP_SECRET },
+    );
+    await expect(verifier.verify(TOKEN)).resolves.toEqual({ zaloId: '1234567890123456789', name: 'H' });
+  });
+
+  it('không cấu hình appSecret thì không gửi header secret_key', async () => {
+    const calls: Array<{ init?: RequestInit }> = [];
+    const verifier = createZaloVerifier(
+      async (_url, init) => {
+        calls.push({ init });
+        return jsonResponse(200, { id: '1002', name: 'K' });
+      },
+      {},
+    );
+    await verifier.verify(TOKEN);
+    const headers = calls[0].init?.headers as Record<string, string>;
+    expect(headers.access_token).toBe(TOKEN);
+    expect('secret_key' in headers).toBe(false);
+  });
+
   it('HTTP 500 là UNAVAILABLE', async () => {
     const verifier = createZaloVerifier(async () => jsonResponse(500, {}), { appSecret: APP_SECRET });
+    const err = await catchError(verifier.verify(TOKEN));
+    expect((err as ZaloAuthError).code).toBe('UNAVAILABLE');
+  });
+
+  it('HTTP 503 kèm thân có error 452 vẫn là UNAVAILABLE (lỗi máy chủ không phải token sai)', async () => {
+    const verifier = createZaloVerifier(async () => jsonResponse(503, { error: 452 }), { appSecret: APP_SECRET });
     const err = await catchError(verifier.verify(TOKEN));
     expect((err as ZaloAuthError).code).toBe('UNAVAILABLE');
   });
@@ -166,8 +230,8 @@ describe('createZaloVerifier', () => {
       const res = {
         status: 200,
         ok: true,
-        json: () =>
-          new Promise<unknown>((_resolve, reject) => {
+        text: () =>
+          new Promise<string>((_resolve, reject) => {
             signal?.addEventListener('abort', () => reject(new Error('body aborted')));
           }),
       };
@@ -187,13 +251,12 @@ describe('createZaloVerifier', () => {
     expect((err as ZaloAuthError).code).toBe('UNAVAILABLE');
   });
 
-  it('id số lớn trong thân phản hồi thật là UNAVAILABLE qua verifier', async () => {
+  it('id chuỗi 19 chữ số trong thân phản hồi thật giữ nguyên qua verifier', async () => {
     const verifier = createZaloVerifier(
-      async () => new Response('{"id": 9007199254740993, "name": "H"}', { status: 200 }),
+      async () => new Response('{"error": 0, "id": "9007199254740993", "name": "H"}', { status: 200 }),
       { appSecret: APP_SECRET },
     );
-    const err = await catchError(verifier.verify(TOKEN));
-    expect((err as ZaloAuthError).code).toBe('UNAVAILABLE');
+    await expect(verifier.verify(TOKEN)).resolves.toEqual({ zaloId: '9007199254740993', name: 'H' });
   });
 });
 

@@ -8,13 +8,22 @@ export const ZALO_ME_ENDPOINT = 'https://graph.zalo.me/v2.0/me';
 const ZALO_ME_FIELDS = 'id,name,picture';
 const DEFAULT_TIMEOUT_MS = 8000;
 
+/**
+ * Mã `error` trong body HTTP 200 nghĩa là token sai (S1, đã quan sát: 452).
+ * Chỉ thêm mã khi đã quan sát được từ Zalo thật; không suy đoán mã mới.
+ */
+export const ZALO_INVALID_TOKEN_CODES: readonly number[] = [452];
+
 export type FetchFn = (input: string, init?: RequestInit) => Promise<Response>;
 
 export interface ZaloVerifierConfig {
   /** Mặc định ZALO_ME_ENDPOINT. Chỉ đổi khi S1 xác nhận endpoint khác. */
   endpoint?: string;
-  /** Secret key của Mini App, gửi qua header secret_key. S1: có bắt buộc hay không chưa xác nhận. */
-  appSecret: string;
+  /**
+   * Secret key của Mini App, gửi qua header secret_key khi có giá trị.
+   * S1: chưa xác nhận Zalo có yêu cầu header này; khi không cấu hình thì không gửi.
+   */
+  appSecret?: string;
   timeoutMs?: number;
 }
 
@@ -30,6 +39,13 @@ export function createZaloVerifier(fetchFn: FetchFn, config: ZaloVerifierConfig)
   return {
     async verify(accessToken: string): Promise<ZaloUser> {
       const url = `${endpoint}?fields=${ZALO_ME_FIELDS}`;
+      const headers: Record<string, string> = {
+        access_token: accessToken,
+        Accept: 'application/json',
+      };
+      if (config.appSecret !== undefined && config.appSecret !== '') {
+        headers.secret_key = config.appSecret;
+      }
       const controller = new AbortController();
       // Timer phủ cả lúc gọi fetch lẫn lúc đọc thân phản hồi (N1): chỉ clear khi xong hẳn.
       const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -39,11 +55,7 @@ export function createZaloVerifier(fetchFn: FetchFn, config: ZaloVerifierConfig)
         try {
           res = await fetchFn(url, {
             method: 'GET',
-            headers: {
-              access_token: accessToken,
-              secret_key: config.appSecret,
-              Accept: 'application/json',
-            },
+            headers,
             signal: controller.signal,
           });
         } catch {
@@ -59,14 +71,15 @@ export function createZaloVerifier(fetchFn: FetchFn, config: ZaloVerifierConfig)
           throw new ZaloAuthError('UNAVAILABLE', 'Zalo trả lỗi tạm thời.');
         }
 
-        let body: unknown;
+        let text: string;
         try {
-          body = await res.json();
+          // Đọc dạng text để giữ nguyên chữ số của id (xem parseZaloMeText).
+          text = await res.text();
         } catch {
           // Thân treo bị abort bởi timer, hoặc thân hỏng: đều là lỗi tạm thời.
           throw new ZaloAuthError('UNAVAILABLE', 'Phản hồi Zalo không đọc được.');
         }
-        return parseZaloMe(body);
+        return parseZaloMeText(text);
       } finally {
         clearTimeout(timer);
       }
@@ -75,41 +88,79 @@ export function createZaloVerifier(fetchFn: FetchFn, config: ZaloVerifierConfig)
 }
 
 /**
- * Đọc phản hồi /v2.0/me. Chỉ tin các trường id, name, picture.
- * S1: Zalo có thể trả HTTP 200 kèm `error != 0` khi token sai; coi là INVALID_TOKEN.
- * S1: `picture` có thể là chuỗi hoặc `{ data: { url } }`; chấp nhận cả hai.
+ * Đọc thân phản hồi /v2.0/me dạng text. Chỉ tin các trường id, name, picture.
+ *
+ * - `error` vắng mặt/null/0: thành công. `error` trong ZALO_INVALID_TOKEN_CODES: INVALID_TOKEN.
+ *   Mã khác: UNAVAILABLE (fail-closed, không cấp phiên).
+ * - `id` lấy bằng regex từ văn bản gốc, thành chuỗi, KHÔNG qua JSON.parse: id 19 chữ số vượt 2^53
+ *   sẽ bị làm tròn nếu đi qua số. Chấp nhận id là chuỗi hoặc số trong JSON; phải đúng một khoá "id"
+ *   trong toàn thân (nhiều khoá "id" -> UNAVAILABLE, không đoán).
+ * - Các trường còn lại (name, picture) lấy từ JSON.parse.
+ * - `picture` có thể là chuỗi hoặc `{ data: { url } }`; chấp nhận cả hai.
  */
-export function parseZaloMe(body: unknown): ZaloUser {
-  if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+export function parseZaloMeText(text: string): ZaloUser {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new ZaloAuthError('UNAVAILABLE', 'Phản hồi Zalo không đọc được.');
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
     throw new ZaloAuthError('UNAVAILABLE', 'Phản hồi Zalo sai định dạng.');
   }
-  const obj = body as Record<string, unknown>;
+  const obj = parsed as Record<string, unknown>;
 
-  if (obj.error !== undefined && obj.error !== 0 && obj.error !== null) {
-    // S1: mã lỗi cụ thể của Zalo chưa xác nhận; mọi mã khác 0 trong body được coi là token không dùng được.
-    throw new ZaloAuthError('INVALID_TOKEN', 'Token Zalo không hợp lệ.');
+  const errorCode = readErrorCode(obj.error);
+  if (errorCode === undefined) {
+    throw new ZaloAuthError('UNAVAILABLE', 'Phản hồi Zalo có mã lỗi không đọc được.');
   }
-
-  // B2: id chỉ nhận chuỗi, hoặc số nguyên an toàn. Số lớn hơn 2^53 đã mất độ chính xác khi JSON.parse,
-  // nên không được dùng làm khoá định danh (có thể gộp hai người dùng khác nhau).
-  const rawId = obj.id;
-  let zaloId = '';
-  if (typeof rawId === 'string') {
-    zaloId = rawId;
-  } else if (typeof rawId === 'number') {
-    if (!Number.isSafeInteger(rawId)) {
-      throw new ZaloAuthError('UNAVAILABLE', 'Phản hồi Zalo có id không an toàn.');
+  if (errorCode !== 0) {
+    if (ZALO_INVALID_TOKEN_CODES.includes(errorCode)) {
+      throw new ZaloAuthError('INVALID_TOKEN', 'Token Zalo không hợp lệ.');
     }
-    zaloId = String(rawId);
-  }
-  if (zaloId.length === 0) {
-    throw new ZaloAuthError('UNAVAILABLE', 'Phản hồi Zalo thiếu id.');
+    throw new ZaloAuthError('UNAVAILABLE', 'Zalo trả lỗi tạm thời.');
   }
 
+  const zaloId = extractRawId(text, obj.id);
   const name = typeof obj.name === 'string' ? obj.name : '';
   const avatarUrl = extractPictureUrl(obj.picture);
 
   return avatarUrl === undefined ? { zaloId, name } : { zaloId, name, avatarUrl };
+}
+
+/** Trả về mã số của `error`; vắng mặt hoặc null là 0; không đọc được là undefined. */
+function readErrorCode(raw: unknown): number | undefined {
+  if (raw === undefined || raw === null) return 0;
+  if (typeof raw === 'number' && Number.isInteger(raw)) return raw;
+  if (typeof raw === 'string' && /^-?\d+$/.test(raw)) return Number(raw);
+  return undefined;
+}
+
+/**
+ * Trích id từ văn bản gốc thành chuỗi chữ số. `jsonId` (đã parse) chỉ để kiểm tra chéo:
+ * nếu là chuỗi thì phải trùng; nếu là số an toàn thì phải trùng String(n). Số không an toàn không kiểm
+ * chéo được, nhưng chuỗi chữ số lấy từ văn bản gốc vẫn giữ đúng từng chữ số.
+ */
+function extractRawId(text: string, jsonId: unknown): string {
+  const keyCount = (text.match(/"id"\s*:/g) ?? []).length;
+  if (keyCount !== 1) {
+    throw new ZaloAuthError('UNAVAILABLE', 'Phản hồi Zalo thiếu id hoặc có nhiều id.');
+  }
+  const match = /"id"\s*:\s*("?)(\d{1,40})\1\s*[,}]/.exec(text);
+  if (match === null) {
+    throw new ZaloAuthError('UNAVAILABLE', 'Phản hồi Zalo có id không hợp lệ.');
+  }
+  const digits = match[2];
+  if (typeof jsonId === 'string') {
+    if (jsonId !== digits) throw new ZaloAuthError('UNAVAILABLE', 'Phản hồi Zalo có id không hợp lệ.');
+  } else if (typeof jsonId === 'number') {
+    if (Number.isSafeInteger(jsonId) && String(jsonId) !== digits) {
+      throw new ZaloAuthError('UNAVAILABLE', 'Phản hồi Zalo có id không hợp lệ.');
+    }
+  } else {
+    throw new ZaloAuthError('UNAVAILABLE', 'Phản hồi Zalo thiếu id.');
+  }
+  return digits;
 }
 
 function extractPictureUrl(picture: unknown): string | undefined {
