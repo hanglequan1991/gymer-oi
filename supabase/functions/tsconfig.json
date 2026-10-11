@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": [
+    "auth-zalo/ports.ts",
+    "auth-zalo/handler.ts",
+    "auth-zalo/handler.test.ts",
+    "_shared/http.ts",
+    "_shared/http.test.ts",
+    "auth-zalo/adapters/zaloVerifier.ts",
+    "auth-zalo/adapters/userStore.ts",
+    "auth-zalo/adapters/sessionIssuer.ts",
+    "auth-zalo/adapters/adapters.test.ts"
+  ]
+}

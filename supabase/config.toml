@@ -8,3 +8,8 @@ project_id = "gymer-oi"
 [db]
 # Đã xác nhận qua Supabase API ngày 2026-10-09: project vbncctoffwenbnnfvwfi chạy Postgres 17.
 major_version = 17
+
+# auth-zalo nhận yêu cầu khi người dùng chưa có phiên nên không yêu cầu JWT (plan D1).
+# Bảo vệ bằng cách xác minh token Zalo phía máy chủ, không bằng JWT của Supabase.
+[functions.auth-zalo]
+verify_jwt = false
