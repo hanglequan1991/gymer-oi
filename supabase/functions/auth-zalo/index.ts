@@ -9,8 +9,8 @@ import { createUserStore } from './adapters/userStore.ts';
 import { createSessionIssuer } from './adapters/sessionIssuer.ts';
 
 // S1: tên biến SUPABASE_* do hosted tự cấp; khoá mới (sb_secret_/sb_publishable_) có thể đổi tên (R6).
-// ZALO_APP_SECRET: đặt bằng `supabase secrets set` (U4). Bắt buộc theo fail-closed; S1 chưa xác nhận có cần thật không.
-const REQUIRED_ENV = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY', 'ZALO_APP_SECRET'] as const;
+// ZALO_APP_SECRET là TÙY CHỌN (S1 6.1): không đặt thì verifier không gửi header secret_key. Không nằm trong REQUIRED_ENV.
+const REQUIRED_ENV = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY'] as const;
 
 function readEnv(name: string): string | undefined {
   try {
@@ -46,14 +46,14 @@ const UNUSED_STORE: UserStore = {
 const UNUSED_ISSUER: SessionIssuer = { issue: () => Promise.reject(new Error('cấu hình thiếu')) };
 
 function buildDeps(): AuthZaloDeps {
-  if (url === undefined || anonKey === undefined || serviceKey === undefined || appSecret === undefined) {
+  if (url === undefined || anonKey === undefined || serviceKey === undefined) {
     return { verifier: UNUSED_VERIFIER, store: UNUSED_STORE, issuer: UNUSED_ISSUER, missingConfig, log };
   }
   const admin = createClient(url, serviceKey, NO_SESSION_OPTIONS);
   const anon = createClient(url, anonKey, NO_SESSION_OPTIONS);
   return {
-    // S1: endpoint graph.zalo.me/v2.0/me và header secret_key là giả thuyết của plan.
-    verifier: createZaloVerifier((input, init) => fetch(input, init), { appSecret }),
+    // S1 6.1: endpoint graph.zalo.me/v2.0/me. secret_key chỉ gửi khi đã cấu hình (appSecret có giá trị).
+    verifier: createZaloVerifier((input, init) => fetch(input, init), appSecret !== undefined ? { appSecret } : {}),
     store: createUserStore({ admin: admin.auth.admin, db: admin, log }),
     issuer: createSessionIssuer({ admin: admin.auth.admin, anonAuth: anon.auth }),
     missingConfig,

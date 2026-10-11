@@ -76,7 +76,10 @@ export async function handleAuthZalo(req: Request, deps: AuthZaloDeps): Promise<
       }
       if (err instanceof ZaloAuthError && err.code === 'UNAVAILABLE') {
         log('auth-zalo: không xác minh được với Zalo');
-        return errorJson(502, 'ZALO_UNAVAILABLE', 'Không kết nối được Zalo, thử lại sau.');
+        // Lỗi tạm thời phía Zalo: retryable để client thử lại, KHÔNG yêu cầu đăng nhập lại.
+        return json(502, {
+          error: { code: 'ZALO_UNAVAILABLE', message: 'Không kết nối được Zalo, thử lại sau.', retryable: true },
+        });
       }
       throw err;
     }

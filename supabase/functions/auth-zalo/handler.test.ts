@@ -61,12 +61,12 @@ describe('handleAuthZalo: phương thức và cấu hình', () => {
     const f = makeFakes();
     const res = await handleAuthZalo(post({ zaloAccessToken: TOKEN }), {
       ...f.deps,
-      missingConfig: ['ZALO_APP_SECRET'],
+      missingConfig: ['SUPABASE_SERVICE_ROLE_KEY'],
     });
     expect(res.status).toBe(500);
     const body = await res.json();
     expect(body.error.code).toBe('CONFIG_MISSING');
-    expect(JSON.stringify(body)).not.toContain('ZALO_APP_SECRET');
+    expect(JSON.stringify(body)).not.toContain('SUPABASE_SERVICE_ROLE_KEY');
     expect(f.verifier.verify).not.toHaveBeenCalled();
     expect(f.store.findUserIdByZaloId).not.toHaveBeenCalled();
     expect(f.issuer.issue).not.toHaveBeenCalled();
@@ -131,7 +131,9 @@ describe('handleAuthZalo: lỗi xác minh Zalo', () => {
     const f = makeFakes({ verifyError: new ZaloAuthError('UNAVAILABLE') });
     const res = await handleAuthZalo(post({ zaloAccessToken: TOKEN }), f.deps);
     expect(res.status).toBe(502);
-    expect((await res.json()).error.code).toBe('ZALO_UNAVAILABLE');
+    const body = await res.json();
+    expect(body.error.code).toBe('ZALO_UNAVAILABLE');
+    expect(body.error.retryable).toBe(true);
     expect(f.issuer.issue).not.toHaveBeenCalled();
   });
 

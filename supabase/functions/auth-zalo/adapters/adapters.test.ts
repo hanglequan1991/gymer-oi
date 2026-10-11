@@ -3,7 +3,7 @@
 import { describe, it, expect } from 'vitest';
 import { createZaloVerifier, parseZaloMeText } from './zaloVerifier.ts';
 import type { FetchFn } from './zaloVerifier.ts';
-import { createUserStore, StoreError } from './userStore.ts';
+import { createUserStore, placeholderEmailFor, StoreError } from './userStore.ts';
 import type { AdminUsersLike, DbError, DbLike } from './userStore.ts';
 import { createSessionIssuer, SessionIssueError } from './sessionIssuer.ts';
 import type { AnonAuthLike, AdminAuthLike } from './sessionIssuer.ts';
@@ -400,6 +400,50 @@ describe('createUserStore', () => {
     });
     await expect(store.createUserForZalo({ zaloId: 'z1', name: 'An' })).rejects.toBeInstanceOf(StoreError);
     expect(ops.some((o) => o.startsWith('insert:'))).toBe(false);
+  });
+
+  it('email tạm là zalo_<hash>@zalo.gymer.invalid, không chứa zaloId thô, và xác định theo zaloId', async () => {
+    const emails: string[] = [];
+    const admin: AdminUsersLike = {
+      async createUser(attrs) {
+        emails.push(attrs.email);
+        return { data: { user: { id: 'uid-e' } }, error: null };
+      },
+      async deleteUser() {
+        return { error: null };
+      },
+    };
+    const ops: string[] = [];
+    const inserted: Array<{ table: string; values: Record<string, unknown> }> = [];
+    const store = createUserStore({ admin, db: fakeDb({ ops, inserted }) });
+    await store.createUserForZalo({ zaloId: '1234567890123456789', name: 'An' });
+    await store.createUserForZalo({ zaloId: '1234567890123456789', name: 'An' });
+
+    expect(emails[0]).toMatch(/^zalo_[0-9a-f]{32}@zalo\.gymer\.invalid$/);
+    expect(emails[0]).not.toContain('1234567890123456789');
+    expect(emails[1]).toBe(emails[0]);
+    expect(await placeholderEmailFor('1234567890123456788')).not.toBe(emails[0]);
+  });
+
+  it('đua email_exists: dùng user của bên thắng nếu đã có, không ném lỗi', async () => {
+    const ops: string[] = [];
+    const inserted: Array<{ table: string; values: Record<string, unknown> }> = [];
+    const store = createUserStore({
+      admin: fakeAdmin({ ops, createError: { code: 'email_exists' } }),
+      db: fakeDb({ ops, inserted, lookups: ['uid-winner'] }),
+    });
+    await expect(store.createUserForZalo({ zaloId: 'z1', name: 'An' })).resolves.toBe('uid-winner');
+    expect(ops.some((o) => o.startsWith('insert:'))).toBe(false);
+  });
+
+  it('email_exists nhưng chưa có zalo_identities: ném StoreError (client thử lại)', async () => {
+    const ops: string[] = [];
+    const inserted: Array<{ table: string; values: Record<string, unknown> }> = [];
+    const store = createUserStore({
+      admin: fakeAdmin({ ops, createError: { code: 'email_exists' } }),
+      db: fakeDb({ ops, inserted }),
+    });
+    await expect(store.createUserForZalo({ zaloId: 'z1', name: 'An' })).rejects.toBeInstanceOf(StoreError);
   });
 });
 

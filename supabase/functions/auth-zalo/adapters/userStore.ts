@@ -42,8 +42,22 @@ export interface UserStoreConfig {
 }
 
 const UNIQUE_VIOLATION = '23505';
-// S1: domain email giả cho user Zalo là giả định của plan; GoTrue có nhận `.invalid` chưa xác nhận.
+// GoTrue trả mã này khi email đã tồn tại (đua hai lần đăng nhập cùng zaloId).
+const EMAIL_EXISTS = 'email_exists';
+// S1: domain email giả cho user Zalo là giả định của plan; GoTrue có nhận `.invalid` đã xác nhận ở (b).
 const PLACEHOLDER_EMAIL_DOMAIN = 'zalo.gymer.invalid';
+// Số ký tự hex của SHA-256 giữ lại trong email (128 bit, đủ tránh trùng).
+const EMAIL_HASH_HEX_LEN = 32;
+
+/**
+ * Email tạm cho user Zalo: zalo_<sha256(zaloId) rút gọn>@zalo.gymer.invalid.
+ * Băm để zaloId thô không lộ trong auth.users; cùng zaloId luôn ra cùng email (xác định).
+ */
+export async function placeholderEmailFor(zaloId: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(zaloId));
+  const hex = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('');
+  return `zalo_${hex.slice(0, EMAIL_HASH_HEX_LEN)}@${PLACEHOLDER_EMAIL_DOMAIN}`;
+}
 
 export function createUserStore(config: UserStoreConfig): UserStore {
   const users = config.admin;
@@ -79,8 +93,17 @@ export function createUserStore(config: UserStoreConfig): UserStore {
   }
 
   async function createUserForZalo(user: ZaloUser): Promise<string> {
-    const email = `zalo-${crypto.randomUUID()}@${PLACEHOLDER_EMAIL_DOMAIN}`;
+    const email = await placeholderEmailFor(user.zaloId);
     const created = await users.createUser({ email, email_confirm: true });
+    if (created.error?.code === EMAIL_EXISTS) {
+      // Đua: lần đăng nhập khác đã tạo auth user cho zaloId này; dùng user của bên thắng nếu đã có.
+      const winner = await findUserIdByZaloId(user.zaloId);
+      if (winner !== null) {
+        log('auth-zalo: đua tạo tài khoản (email), dùng user đã có');
+        return winner;
+      }
+      throw new StoreError('create_user', created.error.code);
+    }
     if (created.error || !created.data.user) {
       throw new StoreError('create_user', created.error?.code);
     }
