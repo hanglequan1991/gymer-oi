@@ -1,0 +1,37 @@
+/* Form Trở thành Gymer: một cột, khoảng cách đều, lề 16px như các màn khác. */
+.gy-onboarding {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 16px;
+}
+
+.gy-onboarding__intro {
+  margin: 0;
+  color: var(--gy-color-muted);
+  font-size: 14px;
+}
+
+.gy-onboarding__group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gy-onboarding__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gy-color-text);
+}
+
+.gy-onboarding__error {
+  margin: 0;
+  font-size: 13px;
+  color: var(--gy-color-danger);
+}
+
+.gy-onboarding__note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--gy-color-muted);
+}

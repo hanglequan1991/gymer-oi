@@ -3,6 +3,7 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/react
 import { SnackbarProvider } from 'zmp-ui';
 import { AppRoutes } from './index';
 import { PATHS, booking, bookingSuccess, gymerDetail } from './paths';
+import { useBookingDraft } from '@/stores';
 import { AppProviders } from '@/providers';
 import { SessionContext, type SessionApi } from '@/hooks';
 import { createFakePlatform } from '@/platform/fake';
@@ -20,7 +21,14 @@ beforeAll(() => {
 afterEach(() => {
   cleanup();
   window.history.pushState({}, '', '/');
+  // Nháp đặt lịch là store toàn cục: xoá để ca sau không thừa hưởng.
+  useBookingDraft.getState().clear();
 });
+
+/** Nháp đầy đủ cho Gymer g-01, khung giờ hợp lệ theo định dạng "<YYYY-MM-DD>T<HH:mm>". */
+function seedBookingDraft(gymerId = 'g-01') {
+  useBookingDraft.getState().setDraft({ gymerId, dateIso: '2026-10-17', slotId: '2026-10-17T09:00' });
+}
 
 const READY: GymerAccountStatus = { isListed: true, acceptsRequests: true, hasLocation: true };
 
@@ -55,11 +63,16 @@ function profileWith(getMyStatus: () => Promise<GymerAccountStatus | null>) {
   return createStubServices({ profile: { getMyStatus: vi.fn(getMyStatus) } });
 }
 
-/** Chờ tới khi tiêu đề đúng xuất hiện: header tạm lúc tải bị thay bằng header của trang khi có dữ liệu. */
-async function expectPageTitle(title: string) {
+/**
+ * Chờ tới khi tiêu đề đúng xuất hiện và (mặc định) trạng thái tải đã biến mất:
+ * header tạm lúc tải bị thay bằng header của trang khi có dữ liệu, nên chỉ kiểm tiêu đề là chưa đủ.
+ * Ca đang tải truyền loaded: false để chờ đúng lúc còn role="status".
+ */
+async function expectPageTitle(title: string, { loaded = true }: { loaded?: boolean } = {}) {
   await waitFor(() => {
     const header = screen.getByTestId('page-header');
     expect(within(header).getByText(title)).toBeInTheDocument();
+    if (loaded) expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 }
 
@@ -74,7 +87,6 @@ describe('AppRoutes: khu khách (không cần quyền Gymer)', () => {
   it.each([
     ['/', 'Tìm Gymer'],
     [gymerDetail('g-01'), 'Chi tiết Gymer'],
-    [booking('g-01'), 'Xác nhận đặt lịch'],
     [bookingSuccess('b-07'), 'Đặt lịch thành công'],
     [PATHS.myBookings, 'Lịch của tôi'],
     [PATHS.gymerJoin, 'Trở thành Gymer'],
@@ -84,18 +96,37 @@ describe('AppRoutes: khu khách (không cần quyền Gymer)', () => {
     await expectPageTitle(title);
   });
 
+  it('hiển thị trang xác nhận đặt lịch khi có nháp khớp Gymer', async () => {
+    seedBookingDraft('g-01');
+    renderRoutes(booking('g-01'));
+    expect(window.location.pathname).toBe('/gymers/g-01/book');
+    await expectPageTitle('Xác nhận đặt lịch');
+  });
+
+  it('thiếu nháp thì chuyển từ xác nhận đặt lịch về chi tiết Gymer', async () => {
+    renderRoutes(booking('g-01'));
+    await waitFor(() => expect(window.location.pathname).toBe('/gymers/g-01'));
+    await expectPageTitle('Chi tiết Gymer');
+  });
+
   it('hiển thị trang chi tiết Gymer với tham số gymerId', async () => {
     renderRoutes(gymerDetail('g-01'));
     expect(window.location.pathname).toBe('/gymers/g-01');
     await expectPageTitle('Chi tiết Gymer');
   });
 
-  it('trang /gymer/join không gọi getMyStatus (không có guard)', async () => {
+  it('trang /gymer/join không đi qua guard khu Gymer: chỉ chính trang gọi getMyStatus một lần', async () => {
     const getMyStatus = vi.fn(async () => null);
     renderRoutes(PATHS.gymerJoin, createStubServices({ profile: { getMyStatus } }));
     await expectPageTitle('Trở thành Gymer');
-    expect(getMyStatus).not.toHaveBeenCalled();
+    expect(getMyStatus).toHaveBeenCalledTimes(1);
     expect(window.location.pathname).toBe('/gymer/join');
+  });
+
+  it('đã là Gymer thì /gymer/join chuyển sang tổng quan', async () => {
+    renderRoutes(PATHS.gymerJoin, profileWith(async () => READY));
+    await waitFor(() => expect(window.location.pathname).toBe('/gymer/overview'));
+    await expectPageTitle('Tổng quan');
   });
 });
 
@@ -130,7 +161,7 @@ describe('AppRoutes: khu Gymer khi chưa là Gymer', () => {
 describe('AppRoutes: trạng thái tải và lỗi của khu Gymer vẫn có tiêu đề', () => {
   it.each(TABS)('đang tải tại %s vẫn có tiêu đề', async (path, title) => {
     renderRoutes(path, profileWith(() => new Promise<GymerAccountStatus | null>(() => {})));
-    await expectPageTitle(title);
+    await expectPageTitle(title, { loaded: false });
     expect(screen.getByRole('status')).toHaveTextContent('Đang tải...');
   });
 

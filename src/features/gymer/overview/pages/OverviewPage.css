@@ -1,0 +1,87 @@
+/* Bố cục tab Tổng quan Gymer. Màu và khoảng cách lấy từ token chung (--gy-*). */
+
+.gy-overview-greeting {
+  padding: var(--gy-space-4) var(--gy-space-4) var(--gy-space-2);
+}
+
+.gy-overview-greeting__text {
+  margin: 0;
+  font-family: var(--gy-font-family);
+  font-size: var(--gy-font-size-lg);
+  color: var(--gy-color-text);
+}
+
+.gy-overview-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--gy-space-2);
+  padding: 0 var(--gy-space-4);
+}
+
+.gy-overview-notice {
+  padding: var(--gy-space-2) var(--gy-space-4) 0;
+}
+
+.gy-overview-notice p {
+  margin: 0 0 var(--gy-space-2);
+}
+
+.gy-overview-empty {
+  margin: 0;
+  font-size: var(--gy-font-size-sm);
+  color: var(--gy-color-muted);
+}
+
+.gy-overview-today,
+.gy-overview-pending {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.gy-overview-today__item {
+  display: flex;
+  gap: var(--gy-space-3);
+  align-items: flex-start;
+  padding: var(--gy-space-2) 0;
+  border-bottom: 1px solid var(--gy-color-border);
+}
+
+.gy-overview-today__time {
+  min-width: 52px;
+  font-weight: 600;
+  color: var(--gy-color-primary);
+}
+
+.gy-overview-today__name {
+  font-size: var(--gy-font-size-md);
+  color: var(--gy-color-text);
+}
+
+.gy-overview-today__goal {
+  font-size: var(--gy-font-size-sm);
+  color: var(--gy-color-muted);
+}
+
+.gy-overview-pending__item {
+  padding: var(--gy-space-3);
+  margin-bottom: var(--gy-space-2);
+  border: 1px solid var(--gy-color-border);
+  border-radius: var(--gy-radius-card);
+  background: var(--gy-color-card);
+}
+
+.gy-overview-pending__who {
+  font-size: var(--gy-font-size-md);
+  font-weight: 600;
+  color: var(--gy-color-text);
+}
+
+.gy-overview-pending__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--gy-space-2);
+  margin-top: var(--gy-space-1);
+  font-size: var(--gy-font-size-sm);
+  color: var(--gy-color-muted);
+}

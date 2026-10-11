@@ -36,11 +36,47 @@ describe('useSearchFilters', () => {
     expect(useSearchFilters.getState().specialty).toBeUndefined();
   });
 
-  it('reset đưa tất cả về mặc định, kể cả chuyên môn đã chọn', () => {
-    const { setRadius, setKeyword, setSpecialty } = useSearchFilters.getState();
+  it('mặc định không lọc giới tính và ba bộ lọc nhanh đều tắt', () => {
+    const state = useSearchFilters.getState();
+
+    expect(state.gender).toBeUndefined();
+    expect(state.onlyTopRated).toBe(false);
+    expect(state.age20to30).toBe(false);
+    expect(state.under200k).toBe(false);
+  });
+
+  it('setGender đặt và bỏ giới tính', () => {
+    useSearchFilters.getState().setGender('female');
+    expect(useSearchFilters.getState().gender).toBe('female');
+
+    useSearchFilters.getState().setGender(undefined);
+    expect(useSearchFilters.getState().gender).toBeUndefined();
+  });
+
+  it('setOnlyTopRated, setAge20to30, setUnder200k bật và tắt từng cờ độc lập', () => {
+    const s = useSearchFilters.getState();
+
+    s.setOnlyTopRated(true);
+    s.setAge20to30(true);
+    s.setUnder200k(true);
+    let state = useSearchFilters.getState();
+    expect([state.onlyTopRated, state.age20to30, state.under200k]).toEqual([true, true, true]);
+
+    s.setAge20to30(false);
+    state = useSearchFilters.getState();
+    expect([state.onlyTopRated, state.age20to30, state.under200k]).toEqual([true, false, true]);
+  });
+
+  it('reset đưa tất cả về mặc định, kể cả chuyên môn, giới tính và các cờ đã bật', () => {
+    const { setRadius, setKeyword, setSpecialty, setGender, setOnlyTopRated, setAge20to30, setUnder200k } =
+      useSearchFilters.getState();
     setRadius(3);
     setKeyword('gym');
     setSpecialty('Tăng cơ');
+    setGender('male');
+    setOnlyTopRated(true);
+    setAge20to30(true);
+    setUnder200k(true);
 
     useSearchFilters.getState().reset();
     const state = useSearchFilters.getState();
@@ -48,6 +84,10 @@ describe('useSearchFilters', () => {
     expect(state.radiusKm).toBe(2);
     expect(state.keyword).toBe('');
     expect(state.specialty).toBeUndefined();
+    expect(state.gender).toBeUndefined();
+    expect(state.onlyTopRated).toBe(false);
+    expect(state.age20to30).toBe(false);
+    expect(state.under200k).toBe(false);
   });
 });
 

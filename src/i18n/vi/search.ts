@@ -1,6 +1,20 @@
-// Chuỗi màn tìm Gymer (khách).
+// Chuỗi màn tìm Gymer (khách). Nhóm do task C1 sở hữu.
 export const search = {
   title: 'Tìm Gymer',
-  emptyTitle: 'Chưa tìm thấy Gymer nào',
-  emptyDescription: 'Thử mở rộng khoảng cách tìm kiếm.',
+  radiusText: (km: number) => `Trong ${km} km`,
+  myBookings: 'Lịch của tôi',
+  forGymers: 'Dành cho Gymer',
+  keywordPlaceholder: 'Tìm theo tên Gymer hoặc môn tập',
+  radiusGroup: 'Bán kính tìm kiếm',
+  genderGroup: 'Giới tính',
+  genderFemale: 'Nữ',
+  genderMale: 'Nam',
+  quickGroup: 'Bộ lọc nhanh',
+  topRated: 'Từ 4★',
+  age20to30: '20-30 tuổi',
+  under200k: 'Dưới 200k',
+  specialtyGroup: 'Chuyên môn',
+  resultCount: (n: number) => `Tìm thấy ${n} Gymer`,
+  resultCap: 'Chỉ hiển thị 50 Gymer gần nhất',
+  increaseRadius: 'Tăng bán kính',
 } as const;
