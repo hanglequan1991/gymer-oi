@@ -5,7 +5,7 @@ import { useServices } from '@/hooks';
 import { messageFromError, vi } from '@/i18n';
 import type { DayInfo } from '@/types/domain';
 import { formatVND } from '@/utils/format';
-import { priceError, toDateIso } from './scheduleModel';
+import { isWeekendDate, priceError, toDateIso } from './scheduleModel';
 
 export interface DayOverrideEditorProps {
   /** Ngày đang chọn, không phải ngày quá khứ (phần cha lo việc này). */
@@ -24,9 +24,7 @@ export interface DayOverrideEditorProps {
  */
 export function DayOverrideEditor({ date, day, defaults, onChanged }: DayOverrideEditorProps) {
   const dateIso = toDateIso(date);
-  // Cùng quy tắc với BulkApplyPanel: T7 và CN là cuối tuần.
-  const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-  const defaultPrice = isWeekend ? defaults.weekend : defaults.weekday;
+  const defaultPrice = isWeekendDate(date) ? defaults.weekend : defaults.weekday;
   // Server đã tính giá của ngày. Khác giá mặc định của loại ngày nghĩa là đang có giá riêng.
   const savedPrice = day?.price !== undefined && day.price !== defaultPrice ? day.price : null;
   // disabled = đang đóng và không có khách. Ngày đóng có khách không xảy ra nên suy ra được trạng thái mở.

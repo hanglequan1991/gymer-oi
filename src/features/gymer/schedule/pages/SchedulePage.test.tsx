@@ -250,6 +250,41 @@ describe('SchedulePage: khung giờ của một ngày', () => {
     expect(screen.getByRole('gridcell', { name: /17 tháng 10/ })).toBeInTheDocument();
   });
 
+  it('đổi khung lỗi do khách vừa đặt thì tải lại khung giờ và hiện khung đã đặt kèm tên khách', async () => {
+    const reloaded: Slot[] = SLOTS_17.map((s) =>
+      s.id === '2026-10-17T07:00' ? { ...s, state: 'booked', bookedBy: 'Khách mới' } : s,
+    );
+    const mocks = setup({
+      setSlotClosed: vi.fn().mockRejectedValue(new AppError('VALIDATION', 'x')),
+      getDaySlots: vi.fn().mockResolvedValueOnce(SLOTS_17).mockResolvedValue(reloaded),
+    });
+    fireEvent.click(await waitCalendar());
+    fireEvent.click(await screen.findByRole('button', { name: '07:00, còn trống' }));
+
+    await waitFor(() => expect(mocks.getDaySlots).toHaveBeenCalledTimes(2));
+    expect(await screen.findByRole('button', { name: '07:00, đã đặt, Khách mới' })).toHaveAttribute('aria-disabled', 'true');
+  });
+
+  it('đổi khung lỗi mạng cũng tải lại khung giờ để không giữ trạng thái lạc quan', async () => {
+    const mocks = setup({
+      setSlotClosed: vi.fn().mockRejectedValue(new AppError('NETWORK', 'x')),
+    });
+    fireEvent.click(await waitCalendar());
+    fireEvent.click(await screen.findByRole('button', { name: '07:00, còn trống' }));
+
+    await waitFor(() => expect(mocks.getDaySlots).toHaveBeenCalledTimes(2));
+    expect(await screen.findByRole('button', { name: '07:00, còn trống' })).toBeInTheDocument();
+  });
+
+  it('đổi khung thành công thì không tải lại khung giờ của ngày, chỉ làm mới lịch tháng', async () => {
+    const mocks = setup();
+    fireEvent.click(await waitCalendar());
+    fireEvent.click(await screen.findByRole('button', { name: '07:00, còn trống' }));
+
+    await waitFor(() => expect(mocks.getMonth).toHaveBeenCalledTimes(2));
+    expect(mocks.getDaySlots).toHaveBeenCalledTimes(1);
+  });
+
   it('ngày chưa có khung giờ thì hiện trạng thái rỗng', async () => {
     setup({}, []);
     fireEvent.click(await waitCalendar());

@@ -5,8 +5,9 @@ import { Section } from '@/components/ui/layout';
 import { useServices } from '@/hooks';
 import { messageFromError, vi } from '@/i18n';
 import type { DayOverridePatch } from '@/types/domain';
+import { vnTodayDate } from '@/utils/date';
 import { formatVND } from '@/utils/format';
-import { priceError, toDateIso } from './scheduleModel';
+import { isWeekendDate, priceError, toDateIso } from './scheduleModel';
 
 type Group = 'weekday' | 'weekend' | 'all';
 type Action = 'setPrice' | 'clearPrice' | 'close' | 'open';
@@ -28,7 +29,7 @@ function listDates(year: number, month: number, group: Group, todayIso: string):
     const d = new Date(year, month - 1, day);
     const iso = toDateIso(d);
     if (iso < todayIso) continue;
-    const weekend = d.getDay() === 0 || d.getDay() === 6;
+    const weekend = isWeekendDate(d);
     if (group === 'weekday' && weekend) continue;
     if (group === 'weekend' && !weekend) continue;
     dates.push(iso);
@@ -68,7 +69,7 @@ export function BulkApplyPanel({ year, month, onApplied, onClose }: BulkApplyPan
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const todayIso = toDateIso(new Date());
+  const todayIso = toDateIso(vnTodayDate());
   const dates = listDates(year, month, group, todayIso);
   const isSetPrice = action === 'setPrice';
   // Ô trống khi đặt giá riêng chỉ chặn nút, không hiện lỗi trước khi người dùng nhập.

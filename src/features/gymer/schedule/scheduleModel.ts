@@ -11,6 +11,11 @@ export function priceError(value: number | null): string | undefined {
   return undefined;
 }
 
+/** Cuối tuần theo luật của tab Lịch và giá: T7 và CN. Nhóm "cuối tuần" và giá mặc định cuối tuần dùng chung quy tắc này. */
+export function isWeekendDate(d: Date): boolean {
+  return d.getDay() === 0 || d.getDay() === 6;
+}
+
 /** Ngày theo giờ địa phương dạng 'YYYY-MM-DD'. Không dùng toISOString (lệch ngày theo múi giờ). */
 export function toDateIso(d: Date): string {
   const mm = String(d.getMonth() + 1).padStart(2, '0');

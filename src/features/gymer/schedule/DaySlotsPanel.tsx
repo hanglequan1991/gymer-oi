@@ -15,7 +15,6 @@ export interface DaySlotsPanelProps {
   date: Date;
   /** Gọi sau khi đổi khung giờ thành công để lịch tháng cập nhật marker. */
   onChanged: () => void;
-  /** Chỗ chừa cho Đợt 7 (G3b): thao tác của cả ngày như giá riêng, đóng ngày. */
   actions?: ReactNode;
 }
 
@@ -50,6 +49,8 @@ export function DaySlotsPanel({ gymerId, date, onChanged, actions }: DaySlotsPan
         return next;
       });
       toast.error(messageFromError(e, 'schedule'));
+      // Lỗi thường do khung vừa được khách đặt: tải lại để hiện đúng trạng thái và tên khách.
+      state.refetch();
     } finally {
       inFlight.current.delete(slot.id);
     }
