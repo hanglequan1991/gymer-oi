@@ -1,6 +1,6 @@
 // @vitest-environment node
 // Test các adapter của auth-zalo bằng client giả. Không gọi mạng, không gọi Supabase thật.
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { createZaloVerifier, parseZaloMeText } from './zaloVerifier.ts';
 import type { FetchFn } from './zaloVerifier.ts';
 import { createUserStore, placeholderEmailFor, StoreError } from './userStore.ts';
@@ -134,11 +134,21 @@ describe('createZaloVerifier', () => {
     expect(JSON.stringify(user)).not.toContain(TOKEN);
   });
 
-  it('HTTP 401 là INVALID_TOKEN', async () => {
-    const verifier = createZaloVerifier(async () => jsonResponse(401, { error: -216 }), { appSecret: APP_SECRET });
-    const err = await catchError(verifier.verify(TOKEN));
-    expect(err).toBeInstanceOf(ZaloAuthError);
-    expect((err as ZaloAuthError).code).toBe('INVALID_TOKEN');
+  it.each([400, 401, 403])('HTTP %i là UNAVAILABLE (không suy ra token sai từ status), log status và không log token', async (status) => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const verifier = createZaloVerifier(async () => jsonResponse(status, { error: 452 }), { appSecret: APP_SECRET });
+      const err = await catchError(verifier.verify(TOKEN));
+      expect(err).toBeInstanceOf(ZaloAuthError);
+      expect((err as ZaloAuthError).code).toBe('UNAVAILABLE');
+      expect(warn).toHaveBeenCalledTimes(1);
+      const logged = warn.mock.calls[0].map((a) => String(a)).join(' ');
+      expect(logged).toContain(String(status));
+      expect(logged).not.toContain(TOKEN);
+      expect(logged).not.toContain(APP_SECRET);
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it('HTTP 200 kèm error = 452 là INVALID_TOKEN', async () => {

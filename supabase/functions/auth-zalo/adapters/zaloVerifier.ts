@@ -29,8 +29,8 @@ export interface ZaloVerifierConfig {
 
 /**
  * Tạo verifier. Không bao giờ đưa token hay secret vào thông báo lỗi.
- * - Token sai/hết hạn -> ZaloAuthError('INVALID_TOKEN').
- * - Zalo lỗi tạm thời, timeout, lỗi mạng, phản hồi không đọc được -> ZaloAuthError('UNAVAILABLE').
+ * - Token sai/hết hạn (error = 452 trong thân HTTP 200) -> ZaloAuthError('INVALID_TOKEN').
+ * - HTTP lỗi (400/401/403/5xx/429), timeout, lỗi mạng, phản hồi không đọc được -> ZaloAuthError('UNAVAILABLE').
  */
 export function createZaloVerifier(fetchFn: FetchFn, config: ZaloVerifierConfig): ZaloVerifier {
   const endpoint = config.endpoint ?? ZALO_ME_ENDPOINT;
@@ -63,11 +63,10 @@ export function createZaloVerifier(fetchFn: FetchFn, config: ZaloVerifierConfig)
           throw new ZaloAuthError('UNAVAILABLE', 'Không kết nối được Zalo.');
         }
 
-        // S1: 401/403/400 là token không hợp lệ; 5xx và 429 là lỗi phía Zalo, thử lại được.
-        if (res.status === 401 || res.status === 403 || res.status === 400) {
-          throw new ZaloAuthError('INVALID_TOKEN', 'Token Zalo không hợp lệ.');
-        }
+        // HTTP không OK (400/401/403/5xx/429...) không phải bằng chứng token sai: map UNAVAILABLE (fail-closed).
+        // Token sai chỉ được xác định bởi error = 452 trong thân HTTP 200. Chỉ log status, không log token.
         if (!res.ok) {
+          console.warn('[auth-zalo] Zalo trả HTTP lỗi', res.status);
           throw new ZaloAuthError('UNAVAILABLE', 'Zalo trả lỗi tạm thời.');
         }
 
