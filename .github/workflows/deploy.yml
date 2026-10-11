@@ -150,7 +150,7 @@ jobs:
     needs: [changes, plan-migrate]
     # Chỉ chạy khi dry-run thành công VÀ báo có migration đang chờ. Chỉ lúc này mới có yêu cầu duyệt.
     # Người duyệt (environment production) đọc summary của plan-migrate trước khi duyệt.
-    if: ${{ needs.plan-migrate.result == 'success' && needs.plan-migrate.outputs.pending == 'true' }}
+    if: ${{ github.ref == 'refs/heads/main' && needs.plan-migrate.result == 'success' && needs.plan-migrate.outputs.pending == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     environment: production
@@ -184,7 +184,7 @@ jobs:
     # Chạy khi: changes thành công, có function, và plan-migrate lẫn migrate đều success hoặc skipped.
     # plan-migrate hoặc migrate failure/cancelled (kể cả bị từ chối duyệt): không chạy,
     # vì schema có thể chưa khớp với code function mới.
-    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.changes.outputs.has_functions == 'true' && contains(fromJSON('["success","skipped"]'), needs.plan-migrate.result) && contains(fromJSON('["success","skipped"]'), needs.migrate.result) }}
+    if: ${{ !cancelled() && github.ref == 'refs/heads/main' && needs.changes.result == 'success' && needs.changes.outputs.has_functions == 'true' && contains(fromJSON('["success","skipped"]'), needs.plan-migrate.result) && contains(fromJSON('["success","skipped"]'), needs.migrate.result) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     environment: production-deploy

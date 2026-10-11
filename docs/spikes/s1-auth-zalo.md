@@ -1,6 +1,6 @@
 # Spike S1: xác minh token Zalo và cấp phiên Supabase
 
-Trạng thái: ĐÃ CÓ KẾT QUẢ (a) và (b) lần 1; R2 CHƯA ĐÓNG; thiếu lần chạy (b) với đăng ký TẮT. Tài liệu này do dev1 viết (T-S1). Phần "Quyết định hệ quả" do sen1 điền sau khi có kết quả.
+Trạng thái: ĐÃ CÓ KẾT QUẢ (a) và (b) lần 1; R2 = RỦI RO ĐƯỢC CHỦ DỰ ÁN CHẤP NHẬN, CHƯA KIỂM CHỨNG (2026-10-11); thiếu lần chạy (b) với đăng ký TẮT. Tài liệu này do dev1 viết (T-S1). Phần "Quyết định hệ quả" do sen1 điền sau khi có kết quả.
 
 Liên quan: `docs/plans/app-supabase-integration.md` mục 2.1 (D1-D4), R2, U3, Q10.
 
@@ -70,12 +70,12 @@ Chạy phần (b) hai lần: một lần khi "Allow new users to sign up" BẬT,
 |---|---|---|
 | Endpoint và biến thể nào trả HTTP 200 với `error` = 0 | `GET https://graph.zalo.me/v2.0/me?fields=id,name,picture`, biến thể A (chỉ header `access_token`): HTTP 200, JSON, `error`=0, message "Success" | Giả thuyết ban đầu đúng về endpoint và header token. |
 | Biến thể A (không `secret_key`) có chạy không? | Có | |
-| Biến thể B (`secret_key`) có cần thiết không? Tên header đúng là gì? | KHÔNG cần. B cho kết quả Y HỆT A | Chỉ có hai khả năng: Zalo bỏ qua header này, hoặc tên header sai. Thí nghiệm này KHÔNG chứng minh `secret_key` vô hại hay vô dụng ở mọi trường hợp; chỉ chứng minh nó không làm đổi kết quả. Không được dùng B làm cơ sở nói "Zalo đã kiểm app". |
+| Biến thể B (`secret_key`) có cần thiết không? Tên header đúng là gì? | KHÔNG cần. B cho kết quả Y HỆT A. CHƯA KẾT LUẬN được về tác dụng của `secret_key` (token app chính hiện bị 452 nên không chạy lại so sánh được) | Chỉ có hai khả năng: Zalo bỏ qua header này, hoặc tên header sai. Thí nghiệm này KHÔNG chứng minh `secret_key` vô hại hay vô dụng ở mọi trường hợp; chỉ chứng minh nó không làm đổi kết quả. Không được dùng B làm cơ sở nói "Zalo đã kiểm app". |
 | `id` có ổn định giữa 2 lần gọi (cùng dấu vân tay)? | Có (fingerprint `a9524ace3c27`, độ dài 19) | Xem cảnh báo 6.3: script dùng `JSON.parse` rồi `String(id)` nên KHÔNG phân biệt được id là chuỗi hay số, và fingerprint tính trên giá trị đã có thể bị làm tròn. Ổn định vẫn đúng nhưng chưa xác nhận kiểu. |
-| Token từ Mini App khác của cùng người dùng có cho cùng `id` không? (R2) | CHƯA TEST | R2 còn mở. |
+| Token từ Mini App khác của cùng người dùng có cho cùng `id` không? (R2) | KHÔNG KIỂM CHỨNG (quyết định chủ dự án 2026-10-11) | Lần chạy `--other` không ra kết quả so sánh vì token app chính bị 452 (không xác định được: hết hạn, bị thu hồi hay không hợp lệ). Xem 6.2. |
 | Token giả trả lỗi gì (HTTP status, `error`, `message`)? | HTTP 200 (KHÔNG phải 4xx), `error`=452, message "Session key invalid. ...", không có `name`/`picture` | Lỗi nằm ở body, không ở HTTP status. |
-| Token hết hạn trả lỗi gì? | CHƯA TEST (tuỳ chọn) | Chưa biết mã. Không giả định cùng 452. |
-| Trường có mặt: `id`, `name`, `picture` đúng không? | Đúng: `id`, `name`, `picture` (object), thêm `is_sensitive`, `error`, `message` | Cấu trúc object của `picture` (có `data.url` không) chưa ghi; parser đang chấp nhận cả chuỗi và `{data:{url}}`. |
+| Token hết hạn trả lỗi gì? | Chưa tách riêng được | Token app chính bị 452 trong lần chạy `--other`; Zalo trả HTTP 200 + `error`=452 cho token không hợp lệ / hết hạn / bị thu hồi, và ta không phân biệt được ba ca từ phản hồi. Không cần phân biệt cho verifier (cùng xử lý INVALID_TOKEN). |
+| Trường có mặt: `id`, `name`, `picture` đúng không? | Đúng: `id`, `name`, `picture` (object), thêm `is_sensitive`, `error`, `message`. `id` là CHUỖI 19 chữ số (đã xác nhận 2026-10-11) | Cấu trúc object của `picture` (có `data.url` không) chưa ghi; parser đang chấp nhận cả chuỗi và `{data:{url}}`. |
 
 ### 5.2 Phần (b): Phiên Supabase
 
@@ -102,7 +102,20 @@ Chạy phần (b) hai lần: một lần khi "Allow new users to sign up" BẬT,
 - Magiclink + verifyOtp có chạy được khi đăng ký tắt không: CHƯA BIẾT. Phải chạy lại (b) với "Allow new users to sign up" TẮT trước khi phát hành. Nếu lỗi: dừng, báo sen1 đổi plan (không tự chọn ký JWT).
 - Nếu magiclink không chạy: dừng, báo sen1 đổi plan. Với đăng ký BẬT/không rõ, magiclink đã chạy.
 
-### 6.2 R2 (mạo danh qua token app khác): CHƯA ĐÓNG
+### 6.2 R2 (mạo danh qua token app khác): RỦI RO ĐƯỢC CHỦ DỰ ÁN CHẤP NHẬN, CHƯA KIỂM CHỨNG
+
+Ghi nhận ngày 2026-10-11: chủ dự án quyết định KHÔNG kiểm chứng R2 và chấp nhận rủi ro. Bối cảnh: lần chạy `--other` không có kết quả so sánh vì token app chính bị 452. Lý do chi tiết của chủ dự án không được ghi lại ngoài việc họ chấp nhận rủi ro. Đây là quyết định chấp nhận rủi ro, KHÔNG phải kết quả "an toàn". Không có bằng chứng nào về việc id là theo app hay toàn cục, và không có bằng chứng Zalo ràng buộc token với Mini App của ta.
+
+Hệ quả cần nhớ: nếu id là toàn cục và Zalo không kiểm app, mọi Mini App khác mà người dùng từng mở có thể lấy token và đăng nhập thay họ vào app của ta (chiếm tài khoản, kể cả xem/đặt lịch và dữ liệu cá nhân). Rủi ro này còn nguyên.
+
+Giảm thiểu rẻ (không thay thế kiểm chứng):
+- Khi nào kiểm lại: bắt buộc nhắc trước go-live công khai (phát hành production cho người dùng thật, hoặc khi có dữ liệu sức khoẻ/consent thật trong tài khoản). Cách rẻ nhất: lấy token mới (tươi, chạy ngay) từ app chính và một app thử thứ hai cùng người dùng, chạy `s1-zalo-me.mjs --other`; script đã đọc id dạng chuỗi nên so fingerprint được.
+- Chỉ mở cho nhóm thử nghiệm (Mini App ở Development/Testing) tới khi kiểm xong.
+- Không ghi thêm quyền hay dữ liệu nhạy cảm vào tài khoản chỉ dựa trên đăng nhập Zalo mà chưa có xác nhận bổ sung.
+- Tra tài liệu Zalo tìm trường `app_id` hoặc header app secret (miễn phí, làm khi rảnh); nếu có `app_id` thì verifier phải so với app id của ta.
+- Giữ nhật ký đăng nhập (đã có `userId`, `created`; không log token) để phát hiện bất thường; có thể thu hồi phiên của một user qua `auth.admin`.
+
+---- Phân tích gốc (trước quyết định chấp nhận) ----
 
 Phán xét: B giống A cho thấy `secret_key` bị bỏ qua hoặc header sai tên. Cả hai đều có nghĩa là KHÔNG có bằng chứng Zalo ràng buộc token với Mini App của mình. Mức rủi ro hiện tại: CAO về lý thuyết, chưa đo được thực tế.
 
@@ -114,7 +127,7 @@ Biện pháp khả thi, theo thứ tự rẻ đến đắt:
 3. Test token giả mạo app: dùng token của app thứ hai, kèm `secret_key` của app thứ nhất ở nhiều tên header khả dĩ theo tài liệu; nếu có tên header đúng, Zalo phải trả lỗi. Chỉ có ý nghĩa nếu bước 2 tìm ra tên header.
 4. Nếu cả ba không cho đảm bảo: giảm thiệt hại, không xoá được rủi ro: bật đăng nhập chỉ cho nhóm thử nghiệm, và không gắn dữ liệu nhạy cảm (mục sức khoẻ có consent theo schema) vào tài khoản mới tạo mà chưa có xác nhận bổ sung. Đây là giảm nhẹ, không phải khắc phục.
 
-Có chặn merge `auth-zalo` không: KHÔNG chặn merge nhánh vào `main` miễn là (i) function chưa deploy ra môi trường người dùng thật, (ii) mục 6.2 bước 1 được ghi là điều kiện bắt buộc trước go-live. CHẶN phát hành/deploy production cho người dùng thật cho tới khi R2 bước 1 có kết quả (và bước 2 nếu id toàn cục). Người dùng đã nói chấp nhận lỗi và sẽ tự kiểm khi hoàn chỉnh; ghi nhận. Nói thẳng: nếu id là toàn cục và không có kiểm app, bất kỳ Mini App nào người dùng từng mở đều có thể đăng nhập thay họ vào app của ta, kể cả xem/đặt lịch và dữ liệu cá nhân. Đây là lỗ hổng chiếm tài khoản, không phải lỗi giao diện.
+Cập nhật 2026-10-11: các điều kiện CHẶN phát hành bên dưới đã được chủ dự án chấp nhận rủi ro ở phần R2; các điều kiện khác (kiểu id đã xác nhận là chuỗi, đăng ký TẮT) vẫn áp dụng như ghi. Có chặn merge `auth-zalo` không: KHÔNG chặn merge nhánh vào `main` miễn là (i) function chưa deploy ra môi trường người dùng thật, (ii) mục 6.2 bước 1 được ghi là điều kiện bắt buộc trước go-live. CHẶN phát hành/deploy production cho người dùng thật cho tới khi R2 bước 1 có kết quả (và bước 2 nếu id toàn cục). Người dùng đã nói chấp nhận lỗi và sẽ tự kiểm khi hoàn chỉnh; ghi nhận. Nói thẳng: nếu id là toàn cục và không có kiểm app, bất kỳ Mini App nào người dùng từng mở đều có thể đăng nhập thay họ vào app của ta, kể cả xem/đặt lịch và dữ liệu cá nhân. Đây là lỗ hổng chiếm tài khoản, không phải lỗi giao diện.
 
 ### 6.3 Cảnh báo kỹ thuật: id 19 chữ số vượt 2^53
 
@@ -143,10 +156,17 @@ MỞ có điều kiện, phạm vi hẹp: dev được sửa các lỗi nhỏ �
 - dev2: `scripts/spikes/s1-zalo-me.mjs`: in thêm kiểu của id lấy từ văn bản thô (có nháy hay không), tính fingerprint từ chuỗi thô, thêm cờ để chạy lại với token app khác và so fingerprint giữa hai lần chạy mà không in id. File này không trùng với dev1.
 - dev3: `supabase/functions/auth-zalo/index.ts` (và `handler.ts`/`handler.test.ts` nếu cần): ánh xạ INVALID_TOKEN -> mã lỗi ZALO_TOKEN_INVALID, UNAVAILABLE -> mã lỗi riêng cho phép thử lại; không còn bắt buộc `ZALO_APP_SECRET` khi khởi động. Chỉ chạm các file này. Phụ thuộc: chờ dev1 chốt tên mã lỗi (thống nhất như trên) hoặc chạy sau dev1.
 
+### 6.8 Phát hiện bổ sung ngày 2026-10-11
+
+- Zalo trả HTTP 200 + `error`=452 cho token không hợp lệ, hết hạn hoặc bị thu hồi (không phân biệt được ba ca). Lỗi nằm ở body, không ở HTTP status.
+- `id` là chuỗi 19 chữ số (không phải số JSON). Verifier đọc id từ văn bản thô nên đúng cho cả hai dạng; giữ nguyên cách này phòng Zalo đổi kiểu.
+- Phản hồi có thêm trường `is_sensitive`; verifier không dùng, không cần xử lý.
+- Chưa kết luận được về header `secret_key`: B giống A nhưng không chạy lại được với token hợp lệ để loại trừ tên header sai.
+
 ### 6.7 Việc còn lại của người dùng
 
 1. Trả lời/ghi trạng thái "Allow new users to sign up" của lần chạy (b) vừa rồi, rồi chạy (b) lại với TẮT.
-2. Tạo/chọn Mini App thứ hai, lấy token cùng người dùng, chạy lại (a) sau khi dev2 sửa script; so fingerprint (R2 bước 1).
+2. (Đã quyết định bỏ qua, 2026-10-11; xem 6.2) Tạo/chọn Mini App thứ hai, lấy token cùng người dùng, chạy `--other`, so fingerprint (R2 bước 1). Kiểm lại trước go-live công khai.
 3. Tra tài liệu Zalo về ràng buộc token với app, tên header app secret, và `app_id` trong phản hồi (R2 bước 2).
 4. Chạy lại (a) sau vài giờ với token cũ để ghi mã lỗi token hết hạn (tuỳ chọn).
 5. `unset` các biến môi trường bí mật; không dán token/khoá vào chat hay repo.

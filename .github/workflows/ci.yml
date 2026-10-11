@@ -45,6 +45,11 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Typecheck edge functions
+        # File tsconfig của edge functions chỉ có trên một số nhánh; bỏ qua khi chưa có.
+        if: ${{ hashFiles('supabase/functions/tsconfig.json') != '' }}
+        run: npx tsc --noEmit -p supabase/functions/tsconfig.json
+
       - name: Test
         run: npm test
 
