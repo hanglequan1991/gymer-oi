@@ -51,4 +51,16 @@ export const gymerProfile = {
     removeCancel: 'Giữ lại',
     removed: 'Đã xoá chứng chỉ',
   },
+  location: {
+    title: 'Phòng tập / địa điểm công cộng bạn dạy',
+    warnTitle: 'Không nhập địa chỉ nhà riêng',
+    warnBody: 'Vị trí này hiện trong kết quả tìm kiếm của khách (làm tròn khoảng 100 m).',
+    statusUnset: 'Chưa đặt vị trí',
+    statusSet: 'Đã đặt vị trí (làm tròn khoảng 100 m)',
+    setButton: 'Đặt vị trí hiện tại làm vị trí phòng tập',
+    resetButton: 'Đặt lại',
+    locating: 'Đang lấy vị trí...',
+    saved: 'Đã lưu địa điểm',
+    deniedRetry: 'Thử lại',
+  },
 } as const;

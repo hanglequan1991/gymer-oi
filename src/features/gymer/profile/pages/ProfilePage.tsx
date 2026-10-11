@@ -7,6 +7,7 @@ import { vi } from '@/i18n';
 import type { Certificate, Gymer } from '@/types/domain';
 import { GymerTabsLayout } from '../../GymerTabsLayout';
 import { CertificatesSection } from '../CertificatesSection';
+import { LocationSection } from '../LocationSection';
 import { InfoSection } from '../InfoSection';
 import { SpecialtiesSection } from '../SpecialtiesSection';
 import { VisibilitySection } from '../VisibilitySection';
@@ -41,7 +42,7 @@ function ProfileContent({ gymer, certificates, onChanged }: ProfileContentProps)
       <InfoSection gymer={gymer} onSaved={onChanged} />
       <SpecialtiesSection tags={gymer.tags} onSaved={onChanged} />
       <CertificatesSection certificates={certificates} onChanged={onChanged} />
-      {/* G5b: LocationSection (vị trí phòng tập) gắn ở đây, sau mục Chứng chỉ. */}
+      <LocationSection />
     </>
   );
 }

@@ -7,6 +7,7 @@ import { CalendarLegend, DEFAULT_GYMER_LEGEND, MonthCalendar } from '@/component
 import { useAsync, useServices } from '@/hooks';
 import { vi } from '@/i18n';
 import type { DayInfo, Gymer } from '@/types/domain';
+import { vnToday, vnTodayDate } from '@/utils/date';
 import { GymerTabsLayout } from '../../GymerTabsLayout';
 import { BulkApplyPanel } from '../BulkApplyPanel';
 import { DayOverrideEditor } from '../DayOverrideEditor';
@@ -26,9 +27,10 @@ interface Cursor {
   month: number; // 1-12
 }
 
+/** Tháng đang hiện theo ngày hôm nay ở giờ Việt Nam. */
 function todayCursor(): Cursor {
-  const now = new Date();
-  return { year: now.getFullYear(), month: now.getMonth() + 1 };
+  const { year, month } = vnToday();
+  return { year, month: month + 1 };
 }
 
 /** Phần nội dung khi đã có hồ sơ Gymer: giá mặc định, lịch tháng, khung giờ của ngày đang chọn. */
@@ -60,7 +62,7 @@ function ScheduleContent({ gymer }: { gymer: Gymer }) {
 
   const selectedIso = selected ? toDateIso(selected) : null;
   const selectedDay = shownMonth?.days.find((d) => toDateIso(d.date) === selectedIso);
-  const selectedIsPast = selectedIso !== null && selectedIso < toDateIso(new Date());
+  const selectedIsPast = selectedIso !== null && selectedIso < toDateIso(vnTodayDate());
   const showMonth = (data: MonthData) => (
     <>
       <MonthCalendar

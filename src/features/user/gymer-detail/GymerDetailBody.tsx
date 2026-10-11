@@ -4,6 +4,7 @@ import { useNavigate } from 'zmp-ui';
 import { useAsync, useServices } from '@/hooks';
 import { useBookingDraft } from '@/stores';
 import type { Certificate, Gymer, Review, Slot } from '@/types/domain';
+import { vnToday } from '@/utils/date';
 import { formatDateVN, weekdayVN } from '@/utils/format';
 import { booking } from '@/routes/paths';
 import { AboutSection } from './sections/AboutSection';
@@ -21,10 +22,10 @@ export interface GymerDetailBodyProps {
   reviews: Review[];
 }
 
-/** Ngày hiện tại theo lịch máy (giờ Việt Nam khi máy ở múi giờ đó). */
+/** Tháng đang hiện theo ngày hôm nay ở giờ Việt Nam (month 1-12). */
 function todayView(): { year: number; month: number } {
-  const now = new Date();
-  return { year: now.getFullYear(), month: now.getMonth() + 1 };
+  const { year, month } = vnToday();
+  return { year, month: month + 1 };
 }
 
 export function GymerDetailBody({ gymer, certificates, reviews }: GymerDetailBodyProps) {

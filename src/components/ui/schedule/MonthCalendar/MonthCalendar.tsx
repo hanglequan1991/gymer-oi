@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { DayInfo } from '@/types/domain';
-import { buildMonthGrid, isPastDay, isSameDay } from '@/utils/date';
+import { buildMonthGrid, isPastDay, isSameDay, vnTodayDate } from '@/utils/date';
 import { formatVND, formatVNDShort, monthLabelVN, weekdayVN } from '@/utils/format';
 import { cx } from '@/utils/cx';
 import './MonthCalendar.css';
@@ -12,7 +12,7 @@ export interface MonthCalendarProps {
   selected?: Date | null;
   onSelect?: (d: Date) => void;
   onMonthChange?: (year: number, month: number) => void; // nút ‹ ›
-  today?: Date; // mặc định new Date()
+  today?: Date; // mặc định ngày hôm nay theo giờ Việt Nam (vnTodayDate)
   weekStartsOn?: 1; // T2..CN cố định
   showPrice?: boolean; // mặc định true với variant 'user'
   priceFormatter?: (n: number) => string; // mặc định formatVNDShort
@@ -48,7 +48,7 @@ export function MonthCalendar({
   monthLabel,
   variant = 'user',
 }: MonthCalendarProps) {
-  const todayDate = today ?? new Date();
+  const todayDate = today ?? vnTodayDate();
   const priceVisible = showPrice ?? variant === 'user';
   const label = monthLabel ?? monthLabelVN(year, month - 1);
 

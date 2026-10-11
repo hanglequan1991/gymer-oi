@@ -38,3 +38,24 @@ export function isPastDay(d: Date, today: Date): boolean {
   const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
   return dayStart < todayStart;
 }
+
+// Múi giờ Việt Nam là UTC+7 cố định. Tính bằng số học trên UTC để kết quả không phụ thuộc múi giờ của máy.
+const VN_OFFSET_MS = 7 * 60 * 60 * 1000;
+
+/**
+ * Ngày dương lịch hiện tại theo giờ Việt Nam. Tháng 0-based như phần còn lại của file này.
+ * Dùng cho "hôm nay" trên lịch; KHÔNG dùng để so sánh thời điểm tuyệt đối.
+ */
+export function vnToday(now: Date = new Date()): { year: number; month: number; day: number } {
+  const wall = new Date(now.getTime() + VN_OFFSET_MS);
+  return { year: wall.getUTCFullYear(), month: wall.getUTCMonth(), day: wall.getUTCDate() };
+}
+
+/**
+ * `Date` lúc 00:00 local của ngày hôm nay theo giờ Việt Nam. Dùng làm `today` cho `isPastDay`/`isSameDay`,
+ * để các hàm đó (so theo ngày local) cho ra đúng ngày VN ở mọi múi giờ của máy.
+ */
+export function vnTodayDate(now: Date = new Date()): Date {
+  const { year, month, day } = vnToday(now);
+  return new Date(year, month, day);
+}
