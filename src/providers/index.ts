@@ -5,3 +5,5 @@ export { PlatformProvider } from './PlatformProvider';
 export type { PlatformProviderProps } from './PlatformProvider';
 export { ServicesProvider } from './ServicesProvider';
 export type { ServicesProviderProps } from './ServicesProvider';
+export { SessionProvider } from './SessionProvider';
+export type { SessionProviderProps } from './SessionProvider';

@@ -7,11 +7,14 @@ export const PATHS = {
   gymerDetail: '/gymers/:gymerId',
   booking: '/gymers/:gymerId/book',
   bookingSuccess: '/bookings/:bookingId/success',
+  myBookings: '/me/bookings',
   gymerRoot: '/gymer',
   gymerOverview: '/gymer/overview',
   gymerSchedule: '/gymer/schedule',
   gymerRequests: '/gymer/requests',
   gymerProfile: '/gymer/profile',
+  /** Đăng ký trở thành Gymer; khu Gymer chuyển về đây khi tài khoản chưa là Gymer. */
+  gymerJoin: '/gymer/join',
   /** Thư viện giao diện, chỉ đăng ký khi chạy dev (xem routes/index.tsx). */
   gallery: '/gallery',
 } as const;

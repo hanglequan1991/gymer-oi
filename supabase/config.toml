@@ -13,3 +13,7 @@ major_version = 17
 # Bảo vệ bằng cách xác minh token Zalo phía máy chủ, không bằng JWT của Supabase.
 [functions.auth-zalo]
 verify_jwt = false
+
+# resolve-location chỉ dành cho người đã đăng nhập (có JWT của Supabase), nên bật xác minh JWT ở cổng.
+[functions.resolve-location]
+verify_jwt = true

@@ -5,7 +5,8 @@ import { env } from '@/config';
 import type { Platform } from '@/platform';
 import { createFakePlatform } from '@/platform/fake';
 import { createZmpPlatform } from '@/platform/zmp';
-import { AppProviders } from '@/providers';
+import { AuthGate } from '@/features/auth';
+import { AppProviders, SessionProvider } from '@/providers';
 import { AppRoutes } from '@/routes';
 
 // Chọn cổng platform theo môi trường, một lần khi module nạp (không tạo lại mỗi lần render).
@@ -17,7 +18,12 @@ export default function AppShell() {
     <App>
       <SnackbarProvider>
         <AppProviders platform={platform}>
-          <AppRoutes />
+          {/* SessionProvider phải nằm trong AppProviders (cần services); AuthGate chặn nội dung tới khi có phiên. */}
+          <SessionProvider>
+            <AuthGate bypass={env.dataSource === 'mock'}>
+              <AppRoutes />
+            </AuthGate>
+          </SessionProvider>
         </AppProviders>
       </SnackbarProvider>
     </App>

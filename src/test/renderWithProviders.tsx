@@ -5,8 +5,17 @@ import { SnackbarProvider, ZMPRouter } from 'zmp-ui';
 import type { Platform } from '@/platform';
 import { createFakePlatform } from '@/platform/fake';
 import { AppProviders } from '@/providers';
+import { SessionContext, type SessionApi } from '@/hooks';
 import type { Services } from '@/services';
 import { createStubServices } from './stubServices';
+
+/** Phiên giả ở trạng thái đã đăng nhập: màn test không phải chờ đăng nhập Zalo. */
+const READY_SESSION: SessionApi = {
+  state: { status: 'ready', userId: 'test-user' },
+  retry: async () => undefined,
+  reauthenticate: async () => undefined,
+  signOut: async () => undefined,
+};
 
 export interface RenderWithProvidersOptions {
   /** Bộ services thay thế. Không truyền thì dùng mặc định của AppProviders. */
@@ -49,7 +58,7 @@ export function renderPage(ui: ReactElement, options: RenderPageOptions = {}): R
     <ZMPRouter>
       <SnackbarProvider>
         <AppProviders services={services} platform={platform}>
-          {ui}
+          <SessionContext.Provider value={READY_SESSION}>{ui}</SessionContext.Provider>
         </AppProviders>
       </SnackbarProvider>
     </ZMPRouter>,

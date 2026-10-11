@@ -4,7 +4,7 @@ import { GymerTabsLayout } from '../../GymerTabsLayout';
 
 export function ProfilePage() {
   return (
-    <GymerTabsLayout activeKey="profile">
+    <GymerTabsLayout activeKey="profile" title="Hồ sơ">
       <Page>
         <AppHeader title="Hồ sơ" data-testid="page-header" />
       </Page>

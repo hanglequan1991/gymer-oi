@@ -8,6 +8,8 @@ import { OverviewPage } from '@/features/gymer/overview';
 import { SchedulePage } from '@/features/gymer/schedule';
 import { RequestsPage } from '@/features/gymer/requests';
 import { ProfilePage } from '@/features/gymer/profile';
+import { MyBookingsPage } from '@/features/user/my-bookings';
+import { BecomeGymerPage } from '@/features/gymer/onboarding';
 
 /**
  * Thư viện giao diện chỉ có khi chạy dev. Ở production biến này là null nên module gallery
@@ -35,11 +37,13 @@ export function AppRoutes() {
         <Route path={PATHS.gymerDetail} element={<GymerDetailPage />} />
         <Route path={PATHS.booking} element={<BookingConfirmPage />} />
         <Route path={PATHS.bookingSuccess} element={<BookingSuccessPage />} />
+        <Route path={PATHS.myBookings} element={<MyBookingsPage />} />
         <Route path={PATHS.gymerRoot} element={<GymerRedirect />} />
         <Route path={PATHS.gymerOverview} element={<OverviewPage />} />
         <Route path={PATHS.gymerSchedule} element={<SchedulePage />} />
         <Route path={PATHS.gymerRequests} element={<RequestsPage />} />
         <Route path={PATHS.gymerProfile} element={<ProfilePage />} />
+        <Route path={PATHS.gymerJoin} element={<BecomeGymerPage />} />
         {GalleryPage && (
           <Route
             path={PATHS.gallery}
