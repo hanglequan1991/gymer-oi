@@ -147,3 +147,63 @@ describe('gymerRepo.getDetail', () => {
     expect(calls.some((c) => c.kind === 'rpc')).toBe(false);
   });
 });
+
+describe('gymerRepo.search bộ lọc mở rộng', () => {
+  it('ánh xạ gender, minRating, ageMin, ageMax, maxPrice sang p_* khi có giá trị', async () => {
+    const { client, calls } = createFakeSupabase({ rpc: { search_gymers: { data: [] } } });
+    const repo = createGymerRepo(client, { now: fixedNow });
+
+    await repo.search({
+      center,
+      radiusKm: 5,
+      gender: 'female',
+      minRating: 4,
+      ageMin: 20,
+      ageMax: 35,
+      maxPrice: 300000,
+    });
+
+    expect(calls[0].args).toEqual({
+      p_lat: 10.776,
+      p_lng: 106.701,
+      p_radius_km: 5,
+      p_gender: 'female',
+      p_min_rating: 4,
+      p_age_min: 20,
+      p_age_max: 35,
+      p_max_price: 300000,
+    });
+  });
+
+  it('không gửi tham số mở rộng khi undefined, kể cả khi có keyword và specialty', async () => {
+    const { client, calls } = createFakeSupabase({ rpc: { search_gymers: { data: [] } } });
+
+    await createGymerRepo(client, { now: fixedNow }).search({
+      center,
+      radiusKm: 3,
+      keyword: '  yoga  ',
+      specialty: 'Yoga',
+      gender: undefined,
+      minRating: undefined,
+    });
+
+    expect(calls[0].args).toEqual({
+      p_lat: 10.776,
+      p_lng: 106.701,
+      p_radius_km: 3,
+      p_keyword: 'yoga',
+      p_specialty: 'Yoga',
+    });
+    for (const key of ['p_gender', 'p_min_rating', 'p_age_min', 'p_age_max', 'p_max_price']) {
+      expect(calls[0].args).not.toHaveProperty(key);
+    }
+  });
+
+  it('giá trị 0 vẫn được gửi (undefined mới là không gửi)', async () => {
+    const { client, calls } = createFakeSupabase({ rpc: { search_gymers: { data: [] } } });
+
+    await createGymerRepo(client, { now: fixedNow }).search({ center, radiusKm: 3, minRating: 0, ageMin: 0 });
+
+    expect(calls[0].args).toMatchObject({ p_min_rating: 0, p_age_min: 0 });
+  });
+});

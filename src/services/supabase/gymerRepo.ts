@@ -38,6 +38,12 @@ export function createGymerRepo(client: SupabaseClient<Database>, deps?: GymerRe
       const keyword = normalizeKeyword(query.keyword);
       if (keyword !== '') args.p_keyword = keyword;
       if (query.specialty) args.p_specialty = query.specialty;
+      // Bộ lọc mở rộng: chỉ gửi khi có giá trị, để server dùng mặc định cho phần còn lại.
+      if (query.gender !== undefined) args.p_gender = query.gender;
+      if (query.minRating !== undefined) args.p_min_rating = query.minRating;
+      if (query.ageMin !== undefined) args.p_age_min = query.ageMin;
+      if (query.ageMax !== undefined) args.p_age_max = query.ageMax;
+      if (query.maxPrice !== undefined) args.p_max_price = query.maxPrice;
 
       const res = await client.rpc('search_gymers', args);
       const rows = unwrapOrNull(res) ?? [];

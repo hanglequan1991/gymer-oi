@@ -1,11 +1,26 @@
 // Repository đặt lịch phía khách (plan T-R, D7): create qua RPC create_booking.
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { MyBooking } from '@/types/domain';
 import { AppError } from '../errors';
 import type { BookingCreateInput, BookingRepository } from '../repositories/bookingRepository';
+import { toMyBooking } from '../mappers/booking';
+import type { MyBookingRow } from '../mappers/booking';
 import type { Database } from './database.types';
 import { toAppError } from './postgrestError';
+import { requireUserId } from './userId';
 
 const SLOT_MS = 60 * 60 * 1000;
+
+/**
+ * Chuỗi select cho lượt đặt phía khách. Embed gymer_profiles qua khoá ngoại bookings_gymer_id_fkey (tên, ảnh);
+ * embed reviews(id) chỉ để biết đã đánh giá chưa (RLS trả các đánh giá của chính khách).
+ */
+export const MY_BOOKING_SELECT =
+  'id, gymer_id, starts_at, ends_at, price_vnd, goal, status, expires_at, gymer_profiles!bookings_gymer_id_fkey(display_name, avatar_url), reviews(id)' as const;
+
+const LIST_LIMIT = 100;
+/** Giới hạn ký tự nhận đánh giá; khớp create_review (char_length sau btrim). */
+const REVIEW_MAX_CHARS = 500;
 
 /**
  * Chuỗi thời gian phải có giờ và offset rõ ràng: `Z` hoặc `±hh:mm` / `±hhmm` ở cuối (V4).
@@ -50,18 +65,55 @@ export function createBookingRepo(client: SupabaseClient<Database>): BookingRepo
       return { bookingId: data };
     },
 
-    // Các method dưới đây là stub (T01). T04 cài bản thật.
-    async getMine() {
-      throw new AppError('NOT_IMPLEMENTED', 'Chưa cài đặt "bookings.getMine".');
+    async getMine(bookingId: string): Promise<MyBooking> {
+      const uid = await requireUserId(client);
+      const { data, error } = await client
+        .from('bookings')
+        .select(MY_BOOKING_SELECT)
+        .eq('customer_id', uid)
+        .eq('id', bookingId)
+        .maybeSingle();
+      if (error) throw toAppError(error);
+      if (!data) throw new AppError('NOT_FOUND', 'Không tìm thấy lượt đặt.');
+      return toMyBooking(data as MyBookingRow);
     },
-    async listMine() {
-      throw new AppError('NOT_IMPLEMENTED', 'Chưa cài đặt "bookings.listMine".');
+
+    async listMine(): Promise<MyBooking[]> {
+      const uid = await requireUserId(client);
+      const { data, error } = await client
+        .from('bookings')
+        .select(MY_BOOKING_SELECT)
+        .eq('customer_id', uid)
+        .order('starts_at', { ascending: false })
+        .limit(LIST_LIMIT);
+      if (error) throw toAppError(error);
+      return ((data ?? []) as MyBookingRow[]).map((row) => toMyBooking(row));
     },
-    async cancel() {
-      throw new AppError('NOT_IMPLEMENTED', 'Chưa cài đặt "bookings.cancel".');
+
+    async cancel(bookingId: string): Promise<void> {
+      await requireUserId(client);
+      const { error } = await client.rpc('cancel_booking', { p_booking_id: bookingId });
+      if (error) throw toAppError(error);
     },
-    async review() {
-      throw new AppError('NOT_IMPLEMENTED', 'Chưa cài đặt "bookings.review".');
+
+    async review(bookingId, input): Promise<void> {
+      // Kiểm đầu vào trước khi gọi mạng; server kiểm lại (RLS và create_review là hàng rào thật).
+      if (!Number.isInteger(input.rating) || input.rating < 1 || input.rating > 5) {
+        throw new AppError('VALIDATION', 'Số sao phải là số nguyên từ 1 đến 5.');
+      }
+      // Cắt khoảng trắng và đếm theo ký tự (code point), đúng cách create_review kiểm.
+      const body = (input.text ?? '').trim();
+      if (Array.from(body).length > REVIEW_MAX_CHARS) {
+        throw new AppError('VALIDATION', `Nhận xét không quá ${REVIEW_MAX_CHARS} ký tự.`);
+      }
+
+      await requireUserId(client);
+      const { error } = await client.rpc('create_review', {
+        p_booking_id: bookingId,
+        p_rating: input.rating,
+        p_body: body,
+      });
+      if (error) throw toAppError(error);
     },
   };
 }

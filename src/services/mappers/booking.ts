@@ -1,0 +1,66 @@
+// Mapper hàng bookings phía khách (kèm tên/ảnh Gymer từ gymer_profiles, số đánh giá từ reviews) sang MyBooking (plan T04).
+// Thuần: không gọi mạng, không đọc thời gian hiện tại. Trạng thái, giới hạn số dòng nằm ở bookingRepo.
+import type { BookingStatus, MyBooking } from '@/types/domain';
+import { AppError } from '../errors';
+
+/** Embed 1-1 (gymer_profiles): PostgREST có thể trả object, mảng hoặc null. */
+type OneToOneEmbed<T> = T | T[] | null;
+
+/** Hình dạng một hàng bookings đã chọn bằng MY_BOOKING_SELECT. */
+export interface MyBookingRow {
+  id: string;
+  gymer_id: string;
+  starts_at: string;
+  ends_at: string;
+  price_vnd: number;
+  goal: string | null;
+  status: BookingStatus;
+  expires_at: string;
+  gymer_profiles: OneToOneEmbed<{ display_name: string; avatar_url: string | null }>;
+  /** Embed reviews(id): mảng, rỗng khi chưa có đánh giá (RLS chỉ trả đánh giá của chính khách). */
+  reviews: { id: string }[] | null;
+}
+
+const BOOKING_STATUSES: readonly BookingStatus[] = ['pending', 'confirmed', 'rejected', 'cancelled', 'expired'];
+
+function isBookingStatus(status: string): status is BookingStatus {
+  return (BOOKING_STATUSES as readonly string[]).includes(status);
+}
+
+/** Lấy phần tử của embed 1-1 dù PostgREST trả object, mảng hay null. */
+function firstOf<T>(embed: OneToOneEmbed<T>): T | undefined {
+  const value = Array.isArray(embed) ? embed[0] : embed;
+  return value ?? undefined;
+}
+
+/**
+ * Chuyển một hàng bookings sang MyBooking.
+ * - Trạng thái ngoài bộ enum booking_status: ném UNKNOWN.
+ * - expiresAt chỉ có khi pending.
+ * - goal rỗng hoặc chỉ có khoảng trắng: không có key goal.
+ * - gymerAvatarUrl: không có key khi Gymer chưa có ảnh.
+ * - reviewed = có ít nhất một đánh giá trong embed.
+ */
+export function toMyBooking(row: MyBookingRow): MyBooking {
+  if (!isBookingStatus(row.status)) {
+    throw new AppError('UNKNOWN', `Trạng thái lượt đặt không hợp lệ: ${row.status}`);
+  }
+
+  const gymer = firstOf(row.gymer_profiles);
+  const booking: MyBooking = {
+    id: row.id,
+    gymerId: row.gymer_id,
+    gymerName: gymer?.display_name ?? '',
+    start: row.starts_at,
+    end: row.ends_at,
+    price: row.price_vnd,
+    status: row.status,
+    reviewed: (row.reviews?.length ?? 0) > 0,
+  };
+
+  if (gymer?.avatar_url) booking.gymerAvatarUrl = gymer.avatar_url;
+  if (row.goal !== null && row.goal.trim() !== '') booking.goal = row.goal;
+  if (row.status === 'pending') booking.expiresAt = row.expires_at;
+
+  return booking;
+}

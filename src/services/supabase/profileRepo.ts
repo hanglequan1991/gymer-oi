@@ -1,11 +1,12 @@
-// Repository hồ sơ của chính Gymer trên Supabase (plan app-supabase-integration, T-P, D7): getMine và updateMine.
+// Repository hồ sơ của chính Gymer trên Supabase (plan app-supabase-integration, T-P, D7; plan app-ui-integration, T05).
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Gymer, Specialty } from '@/types/domain';
+import { SPECIALTIES, type BecomeGymerInput, type Certificate, type Gymer, type GymerAccountStatus } from '@/types/domain';
+import type { GeoPoint } from '@/types/geo';
 import { AppError } from '../errors';
 import type { GymerDetail, GymerRepository } from '../repositories/gymerRepository';
 import type { ProfileRepository } from '../repositories/profileRepository';
 import type { Database } from './database.types';
-import { assertOk, unwrapOrNull } from './postgrestError';
+import { assertOk, toAppError, unwrap, unwrapOrNull } from './postgrestError';
 import { requireUserId } from './userId';
 
 type ProfilePatch = Parameters<ProfileRepository['updateMine']>[0];
@@ -14,10 +15,19 @@ type ProfilePatch = Parameters<ProfileRepository['updateMine']>[0];
 const NAME_MAX = 50;
 const AREA_MAX = 100;
 const BIO_MAX = 1000;
+const CERT_NAME_MAX = 100;
 
-/** Danh sách chuyên môn hợp lệ (khớp bảng `specialties`). */
-const SPECIALTIES: readonly Specialty[] = ['Gym', 'Giảm mỡ', 'Tăng cơ', 'Yoga', 'Calisthenics', 'Giãn cơ'];
+/** Giá VND: số nguyên 0..5.000.000 (khớp check của gymer_profiles). */
+const MAX_PRICE_VND = 5_000_000;
+/** Tuổi Gymer tối thiểu (trigger gymer_profiles_check_age). */
+const MIN_AGE = 18;
+/** Năm sinh sớm nhất cho phép (khớp check birth_year của gymer_profiles). */
+const MIN_BIRTH_YEAR = 1940;
+/** Hệ số làm tròn toạ độ: 3 chữ số thập phân (~110 m), khớp quyết định riêng tư của schema. */
+const ROUND_FACTOR = 1000;
+
 const SPECIALTY_SET: ReadonlySet<string> = new Set<string>(SPECIALTIES);
+const GENDERS: ReadonlySet<string> = new Set<string>(['female', 'male']);
 
 /** Đếm theo ký tự (code point), giống cách server đếm char_length. */
 function charLength(s: string): number {
@@ -26,6 +36,46 @@ function charLength(s: string): number {
 
 function invalid(message: string): AppError {
   return new AppError('VALIDATION', message);
+}
+
+/** Năm hiện tại theo giờ Việt Nam: tuổi và năm sinh tính theo múi giờ này (trigger cũng dùng Asia/Ho_Chi_Minh). */
+function currentYearVN(): number {
+  return Number(new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric' }).format(new Date()));
+}
+
+function roundCoord(n: number): number {
+  return Math.round(n * ROUND_FACTOR) / ROUND_FACTOR;
+}
+
+function assertPrice(label: string, value: number): void {
+  if (!Number.isInteger(value) || value < 0 || value > MAX_PRICE_VND) {
+    throw invalid(`Giá ${label} phải là số nguyên từ 0 đến 5.000.000 đ.`);
+  }
+}
+
+/** Kiểm đầu vào đăng ký Gymer ngay tại client, trước mọi lệnh mạng. Ném VALIDATION khi sai. */
+function validateBecomeGymer(input: BecomeGymerInput): BecomeGymerInput {
+  const name = input.name.trim();
+  const nameLen = charLength(name);
+  if (nameLen < 1 || nameLen > NAME_MAX) throw invalid('Tên hiển thị phải từ 1 đến 50 ký tự.');
+
+  const area = input.area.trim();
+  const areaLen = charLength(area);
+  if (areaLen < 1 || areaLen > AREA_MAX) throw invalid('Khu vực phải từ 1 đến 100 ký tự.');
+
+  if (!GENDERS.has(input.gender)) throw invalid('Giới tính không hợp lệ.');
+
+  const maxBirthYear = currentYearVN() - MIN_AGE;
+  if (!Number.isInteger(input.birthYear) || input.birthYear < MIN_BIRTH_YEAR || input.birthYear > maxBirthYear) {
+    throw invalid(`Năm sinh phải từ ${MIN_BIRTH_YEAR} đến ${maxBirthYear}.`);
+  }
+
+  assertPrice('ngày thường', input.priceWeekday);
+  assertPrice('cuối tuần', input.priceWeekend);
+
+  if (input.tags.some((t) => !SPECIALTY_SET.has(t))) throw invalid('Chuyên môn không hợp lệ.');
+
+  return { ...input, name, area, tags: [...new Set(input.tags)] };
 }
 
 interface ValidPatch {
@@ -131,24 +181,130 @@ export function createProfileRepo(client: SupabaseClient<Database>, gymers: Gyme
       return detail.gymer satisfies Gymer;
     },
 
-    // Các method dưới đây là stub (T01). T05 cài bản thật.
-    async getMyStatus() {
-      throw new AppError('NOT_IMPLEMENTED', 'Chưa cài đặt "profile.getMyStatus".');
+    async getMyStatus(): Promise<GymerAccountStatus | null> {
+      const uid = await requireUserId(client);
+      const profileRes = await client
+        .from('gymer_profiles')
+        .select('is_listed, accepts_requests')
+        .eq('user_id', uid)
+        .maybeSingle();
+      const profile = unwrapOrNull(profileRes);
+      if (profile === null) return null;
+
+      const locationRes = await client.from('gymer_locations').select('user_id').eq('user_id', uid).maybeSingle();
+      const location = unwrapOrNull(locationRes);
+      return {
+        isListed: profile.is_listed,
+        acceptsRequests: profile.accepts_requests,
+        hasLocation: location !== null,
+      };
     },
-    async becomeGymer() {
-      throw new AppError('NOT_IMPLEMENTED', 'Chưa cài đặt "profile.becomeGymer".');
+
+    async becomeGymer(rawInput) {
+      // Kiểm đầu vào trước: lỗi VALIDATION không gọi mạng.
+      const input = validateBecomeGymer(rawInput);
+      const uid = await requireUserId(client);
+
+      const inserted = await client.from('gymer_profiles').insert({
+        user_id: uid,
+        display_name: input.name,
+        gender: input.gender,
+        birth_year: input.birthYear,
+        area_label: input.area,
+        avatar_url: input.avatarUrl ?? null,
+        price_weekday_vnd: input.priceWeekday,
+        price_weekend_vnd: input.priceWeekend,
+        // Đăng ký xong chưa hiển thị: Gymer chủ động bật sau khi có vị trí.
+        is_listed: false,
+        accepts_requests: true,
+      });
+      if (inserted.error != null) {
+        // Đọc SQLSTATE thô trước khi toAppError (toAppError đưa 23505 về UNKNOWN): 23505 = đã có hồ sơ.
+        const code = (inserted.error as { code?: string }).code;
+        if (code === '23505') throw invalid('Bạn đã là Gymer.');
+        throw toAppError(inserted.error);
+      }
+
+      await syncSpecialties(uid, input.tags);
     },
-    async setVisibility() {
-      throw new AppError('NOT_IMPLEMENTED', 'Chưa cài đặt "profile.setVisibility".');
+
+    async setVisibility(patch) {
+      const uid = await requireUserId(client);
+
+      // Bật hiển thị khi chưa có vị trí: chặn ở client, không gọi update (server không có ràng buộc này).
+      if (patch.isListed === true) {
+        const location = unwrapOrNull(
+          await client.from('gymer_locations').select('user_id').eq('user_id', uid).maybeSingle(),
+        );
+        if (location === null) throw invalid('Cần đặt vị trí trước khi hiển thị.');
+      }
+
+      const fields: { is_listed?: boolean; accepts_requests?: boolean } = {};
+      if (patch.isListed !== undefined) fields.is_listed = patch.isListed;
+      if (patch.acceptsRequests !== undefined) fields.accepts_requests = patch.acceptsRequests;
+      if (Object.keys(fields).length === 0) return;
+
+      const res = await client.from('gymer_profiles').update(fields).eq('user_id', uid).select('user_id');
+      assertOk(res);
+      if (!res.data || res.data.length === 0) {
+        throw new AppError('NOT_FOUND', 'Không tìm thấy hồ sơ Gymer.');
+      }
     },
-    async setLocation() {
-      throw new AppError('NOT_IMPLEMENTED', 'Chưa cài đặt "profile.setLocation".');
+
+    async setLocation(point: GeoPoint) {
+      if (!Number.isFinite(point.lat) || point.lat < -90 || point.lat > 90) {
+        throw invalid('Vĩ độ không hợp lệ.');
+      }
+      if (!Number.isFinite(point.lng) || point.lng < -180 || point.lng > 180) {
+        throw invalid('Kinh độ không hợp lệ.');
+      }
+      const uid = await requireUserId(client);
+      const coords = { lat: roundCoord(point.lat), lng: roundCoord(point.lng) };
+
+      // Client không có quyền upsert: cập nhật trước, không có hàng thì chèn (mẫu của setSlotClosed).
+      const updated = await client.from('gymer_locations').update(coords).eq('user_id', uid).select('user_id');
+      assertOk(updated);
+      if (updated.data && updated.data.length > 0) return;
+
+      const inserted = await client.from('gymer_locations').insert({ user_id: uid, ...coords });
+      if (inserted.error != null) {
+        const code = (inserted.error as { code?: string }).code;
+        // 23503: chưa có gymer_profiles (chưa là Gymer) nên khoá ngoại chặn việc chèn.
+        if (code === '23503') throw new AppError('NOT_FOUND', 'Không tìm thấy hồ sơ Gymer.');
+        throw toAppError(inserted.error);
+      }
     },
-    async addCertificate() {
-      throw new AppError('NOT_IMPLEMENTED', 'Chưa cài đặt "profile.addCertificate".');
+
+    async addCertificate(rawName: string): Promise<Certificate> {
+      const name = rawName.trim();
+      const len = charLength(name);
+      if (len < 1 || len > CERT_NAME_MAX) throw invalid('Tên chứng chỉ phải từ 1 đến 100 ký tự.');
+      const uid = await requireUserId(client);
+
+      // Trigger giới hạn 10 chứng chỉ raise LIMIT_REACHED (đi qua toAppError -> appErrorFromRpc).
+      const res = await client
+        .from('certificates')
+        .insert({ gymer_id: uid, name })
+        .select('id,name')
+        .single();
+      if (res.error != null) {
+        const code = (res.error as { code?: string }).code;
+        // 23503: chưa là Gymer (không có gymer_profiles để gắn chứng chỉ).
+        if (code === '23503') throw new AppError('NOT_FOUND', 'Không tìm thấy hồ sơ Gymer.');
+        throw toAppError(res.error);
+      }
+      const row = unwrap(res);
+      return { id: row.id, name: row.name };
     },
-    async removeCertificate() {
-      throw new AppError('NOT_IMPLEMENTED', 'Chưa cài đặt "profile.removeCertificate".');
+
+    async removeCertificate(id: string) {
+      const uid = await requireUserId(client);
+      // Lọc theo gymer_id của chính mình: không xoá được chứng chỉ người khác.
+      const res = await client.from('certificates').delete().eq('id', id).eq('gymer_id', uid).select('id');
+      assertOk(res);
+      if (!res.data || res.data.length === 0) {
+        throw new AppError('NOT_FOUND', 'Không tìm thấy chứng chỉ.');
+      }
     },
   };
 }

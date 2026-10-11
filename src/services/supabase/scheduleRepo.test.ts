@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AppError } from '../errors';
 import { createFakeSupabase } from '@/test/fakeSupabase';
-import type { FakeCall, FakeResult, FakeScript } from '@/test/fakeSupabase';
+import type { FakeCall, FakeResponder, FakeResult, FakeScript } from '@/test/fakeSupabase';
 import { createScheduleRepo } from './scheduleRepo';
 
 /** Mã lỗi AppError của một promise; undefined nếu không ném. */
@@ -261,6 +261,185 @@ describe('scheduleRepo.setSlotClosed', () => {
     });
 
     expect(await codeOf(createScheduleRepo(client).setSlotClosed(SLOT, true))).toBe('UNAUTHENTICATED');
+    expect(fromCalls(calls)).toHaveLength(0);
+  });
+});
+
+describe('scheduleRepo.setDayOverrides', () => {
+  type Row = { is_open: boolean; price_vnd: number | null };
+
+  /**
+   * Kịch bản gymer_day_overrides: select trả dòng trong `rows` theo ngày;
+   * update trả [] khi ngày chưa có dòng (để repo đi tiếp sang insert); `failWrite` gây lỗi ghi theo ngày.
+   */
+  function overrideTable(rows: Record<string, Row> = {}, failWrite: Record<string, FakeResult> = {}): FakeResponder {
+    return (call) => {
+      const day = String(eqs(call).day);
+      if (call.op === 'select') return { data: rows[day] ?? null };
+      if (call.op === 'delete') return { data: null };
+      const fail = failWrite[day];
+      if (fail) return fail;
+      if (call.op === 'update') return { data: rows[day] ? [{}] : [] };
+      return { data: null };
+    };
+  }
+
+  const authed = (table: FakeResponder): FakeScript => ({
+    auth: { session: SESSION },
+    from: { gymer_day_overrides: table },
+  });
+
+  /** Các thao tác ghi (update/insert/delete) theo thứ tự, bỏ select. */
+  const writeOps = (calls: FakeCall[]) => fromCalls(calls).filter((c) => c.op !== 'select');
+
+  it('đặt giá riêng cho ngày chưa có dòng: update 0 hàng rồi insert đúng giá, không upsert', async () => {
+    const { client, calls } = createFakeSupabase(authed(overrideTable()));
+
+    const result = await createScheduleRepo(client).setDayOverrides(['2026-10-17'], { price: 300000 });
+
+    expect(result).toEqual({ applied: ['2026-10-17'], skipped: [] });
+    expect(writeOps(calls).map((c) => c.op)).toEqual(['update', 'insert']);
+    expect(writeOps(calls)[1].payload).toEqual({
+      gymer_id: 'u1',
+      day: '2026-10-17',
+      is_open: true,
+      price_vnd: 300000,
+    });
+  });
+
+  it('bỏ giá riêng (price null) khi ngày mở: xoá dòng, không update hay insert', async () => {
+    const { client, calls } = createFakeSupabase(
+      authed(overrideTable({ '2026-10-17': { is_open: true, price_vnd: 300000 } })),
+    );
+
+    const result = await createScheduleRepo(client).setDayOverrides(['2026-10-17'], { price: null });
+
+    expect(result.applied).toEqual(['2026-10-17']);
+    expect(writeOps(calls).map((c) => c.op)).toEqual(['delete']);
+    expect(eqs(writeOps(calls)[0])).toEqual({ gymer_id: 'u1', day: '2026-10-17' });
+  });
+
+  it('đóng cả ngày chưa có dòng: insert is_open=false, giá null', async () => {
+    const { client, calls } = createFakeSupabase(authed(overrideTable()));
+
+    await createScheduleRepo(client).setDayOverrides(['2026-10-17'], { closed: true });
+
+    expect(writeOps(calls).map((c) => c.op)).toEqual(['update', 'insert']);
+    expect(writeOps(calls)[1].payload).toMatchObject({ is_open: false, price_vnd: null });
+  });
+
+  it('mở lại ngày đang đóng không giá riêng: xoá dòng (trở về mặc định)', async () => {
+    const { client, calls } = createFakeSupabase(
+      authed(overrideTable({ '2026-10-17': { is_open: false, price_vnd: null } })),
+    );
+
+    await createScheduleRepo(client).setDayOverrides(['2026-10-17'], { closed: false });
+
+    expect(writeOps(calls).map((c) => c.op)).toEqual(['delete']);
+  });
+
+  it('mở lại ngày đang đóng nhưng còn giá riêng: update is_open=true và giữ giá', async () => {
+    const { client, calls } = createFakeSupabase(
+      authed(overrideTable({ '2026-10-17': { is_open: false, price_vnd: 280000 } })),
+    );
+
+    await createScheduleRepo(client).setDayOverrides(['2026-10-17'], { closed: false });
+
+    expect(writeOps(calls).map((c) => c.op)).toEqual(['update']);
+    expect(writeOps(calls)[0].payload).toEqual({ is_open: true, price_vnd: 280000 });
+  });
+
+  it('patch rỗng giữ nguyên dòng hiện có (không đổi giá, không đổi đóng mở)', async () => {
+    const { client, calls } = createFakeSupabase(
+      authed(overrideTable({ '2026-10-17': { is_open: false, price_vnd: 280000 } })),
+    );
+
+    await createScheduleRepo(client).setDayOverrides(['2026-10-17'], {});
+
+    expect(writeOps(calls)[0].payload).toEqual({ is_open: false, price_vnd: 280000 });
+  });
+
+  it('ngày có lịch đặt không đóng được: vào skipped, các ngày khác vẫn áp dụng', async () => {
+    const { client } = createFakeSupabase(
+      authed(overrideTable({}, { '2026-10-18': slotError('P0001', 'SLOT_HAS_BOOKING') })),
+    );
+
+    const result = await createScheduleRepo(client).setDayOverrides(
+      ['2026-10-17', '2026-10-18', '2026-10-19'],
+      { closed: true },
+    );
+
+    expect(result).toEqual({ applied: ['2026-10-17', '2026-10-19'], skipped: ['2026-10-18'] });
+  });
+
+  it('lỗi VALIDATION khi MỞ ngày (không phải đóng): không vào skipped, ném ngay', async () => {
+    const { client, calls } = createFakeSupabase(
+      authed(overrideTable({ '2026-10-17': { is_open: false, price_vnd: null } }, {
+        '2026-10-17': slotError('P0001', 'SLOT_HAS_BOOKING'),
+      })),
+    );
+
+    expect(
+      await codeOf(createScheduleRepo(client).setDayOverrides(['2026-10-17'], { closed: false, price: 300000 })),
+    ).toBe(
+      'VALIDATION',
+    );
+    expect(writeOps(calls)).toHaveLength(1);
+  });
+
+  it('lỗi khác (không phải VALIDATION khi đóng) ném ngay, không xử lý các ngày sau', async () => {
+    const { client, calls } = createFakeSupabase(
+      authed(overrideTable({}, { '2026-10-17': { error: { code: '42501', message: 'denied' } } })),
+    );
+
+    expect(
+      await codeOf(createScheduleRepo(client).setDayOverrides(['2026-10-17', '2026-10-18'], { closed: true })),
+    ).toBe('FORBIDDEN');
+    expect(writeOps(calls).some((c) => eqs(c).day === '2026-10-18')).toBe(false);
+  });
+
+  it('63 ngày: VALIDATION, không gọi mạng', async () => {
+    const { client, calls } = createFakeSupabase(authed(overrideTable()));
+    const days = Array.from({ length: 63 }, (_, i) => `2026-10-${String((i % 28) + 1).padStart(2, '0')}`);
+
+    expect(await codeOf(createScheduleRepo(client).setDayOverrides(days, { closed: true }))).toBe('VALIDATION');
+    expect(calls).toHaveLength(0);
+  });
+
+  it('đúng 62 ngày được chấp nhận', async () => {
+    const { client } = createFakeSupabase(authed(overrideTable()));
+    const days = Array.from({ length: 62 }, (_, i) => {
+      const d = new Date(Date.UTC(2026, 0, 1 + i));
+      return d.toISOString().slice(0, 10);
+    });
+
+    const result = await createScheduleRepo(client).setDayOverrides(days, { closed: true });
+    expect(result.applied).toHaveLength(62);
+  });
+
+  it.each([-1, 5_000_001, 1.5, Number.NaN])('giá %s sai: VALIDATION, không gọi gì', async (price) => {
+    const { client, calls } = createFakeSupabase(authed(overrideTable()));
+
+    expect(await codeOf(createScheduleRepo(client).setDayOverrides(['2026-10-17'], { price }))).toBe('VALIDATION');
+    expect(calls).toHaveLength(0);
+  });
+
+  it.each(['2026-10-1', '17/10/2026', '2026-02-30', '2026-13-01', '2026-10-17T07:00'])(
+    'ngày "%s" sai định dạng hoặc không tồn tại: VALIDATION, không gọi gì',
+    async (day) => {
+      const { client, calls } = createFakeSupabase(authed(overrideTable()));
+
+      expect(await codeOf(createScheduleRepo(client).setDayOverrides([day], { closed: true }))).toBe('VALIDATION');
+      expect(calls).toHaveLength(0);
+    },
+  );
+
+  it('chưa đăng nhập: UNAUTHENTICATED, không đọc hay ghi bảng', async () => {
+    const { client, calls } = createFakeSupabase({ auth: { session: null }, from: { gymer_day_overrides: overrideTable() } });
+
+    expect(await codeOf(createScheduleRepo(client).setDayOverrides(['2026-10-17'], { closed: true }))).toBe(
+      'UNAUTHENTICATED',
+    );
     expect(fromCalls(calls)).toHaveLength(0);
   });
 });
