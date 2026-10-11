@@ -3,3 +3,5 @@ export { useSearchFilters } from './searchFilters';
 export type { SearchFiltersData, SearchFiltersState } from './searchFilters';
 export { useBookingDraft } from './bookingDraft';
 export type { BookingDraftData, BookingDraftState } from './bookingDraft';
+export { useUserLocation } from './userLocation';
+export type { LocationSource, UserLocationData, UserLocationState } from './userLocation';

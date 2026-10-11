@@ -5,3 +5,5 @@ export { useAsync } from './useAsync';
 export type { AsyncState } from './useAsync';
 export { useSession, SessionContext } from './useSession';
 export type { SessionApi, SessionState, SessionAction } from './useSession';
+export { useCurrentLocation } from './useCurrentLocation';
+export type { CurrentLocation, CurrentLocationStatus } from './useCurrentLocation';

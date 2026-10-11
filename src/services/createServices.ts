@@ -23,7 +23,7 @@ export type AppSupabaseClient = ReturnType<typeof createSupabaseClient>;
  * Phụ thuộc có thể tiêm vào composition root (để test và để chọn nền tảng thật).
  * - storage: lưu phiên đăng nhập của supabase-js (lấy từ PlatformContext).
  * - auth: cổng đăng nhập Zalo; thiếu thì session.signIn ném UNKNOWN, các phương thức khác vẫn dùng được.
- * - location: cổng vị trí của platform (lấy token vị trí). Chưa được dùng ở T01; T10 nối vào location repository.
+ * - location: cổng vị trí của platform (lấy token vị trí); cùng với auth, nối vào location repository (T10).
  * - client: client Supabase có sẵn (test); thiếu thì dựng từ env và storage.
  * - now: đồng hồ dùng chung cho repository cần thời điểm hiện tại.
  */
@@ -127,7 +127,8 @@ function createSupabaseServices(env: AppEnv, deps: CreateServicesDeps): Services
     requests: createRequestRepo(client, { now }),
     profile: createProfileRepo(client, gymers),
     session,
-    location: createLocationRepo(),
+    // Cần auth (lấy access token Zalo) và location (lấy token vị trí); thiếu thì getCurrent ném UNKNOWN.
+    location: createLocationRepo(client, { auth: deps.auth, location: deps.location }),
   };
 }
 

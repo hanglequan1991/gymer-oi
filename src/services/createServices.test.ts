@@ -187,10 +187,11 @@ describe('createServices với nguồn "supabase"', () => {
     ]);
   });
 
-  it('location dựng từ createLocationRepo không tham số', () => {
-    createServices(SUPABASE_ENV, { client: FAKE_CLIENT, auth: FAKE_AUTH });
+  it('location dựng từ createLocationRepo với client, auth và location (T10)', () => {
+    const location = { requestLocationToken: vi.fn() };
+    createServices(SUPABASE_ENV, { client: FAKE_CLIENT, auth: FAKE_AUTH, location });
 
-    expect(createLocationRepo).toHaveBeenCalledWith();
+    expect(createLocationRepo).toHaveBeenCalledWith(FAKE_CLIENT, { auth: FAKE_AUTH, location });
   });
 
   it.each(calls)('%s gọi đúng repository thật', async (_name, call, expected) => {

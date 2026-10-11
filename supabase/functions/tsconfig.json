@@ -23,6 +23,11 @@
     "auth-zalo/adapters/zaloVerifier.ts",
     "auth-zalo/adapters/userStore.ts",
     "auth-zalo/adapters/sessionIssuer.ts",
-    "auth-zalo/adapters/adapters.test.ts"
+    "auth-zalo/adapters/adapters.test.ts",
+    "resolve-location/ports.ts",
+    "resolve-location/handler.ts",
+    "resolve-location/handler.test.ts",
+    "resolve-location/adapters/zaloLocationResolver.ts",
+    "resolve-location/adapters/zaloLocationResolver.test.ts"
   ]
 }
