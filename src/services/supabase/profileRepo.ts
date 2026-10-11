@@ -130,5 +130,25 @@ export function createProfileRepo(client: SupabaseClient<Database>, gymers: Gyme
       const detail = await gymers.getDetail(uid);
       return detail.gymer satisfies Gymer;
     },
+
+    // Các method dưới đây là stub (T01). T05 cài bản thật.
+    async getMyStatus() {
+      throw new AppError('NOT_IMPLEMENTED', 'Chưa cài đặt "profile.getMyStatus".');
+    },
+    async becomeGymer() {
+      throw new AppError('NOT_IMPLEMENTED', 'Chưa cài đặt "profile.becomeGymer".');
+    },
+    async setVisibility() {
+      throw new AppError('NOT_IMPLEMENTED', 'Chưa cài đặt "profile.setVisibility".');
+    },
+    async setLocation() {
+      throw new AppError('NOT_IMPLEMENTED', 'Chưa cài đặt "profile.setLocation".');
+    },
+    async addCertificate() {
+      throw new AppError('NOT_IMPLEMENTED', 'Chưa cài đặt "profile.addCertificate".');
+    },
+    async removeCertificate() {
+      throw new AppError('NOT_IMPLEMENTED', 'Chưa cài đặt "profile.removeCertificate".');
+    },
   };
 }

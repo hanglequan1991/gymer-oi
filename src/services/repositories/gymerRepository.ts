@@ -1,5 +1,5 @@
 // Cổng truy cập dữ liệu Gymer (chỉ interface, chưa có cài đặt).
-import type { Certificate, Gymer, Review, Specialty } from '@/types/domain';
+import type { Certificate, Gender, Gymer, Review, Specialty } from '@/types/domain';
 import type { GeoPoint, RadiusKm } from '@/types/geo';
 
 /** Tham số tìm Gymer quanh một điểm. */
@@ -8,6 +8,13 @@ export interface GymerSearchQuery {
   radiusKm: RadiusKm;
   keyword?: string;
   specialty?: Specialty;
+  /** Các bộ lọc dưới đây được ánh xạ sang search_gymers ở T06; T01 chỉ khai báo chữ ký. */
+  gender?: Gender;
+  minRating?: number;
+  ageMin?: number;
+  ageMax?: number;
+  /** So với GIÁ NGÀY THƯỜNG (priceWeekday), theo server. */
+  maxPrice?: number;
 }
 
 /** Thông tin chi tiết một Gymer kèm chứng chỉ và đánh giá. */

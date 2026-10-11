@@ -49,5 +49,19 @@ export function createBookingRepo(client: SupabaseClient<Database>): BookingRepo
       }
       return { bookingId: data };
     },
+
+    // Các method dưới đây là stub (T01). T04 cài bản thật.
+    async getMine() {
+      throw new AppError('NOT_IMPLEMENTED', 'Chưa cài đặt "bookings.getMine".');
+    },
+    async listMine() {
+      throw new AppError('NOT_IMPLEMENTED', 'Chưa cài đặt "bookings.listMine".');
+    },
+    async cancel() {
+      throw new AppError('NOT_IMPLEMENTED', 'Chưa cài đặt "bookings.cancel".');
+    },
+    async review() {
+      throw new AppError('NOT_IMPLEMENTED', 'Chưa cài đặt "bookings.review".');
+    },
   };
 }

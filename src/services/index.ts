@@ -2,6 +2,7 @@
 import type {
   BookingRepository,
   GymerRepository,
+  LocationRepository,
   ProfileRepository,
   RequestRepository,
   ScheduleRepository,
@@ -16,6 +17,7 @@ export interface Services {
   requests: RequestRepository;
   profile: ProfileRepository;
   session: SessionRepository;
+  location: LocationRepository;
 }
 
 export type { ErrorCode } from './errors';
@@ -30,4 +32,5 @@ export type {
   RequestRepository,
   ProfileRepository,
   SessionRepository,
+  LocationRepository,
 } from './repositories';

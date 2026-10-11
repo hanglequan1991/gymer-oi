@@ -20,7 +20,7 @@ function Probe() {
 function fakePlatform(): Platform {
   return {
     auth: { login: vi.fn(), getProfile: vi.fn() },
-    location: { getLocation: vi.fn() },
+    location: { requestLocationToken: vi.fn() },
     storage: { get: vi.fn(), set: vi.fn(), remove: vi.fn() },
   } as unknown as Platform;
 }
@@ -30,7 +30,7 @@ beforeEach(() => {
 });
 
 describe('ServicesProvider', () => {
-  it('không ném lỗi khi thiếu PlatformProvider và truyền storage/auth là undefined', () => {
+  it('không ném lỗi khi thiếu PlatformProvider và truyền storage/auth/location là undefined', () => {
     render(
       <ServicesProvider>
         <Probe />
@@ -38,10 +38,14 @@ describe('ServicesProvider', () => {
     );
 
     expect(screen.getByText('default-services')).toBeTruthy();
-    expect(createServices).toHaveBeenCalledWith(expect.anything(), { storage: undefined, auth: undefined });
+    expect(createServices).toHaveBeenCalledWith(expect.anything(), {
+      storage: undefined,
+      auth: undefined,
+      location: undefined,
+    });
   });
 
-  it('lấy storage và auth từ PlatformContext', () => {
+  it('lấy storage, auth và location từ PlatformContext', () => {
     const platform = fakePlatform();
     render(
       <PlatformContext.Provider value={platform}>
@@ -51,7 +55,11 @@ describe('ServicesProvider', () => {
       </PlatformContext.Provider>,
     );
 
-    expect(createServices).toHaveBeenCalledWith(expect.anything(), { storage: platform.storage, auth: platform.auth });
+    expect(createServices).toHaveBeenCalledWith(expect.anything(), {
+      storage: platform.storage,
+      auth: platform.auth,
+      location: platform.location,
+    });
   });
 
   it('tạo services một lần khi render lại với cùng platform', () => {

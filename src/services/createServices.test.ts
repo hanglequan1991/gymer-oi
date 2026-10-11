@@ -14,15 +14,32 @@ const fakes = vi.hoisted(() => ({
     getDaySlots: async () => 'schedule.getDaySlots',
     setPrices: async () => 'schedule.setPrices',
     setSlotClosed: async () => 'schedule.setSlotClosed',
+    setDayOverrides: async () => 'schedule.setDayOverrides',
   },
-  bookings: { create: async () => 'bookings.create' },
+  bookings: {
+    create: async () => 'bookings.create',
+    getMine: async () => 'bookings.getMine',
+    listMine: async () => 'bookings.listMine',
+    cancel: async () => 'bookings.cancel',
+    review: async () => 'bookings.review',
+  },
   requests: { list: async () => 'requests.list', respond: async () => 'requests.respond' },
-  profile: { getMine: async () => 'profile.getMine', updateMine: async () => 'profile.updateMine' },
+  profile: {
+    getMine: async () => 'profile.getMine',
+    updateMine: async () => 'profile.updateMine',
+    getMyStatus: async () => 'profile.getMyStatus',
+    becomeGymer: async () => 'profile.becomeGymer',
+    setVisibility: async () => 'profile.setVisibility',
+    setLocation: async () => 'profile.setLocation',
+    addCertificate: async () => 'profile.addCertificate',
+    removeCertificate: async () => 'profile.removeCertificate',
+  },
   session: {
     signIn: async () => 'session.signIn',
     getSession: async () => 'session.getSession',
     signOut: async () => 'session.signOut',
   },
+  location: { getCurrent: async () => 'location.getCurrent' },
   client: { marker: 'built-client' },
 }));
 
@@ -33,6 +50,7 @@ vi.mock('./supabase/bookingRepo', () => ({ createBookingRepo: vi.fn(() => fakes.
 vi.mock('./supabase/requestRepo', () => ({ createRequestRepo: vi.fn(() => fakes.requests) }));
 vi.mock('./supabase/profileRepo', () => ({ createProfileRepo: vi.fn(() => fakes.profile) }));
 vi.mock('./supabase/sessionRepo', () => ({ createSessionRepo: vi.fn(() => fakes.session) }));
+vi.mock('./supabase/locationRepo', () => ({ createLocationRepo: vi.fn(() => fakes.location) }));
 
 import { createGymerRepo } from './supabase/gymerRepo';
 import { createScheduleRepo } from './supabase/scheduleRepo';
@@ -40,6 +58,7 @@ import { createBookingRepo } from './supabase/bookingRepo';
 import { createRequestRepo } from './supabase/requestRepo';
 import { createProfileRepo } from './supabase/profileRepo';
 import { createSessionRepo } from './supabase/sessionRepo';
+import { createLocationRepo } from './supabase/locationRepo';
 import { createSupabaseClient } from './supabase/client';
 
 /** Mỗi phần tử: tên phương thức, lệnh gọi, và tên kết quả mong đợi ở nhánh supabase. */
@@ -51,18 +70,67 @@ const calls: Array<[string, (s: Services) => Promise<unknown>, string]> = [
   ['schedule.setPrices', (s) => s.schedule.setPrices({ weekday: 100000, weekend: 150000 }), 'schedule.setPrices'],
   ['schedule.setSlotClosed', (s) => s.schedule.setSlotClosed('slot1', true), 'schedule.setSlotClosed'],
   [
+    'schedule.setDayOverrides',
+    (s) => s.schedule.setDayOverrides(['2026-10-17'], { closed: true }),
+    'schedule.setDayOverrides',
+  ],
+  [
     'bookings.create',
     (s) => s.bookings.create({ gymerId: 'g1', startIso: '2026-10-09T08:00:00Z', endIso: '2026-10-09T09:00:00Z', expectedPrice: 150000 }),
     'bookings.create',
   ],
+  ['bookings.getMine', (s) => s.bookings.getMine('b1'), 'bookings.getMine'],
+  ['bookings.listMine', (s) => s.bookings.listMine(), 'bookings.listMine'],
+  ['bookings.cancel', (s) => s.bookings.cancel('b1'), 'bookings.cancel'],
+  ['bookings.review', (s) => s.bookings.review('b1', { rating: 5 }), 'bookings.review'],
   ['requests.list', (s) => s.requests.list(), 'requests.list'],
   ['requests.respond', (s) => s.requests.respond('r1', 'confirmed'), 'requests.respond'],
   ['profile.getMine', (s) => s.profile.getMine(), 'profile.getMine'],
   ['profile.updateMine', (s) => s.profile.updateMine({ name: 'Quán' }), 'profile.updateMine'],
+  ['profile.getMyStatus', (s) => s.profile.getMyStatus(), 'profile.getMyStatus'],
+  [
+    'profile.becomeGymer',
+    (s) =>
+      s.profile.becomeGymer({
+        name: 'Quán',
+        gender: 'male',
+        birthYear: 1990,
+        area: 'Quận 1',
+        priceWeekday: 100000,
+        priceWeekend: 150000,
+        tags: ['Gym'],
+      }),
+    'profile.becomeGymer',
+  ],
+  ['profile.setVisibility', (s) => s.profile.setVisibility({ isListed: true }), 'profile.setVisibility'],
+  ['profile.setLocation', (s) => s.profile.setLocation({ lat: 10.77, lng: 106.7 }), 'profile.setLocation'],
+  ['profile.addCertificate', (s) => s.profile.addCertificate('PT cấp 1'), 'profile.addCertificate'],
+  ['profile.removeCertificate', (s) => s.profile.removeCertificate('c1'), 'profile.removeCertificate'],
   ['session.signIn', (s) => s.session.signIn(), 'session.signIn'],
   ['session.getSession', (s) => s.session.getSession(), 'session.getSession'],
   ['session.signOut', (s) => s.session.signOut(), 'session.signOut'],
+  ['location.getCurrent', (s) => s.location.getCurrent(), 'location.getCurrent'],
 ];
+
+/** Tên phương thức theo từng nhóm, theo hợp đồng ở docs/plans/app-ui-integration.md mục 3.1. */
+const EXPECTED_METHODS: Record<keyof Services, string[]> = {
+  gymers: ['getDetail', 'search'],
+  schedule: ['getDaySlots', 'getMonth', 'setDayOverrides', 'setPrices', 'setSlotClosed'],
+  bookings: ['cancel', 'create', 'getMine', 'listMine', 'review'],
+  requests: ['list', 'respond'],
+  profile: [
+    'addCertificate',
+    'becomeGymer',
+    'getMine',
+    'getMyStatus',
+    'removeCertificate',
+    'setLocation',
+    'setVisibility',
+    'updateMine',
+  ],
+  session: ['getSession', 'signIn', 'signOut'],
+  location: ['getCurrent'],
+};
 
 const FAKE_CLIENT = { marker: 'client' } as unknown as AppSupabaseClient;
 const FAKE_AUTH = { login: vi.fn(), getProfile: vi.fn() } as unknown as AuthPort;
@@ -78,6 +146,15 @@ describe('createServices với nguồn "mock"', () => {
 
     await expect(call(services)).rejects.toBeInstanceOf(AppError);
     await expect(call(services)).rejects.toMatchObject({ code: 'NOT_IMPLEMENTED' });
+  });
+
+  it('có đủ bảy nhóm và đủ phương thức theo hợp đồng', () => {
+    const services = createServices({ dataSource: 'mock' });
+
+    expect(Object.keys(services).sort()).toEqual(Object.keys(EXPECTED_METHODS).sort());
+    for (const group of Object.keys(EXPECTED_METHODS) as Array<keyof Services>) {
+      expect(Object.keys(services[group]).sort()).toEqual([...EXPECTED_METHODS[group]].sort());
+    }
   });
 
   it('thông báo lỗi có nêu nguồn dữ liệu', async () => {
@@ -96,10 +173,24 @@ describe('createServices với nguồn "mock"', () => {
 });
 
 describe('createServices với nguồn "supabase"', () => {
-  it('trả về đủ sáu nhóm repository', () => {
+  it('trả về đủ bảy nhóm repository (gồm location)', () => {
     const services = createServices(SUPABASE_ENV, { client: FAKE_CLIENT, auth: FAKE_AUTH });
 
-    expect(Object.keys(services).sort()).toEqual(['bookings', 'gymers', 'profile', 'requests', 'schedule', 'session']);
+    expect(Object.keys(services).sort()).toEqual([
+      'bookings',
+      'gymers',
+      'location',
+      'profile',
+      'requests',
+      'schedule',
+      'session',
+    ]);
+  });
+
+  it('location dựng từ createLocationRepo không tham số', () => {
+    createServices(SUPABASE_ENV, { client: FAKE_CLIENT, auth: FAKE_AUTH });
+
+    expect(createLocationRepo).toHaveBeenCalledWith();
   });
 
   it.each(calls)('%s gọi đúng repository thật', async (_name, call, expected) => {

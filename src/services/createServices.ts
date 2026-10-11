@@ -3,12 +3,13 @@
 // - 'mock': mọi repository chưa có cài đặt thật, mọi phương thức ném AppError('NOT_IMPLEMENTED').
 // - 'supabase': dựng SupabaseClient một lần và nối đủ sáu repository thật.
 import type { AppEnv } from '@/config';
-import type { AuthPort, StoragePort } from '@/platform/ports';
+import type { AuthPort, LocationPort, StoragePort } from '@/platform/ports';
 import { AppError } from './errors';
 import type { Services } from './index';
 import type { SessionRepository } from './repositories/sessionRepository';
 import { createBookingRepo } from './supabase/bookingRepo';
 import { createGymerRepo } from './supabase/gymerRepo';
+import { createLocationRepo } from './supabase/locationRepo';
 import { createProfileRepo } from './supabase/profileRepo';
 import { createRequestRepo } from './supabase/requestRepo';
 import { createScheduleRepo } from './supabase/scheduleRepo';
@@ -22,12 +23,14 @@ export type AppSupabaseClient = ReturnType<typeof createSupabaseClient>;
  * Phụ thuộc có thể tiêm vào composition root (để test và để chọn nền tảng thật).
  * - storage: lưu phiên đăng nhập của supabase-js (lấy từ PlatformContext).
  * - auth: cổng đăng nhập Zalo; thiếu thì session.signIn ném UNKNOWN, các phương thức khác vẫn dùng được.
+ * - location: cổng vị trí của platform (lấy token vị trí). Chưa được dùng ở T01; T10 nối vào location repository.
  * - client: client Supabase có sẵn (test); thiếu thì dựng từ env và storage.
  * - now: đồng hồ dùng chung cho repository cần thời điểm hiện tại.
  */
 export interface CreateServicesDeps {
   storage?: StoragePort;
   auth?: AuthPort;
+  location?: LocationPort;
   client?: AppSupabaseClient;
   now?: () => Date;
 }
@@ -56,9 +59,14 @@ function createMockServices(ds: AppEnv['dataSource']): Services {
       getDaySlots: notImplemented(ds, 'schedule.getDaySlots'),
       setPrices: notImplemented(ds, 'schedule.setPrices'),
       setSlotClosed: notImplemented(ds, 'schedule.setSlotClosed'),
+      setDayOverrides: notImplemented(ds, 'schedule.setDayOverrides'),
     },
     bookings: {
       create: notImplemented(ds, 'bookings.create'),
+      getMine: notImplemented(ds, 'bookings.getMine'),
+      listMine: notImplemented(ds, 'bookings.listMine'),
+      cancel: notImplemented(ds, 'bookings.cancel'),
+      review: notImplemented(ds, 'bookings.review'),
     },
     requests: {
       list: notImplemented(ds, 'requests.list'),
@@ -67,11 +75,20 @@ function createMockServices(ds: AppEnv['dataSource']): Services {
     profile: {
       getMine: notImplemented(ds, 'profile.getMine'),
       updateMine: notImplemented(ds, 'profile.updateMine'),
+      getMyStatus: notImplemented(ds, 'profile.getMyStatus'),
+      becomeGymer: notImplemented(ds, 'profile.becomeGymer'),
+      setVisibility: notImplemented(ds, 'profile.setVisibility'),
+      setLocation: notImplemented(ds, 'profile.setLocation'),
+      addCertificate: notImplemented(ds, 'profile.addCertificate'),
+      removeCertificate: notImplemented(ds, 'profile.removeCertificate'),
     },
     session: {
       signIn: notImplemented(ds, 'session.signIn'),
       getSession: notImplemented(ds, 'session.getSession'),
       signOut: notImplemented(ds, 'session.signOut'),
+    },
+    location: {
+      getCurrent: notImplemented(ds, 'location.getCurrent'),
     },
   };
 }
@@ -86,7 +103,7 @@ const MISSING_AUTH = {
   },
 };
 
-/** Bộ services nhánh supabase: nối sáu repository thật với một client dùng chung. */
+/** Bộ services nhánh supabase: nối các repository thật với một client dùng chung (location còn là stub). */
 function createSupabaseServices(env: AppEnv, deps: CreateServicesDeps): Services {
   const client = deps.client ?? createSupabaseClient(env, deps.storage);
   const now = deps.now;
@@ -110,6 +127,7 @@ function createSupabaseServices(env: AppEnv, deps: CreateServicesDeps): Services
     requests: createRequestRepo(client, { now }),
     profile: createProfileRepo(client, gymers),
     session,
+    location: createLocationRepo(),
   };
 }
 

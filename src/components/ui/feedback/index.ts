@@ -6,3 +6,5 @@ export { SuccessState } from './SuccessState';
 export type { SuccessStateProps } from './SuccessState';
 export { useToast } from './useToast';
 export type { ToastApi } from './useToast';
+export { ConfirmDialog } from './ConfirmDialog';
+export type { ConfirmDialogProps } from './ConfirmDialog';

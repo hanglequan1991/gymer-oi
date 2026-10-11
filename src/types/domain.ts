@@ -63,3 +63,46 @@ export interface Certificate {
   id: string;
   name: string;
 }
+
+/** Danh sách chuyên môn hợp lệ, khớp bảng `specialties`. */
+export const SPECIALTIES: readonly Specialty[] = ['Gym', 'Giảm mỡ', 'Tăng cơ', 'Yoga', 'Calisthenics', 'Giãn cơ'];
+
+/** Lượt đặt nhìn từ phía khách. */
+export interface MyBooking {
+  id: string;
+  gymerId: string;
+  gymerName: string;
+  gymerAvatarUrl?: string;
+  start: string; // ISO
+  end: string; // ISO
+  price: number; // VND
+  goal?: string;
+  status: BookingStatus;
+  expiresAt?: string; // chỉ khi status = 'pending'
+  reviewed: boolean; // đã có đánh giá cho lượt này
+}
+
+/** Trạng thái tài khoản Gymer của chính mình. */
+export interface GymerAccountStatus {
+  isListed: boolean;
+  acceptsRequests: boolean;
+  hasLocation: boolean;
+}
+
+/** Dữ liệu để đăng ký trở thành Gymer. */
+export interface BecomeGymerInput {
+  name: string;
+  gender: Gender;
+  birthYear: number;
+  area: string;
+  priceWeekday: number;
+  priceWeekend: number;
+  tags: Specialty[];
+  avatarUrl?: string;
+}
+
+/** price: số = đặt giá riêng; null = bỏ giá riêng; undefined = không đổi. closed: true đóng cả ngày, false mở lại. */
+export interface DayOverridePatch {
+  closed?: boolean;
+  price?: number | null;
+}

@@ -82,5 +82,10 @@ export function createScheduleRepo(client: SupabaseClient<Database>): ScheduleRe
         throw new AppError('NOT_FOUND', 'Không tìm thấy khung giờ.');
       }
     },
+
+    // Stub (T01). T06 cài bản thật.
+    async setDayOverrides() {
+      throw new AppError('NOT_IMPLEMENTED', 'Chưa cài đặt "schedule.setDayOverrides".');
+    },
   };
 }

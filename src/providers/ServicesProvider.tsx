@@ -22,7 +22,7 @@ export function ServicesProvider({ services, children }: ServicesProviderProps) 
   const fallback = useMemo(
     () =>
       services === undefined
-        ? createServices(env, { storage: platform?.storage, auth: platform?.auth })
+        ? createServices(env, { storage: platform?.storage, auth: platform?.auth, location: platform?.location })
         : null,
     [services, platform],
   );

@@ -1,0 +1,46 @@
+/*
+ * Lớp phủ và hộp thoại. Màu chỉ dùng token; lớp phủ lấy từ màu chữ để tự đổi theo light/dark.
+ * z-index cao để nằm trên thanh tab và snackbar của zmp-ui.
+ */
+.gy-confirm__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--gy-space-4);
+  background: color-mix(in srgb, var(--gy-color-text) 45%, transparent);
+}
+
+.gy-confirm {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 360px;
+  padding: var(--gy-space-5);
+  border-radius: var(--gy-radius-card);
+  background: var(--gy-color-card);
+  color: var(--gy-color-text);
+  box-shadow: var(--gy-shadow-card);
+}
+
+.gy-confirm__title {
+  margin: 0;
+  font-size: var(--gy-font-size-lg);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.gy-confirm__body {
+  margin-top: var(--gy-space-2);
+  font-size: var(--gy-font-size-md);
+  color: var(--gy-color-muted);
+  line-height: 1.5;
+}
+
+.gy-confirm__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gy-space-3);
+  margin-top: var(--gy-space-5);
+}

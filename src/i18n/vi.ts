@@ -1,31 +1,36 @@
-// Chuỗi tiếng Việt của ứng dụng. Chỉ một ngôn ngữ; nhóm theo feature (docs/project-structure.md, mục 2.7).
-// Dùng dạng `as const` để kiểu của từng chuỗi được giữ nguyên khi truy cập, ví dụ vi.booking.confirmTitle.
+// Chuỗi tiếng Việt của ứng dụng. Chỉ một ngôn ngữ; mỗi feature có file nhóm riêng trong `vi/` (docs/project-structure.md, mục 2.7).
+// File này chỉ ghép các nhóm. Dùng `as const` để kiểu của từng chuỗi được giữ nguyên, ví dụ vi.booking.confirmTitle.
+// Thêm chuỗi: sửa đúng file nhóm của task, không sửa file này trừ khi thêm nhóm mới.
+import { auth } from './vi/auth';
+import { booking } from './vi/booking';
+import { common } from './vi/common';
+import { gymerDetail } from './vi/gymerDetail';
+import { gymerOnboarding } from './vi/gymerOnboarding';
+import { gymerOverview } from './vi/gymerOverview';
+import { gymerProfile } from './vi/gymerProfile';
+import { gymerRequests } from './vi/gymerRequests';
+import { gymerSchedule } from './vi/gymerSchedule';
+import { health } from './vi/health';
+import { location } from './vi/location';
+import { myBookings } from './vi/myBookings';
+import { nav } from './vi/nav';
+import { search } from './vi/search';
 
 export const vi = {
-  common: {
-    appName: 'Gymer ơi',
-    loading: 'Đang tải...',
-    retry: 'Thử lại',
-    cancel: 'Hủy',
-    confirm: 'Xác nhận',
-    back: 'Quay lại',
-  },
-  nav: {
-    search: 'Tìm Gymer',
-    gymerOverview: 'Tổng quan',
-    gymerSchedule: 'Lịch và giá',
-    gymerRequests: 'Yêu cầu',
-    gymerProfile: 'Hồ sơ',
-  },
-  search: {
-    title: 'Tìm Gymer',
-    emptyTitle: 'Chưa tìm thấy Gymer nào',
-    emptyDescription: 'Thử mở rộng khoảng cách tìm kiếm.',
-  },
-  booking: {
-    confirmTitle: 'Xác nhận đặt lịch',
-    successTitle: 'Đặt lịch thành công',
-  },
+  common,
+  nav,
+  search,
+  booking,
+  auth,
+  location,
+  gymerDetail,
+  myBookings,
+  gymerOnboarding,
+  gymerOverview,
+  gymerSchedule,
+  gymerRequests,
+  gymerProfile,
+  health,
 } as const;
 
 /** Kiểu của toàn bộ từ điển chuỗi. */
