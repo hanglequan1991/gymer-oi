@@ -5,7 +5,7 @@
 //
 // Cách dùng:
 //   node scripts/spikes/s1-zalo-me.mjs --dry-run      (không gọi mạng, chỉ in kế hoạch)
-//   ZALO_ACCESS_TOKEN=... [ZALO_SECRET_KEY=...] node scripts/spikes/s1-zalo-me.mjs
+//   ZALO_ACCESS_TOKEN=... [ZALO_APP_SECRET=...] node scripts/spikes/s1-zalo-me.mjs
 //
 // Giả thuyết cần kiểm (chưa khẳng định): GET graph.zalo.me/v2.0/me với header access_token.
 // Tên header secret_key ở biến thể B cũng là giả thuyết.
@@ -21,7 +21,7 @@ const DRY_RUN = process.argv.includes('--dry-run');
 const FAKE_TOKEN = 'token-gia-s1-kiem-loi-0000';
 
 const token = (process.env.ZALO_ACCESS_TOKEN ?? '').trim();
-const secretKey = (process.env.ZALO_SECRET_KEY ?? '').trim();
+const secretKey = (process.env.ZALO_APP_SECRET ?? '').trim();
 
 // Mọi chuỗi in ra đều đi qua hàm này để che bí mật nếu lỡ xuất hiện trong thông báo lỗi.
 const secretsToRedact = [token, secretKey].filter((s) => s.length > 0);
@@ -60,7 +60,7 @@ const INVALID_CASE = { id: 'C', name: 'token giả (xem dạng lỗi)', headers:
 function printDryRunPlan() {
   console.log('[S1-a] Kế hoạch (dry-run, không gọi mạng):');
   console.log(`  Biến ZALO_ACCESS_TOKEN: ${token ? 'có' : 'thiếu (bắt buộc khi chạy thật)'}`);
-  console.log(`  Biến ZALO_SECRET_KEY: ${secretKey ? 'có' : 'thiếu (tuỳ chọn, biến thể B bị bỏ qua)'}`);
+  console.log(`  Biến ZALO_APP_SECRET: ${secretKey ? 'có' : 'thiếu (tuỳ chọn, biến thể B bị bỏ qua)'}`);
   console.log(`  Endpoint: GET ${ENDPOINT}?fields=${FIELDS}`);
   for (const v of VARIANTS) {
     console.log(`  Biến thể ${v.id}: ${v.name}`);
@@ -116,7 +116,7 @@ function summarize(v, outcome) {
 
 async function runCase(v) {
   if (v.needsSecret && !secretKey) {
-    return summarize(v, { skipped: 'thiếu ZALO_SECRET_KEY' });
+    return summarize(v, { skipped: 'thiếu ZALO_APP_SECRET' });
   }
   if (v.id !== 'C' && !token) {
     return summarize(v, { skipped: 'thiếu ZALO_ACCESS_TOKEN' });

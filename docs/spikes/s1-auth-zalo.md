@@ -26,10 +26,10 @@ read -rs ZALO_ACCESS_TOKEN && export ZALO_ACCESS_TOKEN
 read -rs SUPABASE_SERVICE_ROLE_KEY && export SUPABASE_SERVICE_ROLE_KEY
 export SUPABASE_URL="https://<project-ref>.supabase.co"   # URL dự án, không phải bí mật
 read -rs SUPABASE_ANON_KEY && export SUPABASE_ANON_KEY
-read -rs ZALO_SECRET_KEY && export ZALO_SECRET_KEY        # tuỳ chọn, lấy ở U1
+read -rs ZALO_APP_SECRET && export ZALO_APP_SECRET        # tuỳ chọn, lấy ở U1
 ```
 
-Khi xong: `unset ZALO_ACCESS_TOKEN ZALO_SECRET_KEY SUPABASE_SERVICE_ROLE_KEY SUPABASE_ANON_KEY`.
+Khi xong: `unset ZALO_ACCESS_TOKEN ZALO_APP_SECRET SUPABASE_SERVICE_ROLE_KEY SUPABASE_ANON_KEY`.
 
 ## 3. Lấy token thử
 
@@ -55,7 +55,7 @@ node scripts/spikes/s1-zalo-me.mjs
 node scripts/spikes/s1-session.mjs
 ```
 
-- `s1-zalo-me.mjs` thử biến thể A (chỉ `access_token`), biến thể B (thêm `secret_key`, chỉ khi có `ZALO_SECRET_KEY`), biến thể C (token giả, để xem dạng lỗi), rồi gọi lại A để kiểm id ổn định. Script chỉ in status, mã lỗi Zalo, tên trường, độ dài, và dấu vân tay SHA-256 rút gọn của `id`. Không in `id`, `name`, ảnh.
+- `s1-zalo-me.mjs` thử biến thể A (chỉ `access_token`), biến thể B (thêm `secret_key`, chỉ khi có `ZALO_APP_SECRET`), biến thể C (token giả, để xem dạng lỗi), rồi gọi lại A để kiểm id ổn định. Script chỉ in status, mã lỗi Zalo, tên trường, độ dài, và dấu vân tay SHA-256 rút gọn của `id`. Không in `id`, `name`, ảnh.
 - `s1-session.mjs` tạo một user tạm, chạy chuỗi cấp phiên, gọi RPC bằng phiên mới và bằng client không phiên (đối chứng), thử refresh, rồi luôn xoá user tạm. Nếu dòng "(7) xoá user tạm" báo LỖI, xoá tay user được in ra trên Dashboard > Authentication.
 - Mã thoát: 0 nếu không có lỗi, 1 nếu có bước lỗi, 2 nếu thiếu biến môi trường.
 
@@ -94,7 +94,7 @@ Chạy phần (b) hai lần: một lần khi "Allow new users to sign up" BẬT,
 ## 6. Quyết định hệ quả (sen1 điền sau khi có bảng kết quả)
 
 - Endpoint và header chốt cho `auth-zalo`: (chưa có)
-- Có cần `ZALO_SECRET_KEY` trong `auth-zalo` không: (chưa có)
+- Có cần `ZALO_APP_SECRET` trong `auth-zalo` không: (chưa có)
 - Định dạng email tạm chốt cho D3: (chưa có)
 - Magiclink + verifyOtp có chạy được khi đăng ký tắt không: (chưa có)
 - R2 (mạo danh qua token app khác): mức rủi ro sau S1 và biện pháp: (chưa có)
