@@ -15,5 +15,6 @@ major_version = 17
 verify_jwt = false
 
 # resolve-location chỉ dành cho người đã đăng nhập (có JWT của Supabase), nên bật xác minh JWT ở cổng.
+# Cổng chỉ kiểm chữ ký nên khoá anon cũng qua; handler.ts kiểm thêm role = 'authenticated' (N4).
 [functions.resolve-location]
 verify_jwt = true

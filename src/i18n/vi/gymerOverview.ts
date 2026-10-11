@@ -17,6 +17,8 @@ export const gymerOverview = {
     title: 'Yêu cầu chờ duyệt',
     viewAll: 'Xem tất cả',
     empty: 'Chưa có yêu cầu chờ duyệt.',
+    /** Nhãn đọc màn hình cho một yêu cầu chờ duyệt trên tổng quan. */
+    itemLabel: (name: string) => `Yêu cầu của ${name}`,
   },
   notices: {
     /** Hồ sơ đang ẩn: khách không tìm thấy Gymer. */

@@ -171,6 +171,33 @@ describe('OverviewPage: yêu cầu chờ duyệt', () => {
   });
 });
 
+describe('OverviewPage: yêu cầu chờ duyệt đã quá hạn', () => {
+  it('không đếm và không liệt kê yêu cầu chờ duyệt đã quá hạn xác nhận', async () => {
+    renderOverview({
+      list: [
+        req('old', 'pending', '2026-10-12T09:00:00+07:00', '2026-10-12T10:00:00+07:00', {
+          expiresAt: '2026-10-11T09:00:00+07:00',
+        }),
+        req('fresh', 'pending', '2026-10-13T09:00:00+07:00', '2026-10-13T10:00:00+07:00', {
+          expiresAt: '2026-10-11T12:00:00+07:00',
+        }),
+      ],
+    });
+    expect(await screen.findByText('Xin chào, Minh Anh')).toBeInTheDocument();
+    expect(statValue('stat-pending')).toBe('1');
+    expect(screen.queryByText('Khách old')).not.toBeInTheDocument();
+    expect(screen.getByText('Khách fresh')).toBeInTheDocument();
+  });
+
+  it('yêu cầu chờ duyệt không có hạn (expiresAt trống) vẫn được đếm', async () => {
+    renderOverview({
+      list: [req('p1', 'pending', '2026-10-13T09:00:00+07:00', '2026-10-13T10:00:00+07:00')],
+    });
+    expect(await screen.findByText('Xin chào, Minh Anh')).toBeInTheDocument();
+    expect(statValue('stat-pending')).toBe('1');
+  });
+});
+
 describe('OverviewPage: thông báo trạng thái hồ sơ', () => {
   it('hồ sơ đang ẩn: hiện cảnh báo và nút đi tới Hồ sơ', async () => {
     renderOverview({ status: { ...READY, isListed: false } });

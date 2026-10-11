@@ -1,5 +1,6 @@
 // Xử lý thuần cho tab Tổng quan: đếm, lọc theo ngày giờ Việt Nam. Không gọi service, không đụng DOM.
 import type { BookingRequest } from '@/types/domain';
+import { isStaleRequest } from '../requests/requestList';
 
 /** Số yêu cầu chờ duyệt tối đa hiện trên tổng quan; phần còn lại xem ở tab Yêu cầu. */
 export const PENDING_PREVIEW_LIMIT = 3;
@@ -81,6 +82,8 @@ export function buildOverview(list: readonly BookingRequest[], now: Date): Overv
 
   for (const r of list) {
     if (r.status === 'pending') {
+      // Đã quá hạn xác nhận: không đếm và không hiện trong danh sách chờ duyệt.
+      if (isStaleRequest(r, now)) continue;
       pendingCount += 1;
       pending.push(r);
     } else if (r.status === 'confirmed') {

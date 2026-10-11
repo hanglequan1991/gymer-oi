@@ -8,6 +8,7 @@ import { AppHeader, Section } from '@/components/ui/layout';
 import { useAsync, useServices } from '@/hooks';
 import { useGymerStatus } from '@/hooks/useGymerStatus';
 import { vi } from '@/i18n';
+import { PATHS } from '@/routes/paths';
 import type { BookingRequest, Gymer } from '@/types/domain';
 import { formatVND } from '@/utils/format';
 import { GymerTabsLayout } from '../../GymerTabsLayout';
@@ -20,7 +21,7 @@ import './OverviewPage.css';
  */
 function PendingPreviewItem({ request }: { request: BookingRequest }) {
   return (
-    <li className="gy-overview-pending__item" aria-label={`Yêu cầu của ${request.customerName}`}>
+    <li className="gy-overview-pending__item" aria-label={vi.gymerOverview.pending.itemLabel(request.customerName)}>
       <div className="gy-overview-pending__who">{request.customerName}</div>
       <div className="gy-overview-pending__meta">
         <time dateTime={request.start}>{vnDateTimeLabel(request.start)}</time>
@@ -83,7 +84,7 @@ function OverviewContent() {
                 <div className="gy-overview-notice">
                   <Notice tone="warn">
                     <p>{vi.gymerOverview.notices.hidden}</p>
-                    <GButton kind="ghost" onClick={() => navigate('/gymer/profile')}>
+                    <GButton kind="ghost" onClick={() => navigate(PATHS.gymerProfile)}>
                       {vi.gymerOverview.notices.openProfile}
                     </GButton>
                   </Notice>
@@ -93,7 +94,7 @@ function OverviewContent() {
                 <div className="gy-overview-notice">
                   <Notice tone="warn">
                     <p>{vi.gymerOverview.notices.noLocation}</p>
-                    <GButton kind="ghost" onClick={() => navigate('/gymer/profile')}>
+                    <GButton kind="ghost" onClick={() => navigate(PATHS.gymerProfile)}>
                       {vi.gymerOverview.notices.openProfile}
                     </GButton>
                   </Notice>
@@ -123,7 +124,7 @@ function OverviewContent() {
               <Section
                 title={vi.gymerOverview.pending.title}
                 actionLabel={vi.gymerOverview.pending.viewAll}
-                onAction={() => navigate('/gymer/requests')}
+                onAction={() => navigate(PATHS.gymerRequests)}
               >
                 {summary.pendingPreview.length === 0 ? (
                   <EmptyState title={vi.gymerOverview.pending.empty} />

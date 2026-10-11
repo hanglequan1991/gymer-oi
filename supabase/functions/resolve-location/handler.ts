@@ -25,6 +25,10 @@ const PRINTABLE_ASCII = /^[\x21-\x7E]+$/;
 const COORD_DECIMALS = 1000;
 
 const INVALID_REQUEST_MSG = 'Yêu cầu không hợp lệ.';
+const UNAUTHENTICATED_MSG = 'Yêu cầu cần đăng nhập.';
+// Authorization: Bearer <jwt>. Chỉ chấp nhận ký tự base64url ở phần payload.
+const BEARER_HEADER = /^Bearer\s+(\S+)$/i;
+const BASE64URL_PART = /^[A-Za-z0-9_-]+$/;
 
 export async function handleResolveLocation(req: Request, deps: ResolveLocationDeps): Promise<Response> {
   const log = (msg: string, meta?: Record<string, unknown>): void => {
@@ -41,6 +45,13 @@ export async function handleResolveLocation(req: Request, deps: ResolveLocationD
       return json(405, { error: { code: 'METHOD_NOT_ALLOWED', message: 'Chỉ hỗ trợ POST.' } }, {
         Allow: 'POST, OPTIONS',
       });
+    }
+
+    // N4: khoá anon (role = 'anon') cũng là JWT hợp lệ nên cổng verify_jwt cho qua. Chỉ người đã đăng nhập được đi tiếp.
+    // Kiểm trước cấu hình và trước khi đọc thân để kẻ không đăng nhập không dò được gì. Role lấy từ claims JWT, không lấy từ body.
+    if (!isAuthenticatedUser(req.headers.get('authorization'))) {
+      log('resolve-location: từ chối yêu cầu chưa đăng nhập');
+      return errorJson(401, 'UNAUTHENTICATED', UNAUTHENTICATED_MSG);
     }
 
     // Fail-closed: thiếu cấu hình (ZALO_APP_SECRET) thì không chạm Zalo.
@@ -99,6 +110,34 @@ export async function handleResolveLocation(req: Request, deps: ResolveLocationD
     // Chỉ ghi tên lỗi: thông báo lỗi có thể chứa dữ liệu nhạy cảm.
     log('resolve-location: lỗi nội bộ', { errorName: err instanceof Error ? err.name : typeof err });
     return errorJson(500, 'INTERNAL', 'Lỗi nội bộ, thử lại sau.');
+  }
+}
+
+/**
+ * Kiểm người gọi có phải người đã đăng nhập: JWT có role = 'authenticated' và sub không rỗng.
+ * Chỉ đọc payload, KHÔNG kiểm chữ ký: cổng Supabase (verify_jwt = true) đã kiểm chữ ký trước khi tới đây.
+ * Không log hay trả về chuỗi token hoặc payload.
+ */
+function isAuthenticatedUser(authorization: string | null): boolean {
+  const claims = readJwtPayload(authorization);
+  return claims !== null && claims.role === 'authenticated' && typeof claims.sub === 'string' && claims.sub.trim().length > 0;
+}
+
+/** Trả payload JWT dạng object, hoặc null nếu header sai định dạng hoặc payload hỏng. */
+function readJwtPayload(authorization: string | null): Record<string, unknown> | null {
+  if (authorization === null) return null;
+  const match = BEARER_HEADER.exec(authorization.trim());
+  if (match === null) return null;
+  const parts = match[1].split('.');
+  if (parts.length !== 3 || !BASE64URL_PART.test(parts[1])) return null;
+  try {
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+    const payload: unknown = JSON.parse(atob(padded));
+    if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) return null;
+    return payload as Record<string, unknown>;
+  } catch {
+    return null;
   }
 }
 

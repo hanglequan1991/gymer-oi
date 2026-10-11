@@ -8,7 +8,7 @@ import { useAsync, useServices } from '@/hooks';
 import { messageFromError, vi } from '@/i18n';
 import type { BookingRequest, RequestStatus } from '@/types/domain';
 import { GymerTabsLayout } from '../../GymerTabsLayout';
-import { REQUEST_TABS, countByStatus, listForTab } from '../requestList';
+import { REQUEST_TABS, countByStatus, listForTab, withoutStale } from '../requestList';
 
 /**
  * Mã lỗi sau khi bấm Xác nhận/Từ chối mà danh sách đã cũ: yêu cầu đã hết hạn, đã xử lý hoặc không còn.
@@ -63,8 +63,10 @@ export function RequestsPage() {
         <AppHeader title={vi.gymerRequests.title} data-testid="page-header" />
         <AsyncView state={requests}>
           {(list) => {
-            const counts = countByStatus(list);
-            const shown = listForTab(list, tab);
+            // Lọc theo thời điểm render: yêu cầu quá hạn không được đếm và không hiện nút xác nhận/từ chối.
+            const visible = withoutStale(list, new Date());
+            const counts = countByStatus(visible);
+            const shown = listForTab(visible, tab);
             const empty = vi.gymerRequests.empty[tab];
             return (
               <>

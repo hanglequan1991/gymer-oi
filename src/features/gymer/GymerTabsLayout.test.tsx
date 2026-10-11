@@ -5,6 +5,7 @@ import { useGymerStatus } from '@/hooks/useGymerStatus';
 import { renderPage } from '@/test/renderWithProviders';
 import { createStubServices } from '@/test/stubServices';
 import { AppError } from '@/services/errors';
+import { messageFromError } from '@/i18n';
 import type { Services } from '@/services';
 import type { GymerAccountStatus } from '@/types/domain';
 
@@ -99,6 +100,59 @@ describe('GymerTabsLayout: là Gymer', () => {
     renderLayout({ getMyStatus: vi.fn(async () => READY) });
     fireEvent.click(await screen.findByText('Lịch và giá'));
     await waitFor(() => expect(window.location.pathname).toBe('/gymer/schedule'));
+  });
+});
+
+describe('GymerTabsLayout: làm mới lỗi khi đã có trạng thái', () => {
+  it('làm mới lỗi thì giữ nội dung, giữ trạng thái cũ và báo bằng toast, không hiện ErrorView', async () => {
+    const getMyStatus = vi
+      .fn<() => Promise<GymerAccountStatus | null>>()
+      .mockResolvedValueOnce(READY)
+      .mockRejectedValueOnce(new AppError('NETWORK', 'mất mạng'));
+    renderLayout(
+      { getMyStatus },
+      <>
+        <p>Nội dung trang</p>
+        <StatusProbe />
+        <RefreshButton />
+      </>,
+    );
+    expect(await screen.findByText('Đang hiện')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Làm mới' }));
+    await waitFor(() => expect(getMyStatus).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText(messageFromError(new AppError('NETWORK', 'mất mạng'), 'profile'))).toBeInTheDocument();
+    expect(screen.getByText('Nội dung trang')).toBeInTheDocument();
+    expect(screen.getByText('Đang hiện')).toBeInTheDocument();
+    expect(screen.getByText('Lịch và giá')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Thử lại' })).not.toBeInTheDocument();
+  });
+
+  it('làm mới lỗi rồi làm mới thành công thì cập nhật trạng thái mới, vẫn không gỡ trang', async () => {
+    const getMyStatus = vi
+      .fn<() => Promise<GymerAccountStatus | null>>()
+      .mockResolvedValueOnce(READY)
+      .mockRejectedValueOnce(new AppError('NETWORK', 'mất mạng'))
+      .mockResolvedValueOnce({ ...READY, isListed: false });
+    renderLayout(
+      { getMyStatus },
+      <>
+        <p>Nội dung trang</p>
+        <StatusProbe />
+        <RefreshButton />
+      </>,
+    );
+    await screen.findByText('Đang hiện');
+    fireEvent.click(screen.getByRole('button', { name: 'Làm mới' }));
+    await waitFor(() => expect(getMyStatus).toHaveBeenCalledTimes(2));
+    fireEvent.click(screen.getByRole('button', { name: 'Làm mới' }));
+    expect(await screen.findByText('Đang ẩn')).toBeInTheDocument();
+    expect(screen.getByText('Nội dung trang')).toBeInTheDocument();
+  });
+
+  it('lỗi lần đầu vẫn hiện ErrorView, không có trạng thái cũ để giữ', async () => {
+    renderLayout({ getMyStatus: vi.fn(async () => { throw new AppError('NETWORK', 'mất mạng'); }) });
+    expect(await screen.findByRole('button', { name: 'Thử lại' })).toBeInTheDocument();
+    expect(screen.queryByText('Nội dung trang')).not.toBeInTheDocument();
   });
 });
 

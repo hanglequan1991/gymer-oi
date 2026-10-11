@@ -1,35 +1,38 @@
 # Thiết lập app-Supabase và smoke test
 
-Trạng thái: BẢN NHÁP (T-D, dev3, 2026-10-11). Căn cứ: `docs/plans/app-supabase-integration.md` mục 2.1, 4 (R1, R2, R5-R8), 5.2 (U1-U7); `docs/spikes/s1-auth-zalo.md`; `docs/ci-cd-setup.md`; `docs/supabase-migrations.md`.
+Trạng thái: BẢN NHÁP (T-D, dev3, 2026-10-11; cập nhật theo task D1 của `docs/plans/app-ui-integration-review-dot-3-6.md`, mục B1). Căn cứ: `docs/plans/app-supabase-integration.md` mục 2.1, 4 (R1, R2, R5-R8), 5.2 (U1-U7); `docs/spikes/s1-auth-zalo.md` (mục 6 đã chốt); `docs/spikes/s2-resolve-location.md`; `docs/ci-cd-setup.md`; `docs/supabase-migrations.md`.
 
 Tài liệu không chứa giá trị bí mật. Mọi `<...>` là placeholder.
 
 ## 0. Tình trạng code hiện tại (kiểm 2026-10-11)
 
-- `supabase/functions/auth-zalo/` chưa có `index.ts` và `adapters/`.
-- Có `ports.ts` trên nhánh `wip/auth-zalo-ports` (commit `e0f969d`), không có trên `main`.
-- Có `handler.ts`, `handler.test.ts` và `_shared/http.ts` nhưng CHƯA commit (đang nằm trong working tree của `main`).
-- `supabase/config.toml` chưa có khối `[functions.auth-zalo]`.
-
-Hệ quả: các bước deploy `auth-zalo` ở mục 4 chỉ làm được sau khi T-F1 và T-F2 xong và review 3a đạt.
+- `supabase/functions/auth-zalo/` có `index.ts`, `handler.ts`, `ports.ts`, `adapters/` trên `main`. `supabase/config.toml` có `[functions.auth-zalo] verify_jwt = false`.
+- `supabase/functions/resolve-location/` có đủ file trên `main`. `supabase/config.toml` có `[functions.resolve-location] verify_jwt = true`.
+- Push `main` làm workflow `deploy.yml` deploy MỌI function (R1). Theo báo cáo của chủ dự án, `auth-zalo` đã được deploy. `resolve-location` cũng đã lên cùng đợt, nên hiện đang trả 500 `CONFIG_MISSING` cho đến khi đặt `ZALO_APP_SECRET` (mục 4.1).
+- Vì vậy thứ tự cũ "đặt secret trước khi push" không còn đúng với `resolve-location`. Mục 4.4 là thứ tự bắt buộc từ bây giờ.
 
 ## 1. Checklist tổng (theo thứ tự)
 
 - [ ] A. Lấy Zalo Secret Key (U1), mục 2
 - [ ] B. Chạy S1, bật rồi tắt đăng ký (U3), mục 3.1
 - [ ] C. Cài đặt Auth trên Supabase: tắt đăng ký và anonymous sign-in (U2), mục 3.2
-- [ ] D. Đặt secret function trước khi push (U4), mục 4.1
-- [ ] E. Kiểm điều kiện và đưa `auth-zalo` lên `main` qua PR, mục 4.2 và 4.3
+- [ ] D. Đặt `ZALO_APP_SECRET` cho `resolve-location` (BẮT BUỘC), mục 4.1
+- [ ] E. Kiểm trạng thái `auth-zalo` và `resolve-location` trên `main` và Dashboard, mục 4.2 và 4.3
 - [ ] F. Đặt biến `VITE_*` và biến GitHub environment (U5), mục 5
 - [ ] G. Kiểm sau deploy (U6), mục 4.3 bước 5
-- [ ] H. Smoke test, mục 6
+- [ ] H. Smoke test, mục 6 (gồm 6.11 cho `resolve-location`)
+- [ ] I. Chạy S2 trên Zalo thật và ghi kết quả, `docs/spikes/s2-resolve-location.md`
+- [ ] J. Đủ điều kiện mở cho người dùng thật, mục 4.4
 
 ## 2. Lấy Zalo Secret Key
 
 - Vào Zalo for Developers, mở Mini App có App ID trong biến `ZMP_APP_ID` (xem `docs/ci-cd-setup.md` mục 3). Tìm mục khoá bí mật của Mini App. Tên mục có thể khác với mô tả này, plan chưa xác nhận vị trí (U1).
 - Không dán khoá vào chat, issue, commit, file trong repo hay biến `VITE_*`.
 - Tên biến khi đặt trên Supabase: `ZALO_APP_SECRET` (theo plan D2 và test `handler.test.ts`).
-- Script `scripts/spikes/s1-zalo-me.mjs` đọc cùng tên `ZALO_APP_SECRET` (biến tuỳ chọn ở S1). Việc có cần secret hay không vẫn chờ S1 chốt mục 6 của `docs/spikes/s1-auth-zalo.md`. Chưa chốt thì chưa đặt secret.
+- Vai trò của secret theo từng function:
+  - `resolve-location`: BẮT BUỘC (vị trí của khách). Thiếu thì trả 500 `CONFIG_MISSING`, không chạm Zalo (fail-closed).
+  - `auth-zalo`: TUỲ CHỌN. `docs/spikes/s1-auth-zalo.md` mục 6.1 chốt là không cần để đăng nhập chạy. Xem cảnh báo ở mục 4.1.
+- Script `scripts/spikes/s1-zalo-me.mjs` đọc cùng tên `ZALO_APP_SECRET` (biến tuỳ chọn ở S1).
 
 ## 3. Chạy S1 và cài đặt Auth
 
@@ -51,55 +54,67 @@ Vị trí các mục có thể khác theo phiên bản dashboard.
 - [ ] Provider Email: nếu S1 cho thấy magiclink cần provider Email, giữ Email bật nhưng đăng ký vẫn tắt. Chưa kiểm chứng (xem mục 7).
 - [ ] Không bật provider nào khác nếu chưa có quyết định.
 
-## 4. Secret và đưa `auth-zalo` lên `main`
+## 4. Secret và trạng thái `auth-zalo`, `resolve-location` trên `main`
 
-### 4.1 Đặt secret TRƯỚC khi push
+### 4.1 Đặt `ZALO_APP_SECRET` cho `resolve-location` (BẮT BUỘC)
 
-Secret của function không đi qua GitHub Actions (`docs/supabase-migrations.md`). Đặt bằng CLI, dùng file env nằm NGOÀI repo:
+Secret của function không đi qua GitHub Actions (`docs/supabase-migrations.md`). Đặt bằng CLI. Giá trị không được in ra màn hình, không nằm trên dòng lệnh (dễ lọt vào lịch sử shell), không nằm trong repo:
 
 ```bash
-# Tạo file ngoài repo, quyền 600, mỗi dòng NAME=value
-# Nội dung ví dụ: ZALO_APP_SECRET=<giá trị khoá bí mật>
-supabase secrets set --env-file /<đường-dẫn-ngoài-repo>/auth-zalo.env --project-ref <project-ref>
-rm /<đường-dẫn-ngoài-repo>/auth-zalo.env
+read -rs -p "ZALO_APP_SECRET: " ZALO_APP_SECRET && echo     # gõ hoặc dán, không hiện trên màn hình
+umask 077
+mkdir -p "$HOME/.gymer-secrets"
+printf 'ZALO_APP_SECRET=%s\n' "$ZALO_APP_SECRET" > "$HOME/.gymer-secrets/resolve-location.env"
+unset ZALO_APP_SECRET
+supabase secrets set --env-file "$HOME/.gymer-secrets/resolve-location.env" --project-ref <project-ref>
+rm -f "$HOME/.gymer-secrets/resolve-location.env"
 supabase secrets list --project-ref <project-ref>   # chỉ hiện tên và digest, không hiện giá trị
 ```
 
+- Thư mục `$HOME/.gymer-secrets` nằm NGOÀI repo. Không đặt file này trong `/home/claude/gymer-oi`.
 - Nếu không dùng được CLI: đặt trên Dashboard > Edge Functions > Secrets.
+- Secret đặt ở cấp dự án nên mọi function trong dự án đều đọc được. Xem cảnh báo cho `auth-zalo` bên dưới.
 - Không đặt tên bắt đầu bằng `SUPABASE_`. `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` được nền tảng cấp vào function (R6). Việc CLI có từ chối tên `SUPABASE_*` hay không chưa kiểm chứng.
-- Thiếu secret thì function trả `500 CONFIG_MISSING` và không chạy tiếp (fail-closed). Nếu lỡ deploy trước khi đặt secret, đây là trạng thái an toàn, không đăng nhập được.
+- Thiếu secret thì `resolve-location` trả `500 CONFIG_MISSING` và không chạm Zalo (fail-closed). Đây là trạng thái an toàn nhưng làm chết luồng vị trí của khách.
+- Chưa kiểm chứng: có cần deploy lại sau khi đặt secret hay không. Kiểm bằng smoke test 6.11 (bước đối chứng trước và sau khi đặt).
 
-### 4.2 Điều kiện trước khi merge
+Cảnh báo cho `auth-zalo`: `supabase/functions/auth-zalo/index.ts` đọc cùng biến này và truyền xuống verifier (dòng 12 và 32). Mục 6.1 của S1 chốt là không gửi `secret_key` mặc định. Chưa kiểm xem verifier có gửi header `secret_key` khi biến có giá trị hay không. Trước khi đặt secret, sen1 cần xác nhận một trong hai: sửa `auth-zalo` để không dùng biến này, hoặc chấp nhận có chủ đích và ghi vào mục 7.
 
-Push `main` làm job `functions` deploy MỌI thư mục function (R1), và job `zalo` chỉ chạy khi `functions` thành công hoặc bị bỏ qua. Vì vậy:
+### 4.2 Trạng thái trên `main`
 
-- [ ] `supabase/functions/auth-zalo/index.ts` có tồn tại. Thiếu file này thì deploy đỏ và job `zalo` bị bỏ qua.
-- [ ] `adapters/` đủ, test của function xanh (lệnh Vitest chạy trong repo, xác nhận trong `package.json` trước khi chạy).
-- [ ] `supabase/config.toml` có khối sau. Không có khối này, gateway đòi JWT và mọi lời gọi trả 401 (R1):
+Push `main` làm job `functions` deploy MỌI thư mục function (R1), và job `zalo` chỉ chạy khi `functions` thành công hoặc bị bỏ qua. Trạng thái hiện tại:
 
-```toml
-[functions.auth-zalo]
-verify_jwt = false
-```
-
-- [ ] Review bảo mật 3a đạt (R1 đến R3, R6, R7).
-- [ ] Secret mục 4.1 đã đặt.
+- [x] `supabase/functions/auth-zalo/index.ts` có trên `main` (kiểm trong repo 2026-10-11).
+- [x] `supabase/functions/resolve-location/index.ts` có trên `main`.
+- [x] `supabase/config.toml` có khối `[functions.auth-zalo] verify_jwt = false` và `[functions.resolve-location] verify_jwt = true`. Không có khối `auth-zalo`, gateway đòi JWT và mọi lời gọi trả 401 (R1).
+- [ ] Review bảo mật 3a đạt (R1 đến R3, R6, R7). Chưa có xác nhận trong repo.
+- [ ] Secret `ZALO_APP_SECRET` đã đặt (mục 4.1). Chưa xác nhận.
 - [ ] Diff không chứa token, khoá hay `.env`. Kiểm bằng `git diff --cached` trước khi commit.
 
-### 4.3 Cách đưa lên `main`
+### 4.3 Kiểm sau khi lên `main`
 
-Không merge trực tiếp `wip/auth-zalo-ports`. Nhánh đó chỉ có `ports.ts`, không có `index.ts`, và sẽ làm job `functions` đỏ.
+Các bước đưa lên `main` (PR, `ci.yml`, `deploy.yml`) đã được thực hiện. Dùng phần này để kiểm, không làm lại việc đưa lên.
 
-Không bấm Run workflow (`workflow_dispatch`) trên nhánh chứa function chưa merge. Job `functions` trong `deploy.yml` hiện chưa kiểm `github.ref`, nên có thể deploy `auth-zalo` từ nhánh đó (xem review C, N3).
+Không merge trực tiếp `wip/auth-zalo-ports`. Nhánh đó chỉ có `ports.ts`, không có `index.ts`, và sẽ làm job `functions` đỏ. Không bấm Run workflow (`workflow_dispatch`) trên nhánh chứa function chưa merge. Job `functions` trong `deploy.yml` hiện chưa kiểm `github.ref`, nên có thể deploy function từ nhánh đó (xem review C, N3).
 
-1. Từ `main`, tạo nhánh mới, ví dụ `feat/auth-zalo`.
-2. Đưa vào nhánh mới: commit `e0f969d` (`ports.ts`), `handler.ts`, `handler.test.ts`, `_shared/http.ts`, `_shared/http.test.ts`, `index.ts`, `adapters/*`, `supabase/functions/tsconfig.json`, `supabase/config.toml`.
-3. Mở PR vào `main`, chờ `ci.yml` xanh, merge. Không push thẳng `main`.
-4. Theo dõi run `deploy.yml`: các job `functions` và `zalo`.
-5. Kiểm Dashboard > Edge Functions: `auth-zalo` có "Enforce JWT verification" TẮT (R1). Nếu không tắt, dừng và báo product-manager. Không tự sửa `deploy.yml`.
-6. Sau khi merge xong, xoá nhánh `wip/auth-zalo-ports` nếu không còn cần.
+1. Theo dõi run `deploy.yml` gần nhất: các job `functions` và `zalo`.
+2. Kiểm Dashboard > Edge Functions: `auth-zalo` có "Enforce JWT verification" TẮT (R1). `resolve-location` có "Enforce JWT verification" BẬT (khớp `verify_jwt = true`). Nếu lệch, dừng và báo product-manager. Không tự sửa `deploy.yml`.
+3. Xoá nhánh `wip/auth-zalo-ports` nếu không còn cần.
 
-Rollback: revert PR trên `main` (deploy lại bản trước). Nếu đây là lần deploy đầu tiên, không có bản trước để quay về, dùng Dashboard để xoá function `auth-zalo`.
+Rollback: revert PR trên `main` (deploy lại bản trước). Nếu đây là lần deploy đầu tiên của một function, không có bản trước để quay về, dùng Dashboard để xoá function đó.
+
+### 4.4 Thứ tự bắt buộc trước khi mở cho người dùng thật (B1)
+
+Không phát hành cho khách khi chưa xong các bước 1 đến 4.
+
+1. Đặt `ZALO_APP_SECRET` (mục 4.1). Kiểm `supabase secrets list` có tên `ZALO_APP_SECRET`.
+2. Kiểm mục 4.3 bước 2 (JWT ở cổng khớp cấu hình).
+3. Chạy S2 trên Zalo thật, ghi kết quả vào `docs/spikes/s2-resolve-location.md`. Đóng S2 theo mục 5 của spike.
+4. Chạy smoke test 6.11 (S3). Không còn `500 CONFIG_MISSING`, và phản hồi khớp kết quả S2.
+
+Lối chọn khu vực (C1b, `f20d34a`) đã có trên `main`. Đây là đường dự phòng khi không lấy được vị trí (D9 trong plan). Đường dự phòng không thay thế bước 1 đến 4: nó chỉ giúp khách vẫn tìm được Gymer khi `resolve-location` lỗi. Bước 1 đến 4 vẫn là điều kiện để phát hành.
+
+Điều kiện khác của B1 (review đợt 3-6, mục 5, không thuộc tài liệu này): N1, N2, N3 phải được sửa trước khi phát hành. Kiểm trạng thái trong `docs/plans/app-ui-integration-review-dot-3-6.md`.
 
 ## 5. Biến `VITE_*` và biến môi trường
 
@@ -239,6 +254,36 @@ order by u.created_at;
 - Kỳ vọng: 0 hàng. Chạy trước mỗi lần kiểm smoke test và sau mỗi sự cố.
 - Nếu có hàng: đây là user mồ côi do function bị dừng giữa chừng. Chấp nhận v1 (review C, G-b), không tự động dọn. Xoá tay từng user trên Dashboard > Authentication sau khi chắc không liên quan đến phiên đăng nhập nào.
 
+### 6.11 Smoke test `resolve-location` (S3, curl)
+
+Chuẩn bị: lấy khoá publishable (anon) từ Dashboard > Settings > API. Đọc vào biến shell mà không hiện ra màn hình. Không dùng service-role key.
+
+```bash
+read -rs -p "Publishable key: " SB_PUBLISHABLE_KEY && echo
+```
+
+Lệnh chung (thay `<project-ref>`):
+
+```bash
+curl -sS -X POST "https://<project-ref>.supabase.co/functions/v1/resolve-location" \
+  -H "Authorization: Bearer $SB_PUBLISHABLE_KEY" \
+  -H "apikey: $SB_PUBLISHABLE_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"zaloAccessToken":"token-gia-khong-hop-le-1234","locationToken":"loc-gia-khong-hop-le"}' \
+  -w "\n%{http_code}\n"
+```
+
+Các ca (chạy theo thứ tự):
+
+- [ ] Trước khi đặt secret (đối chứng): kỳ vọng `500` với `CONFIG_MISSING`.
+- [ ] Sau khi đặt secret, token giả như lệnh trên: kỳ vọng `401 ZALO_TOKEN_INVALID` nếu Zalo trả 452, hoặc `502 ZALO_UNAVAILABLE` nếu Zalo trả mã khác. Hai kết quả này CHƯA kiểm chứng. Ghi kết quả thật vào spike S2, không đoán.
+- [ ] `GET` (không kèm thân): kỳ vọng `405 METHOD_NOT_ALLOWED`.
+- [ ] `POST` thân `{}`: kỳ vọng `400 INVALID_REQUEST`.
+- [ ] `POST` không có header `Authorization`: kỳ vọng `401` từ cổng (`verify_jwt = true`). Phản hồi có thể không có JSON của handler. Đây là dấu hiệu cổng đang chặn đúng.
+- [ ] Sau F4 (plan đợt 3-6): `POST` với anon key kỳ vọng `401 UNAUTHENTICATED`. Trước F4, bước này chỉ là ghi nhận.
+
+Chỉ dùng token giả trong lệnh này. Token vị trí thật chỉ đi qua app hoặc lệnh đọc từ biến shell, không gõ vào dòng lệnh.
+
 ## 7. Giả thuyết chưa kiểm chứng
 
 - R8: embed PostgREST (`profiles!bookings_customer_id_fkey`, `booking_health_notes`) và hình dạng object hay mảng. Mới chỉ kiểm bằng client giả. Kiểm ở 6.7.
@@ -246,13 +291,16 @@ order by u.created_at;
 - R2: `id` Zalo có khác nhau giữa các Mini App không, token của app khác có đăng nhập được không. S1 phần (a) sẽ trả lời.
 - R1: CLI có áp `verify_jwt = false` từ `config.toml` khi deploy không. Kiểm ở mục 4.3 bước 5.
 - R5: `nativeStorage` có giữ phiên ổn định trên thiết bị thật không.
-- Tên secret đã chốt là `ZALO_APP_SECRET`. Còn lại chờ S1: có cần secret hay không.
+- Tên secret đã chốt là `ZALO_APP_SECRET`. Bắt buộc cho `resolve-location` (theo code). Cho `auth-zalo`: tuỳ chọn, và verifier có gửi `secret_key` khi có giá trị hay không chưa kiểm (xem mục 4.1).
+- S2 (`docs/spikes/s2-resolve-location.md`): endpoint `graph.zalo.me/v2.0/me/info`, header `access_token`, `code`, `secret_key`, cấu trúc phản hồi, mã 452. Tất cả là giả thuyết, chưa chạy trên Zalo thật.
+- `resolve-location` có `verify_jwt = true`, nên anon key vẫn qua được cổng (vì là JWT hợp lệ). Sau khi handler kiểm role `authenticated` (F4 của plan đợt 3-6), anon key phải nhận 401. Kiểm lại mục 6.11 sau F4.
 - Một tài khoản Zalo: nếu chỉ có A, chưa có cách đã kiểm để tạo khách B. Không tự tạo `auth.users` bằng SQL vì khi đó không kiểm được đường đăng nhập Zalo của khách.
 - SQL gieo dữ liệu dựa trên migration hiện tại (`supabase/migrations/`). Nếu lệnh lỗi, đối chiếu lại cột và khoá của các bảng.
 
 ## 8. Khi sự cố
 
 - Lỗi đăng nhập hàng loạt: revert PR của `auth-zalo` trên `main`, hoặc xoá function trên Dashboard.
+- Lỗi vị trí hàng loạt (`500 CONFIG_MISSING` hoặc `502 ZALO_UNAVAILABLE` từ `resolve-location`): kiểm `supabase secrets list` có `ZALO_APP_SECRET`, xem log function. Trong lúc chờ, khách dùng lối chọn khu vực (C1b). Nếu không khắc phục được, dừng mở thêm người dùng và báo product-manager.
 - Nghi lộ khoá: đổi khoá trên Zalo for Developers, đặt lại secret bằng mục 4.1, deploy lại.
 - Đăng ký bị mở nhầm: tắt lại "Allow new users to sign up" (mục 3.2).
 - Đưa app về dữ liệu giả: đặt `VITE_DATA_SOURCE=mock`. Lưu ý: `docs/ci-cd-setup.md` mục 8 nói job từ chối deploy `deploy-*` nếu `VITE_DATA_SOURCE` khác `supabase`. Kiểm mục đó trước khi dùng cách này.

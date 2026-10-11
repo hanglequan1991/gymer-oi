@@ -126,6 +126,21 @@ describe('RequestsPage: ba tab và lọc', () => {
   });
 });
 
+describe('RequestsPage: yêu cầu chờ duyệt đã quá hạn', () => {
+  it('thẻ quá hạn không được đếm và không hiện, thẻ còn hạn vẫn hiện', async () => {
+    renderRequests({
+      list: vi.fn().mockResolvedValue([
+        req({ id: 'old', customerName: 'Cũ', expiresAt: '2020-01-01T00:00:00+07:00' }),
+        req({ id: 'fresh', customerName: 'Mới', expiresAt: '2099-01-01T00:00:00+07:00' }),
+      ]),
+    });
+
+    expect(await screen.findByRole('radio', { name: 'Chờ duyệt (1)' })).toBeChecked();
+    expect(screen.queryByRole('article', { name: 'Yêu cầu của Cũ' })).not.toBeInTheDocument();
+    expect(articleNamed('Mới')).toBeInTheDocument();
+  });
+});
+
 describe('RequestsPage: xác nhận và từ chối', () => {
   const PENDING = [req({ id: 'r1', customerName: 'Minh' })];
 
