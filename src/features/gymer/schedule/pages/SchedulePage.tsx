@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { Page } from 'zmp-ui';
 import { AsyncView } from '@/components/app';
+import { GButton } from '@/components/ui/controls';
 import { AppHeader, Section } from '@/components/ui/layout';
 import { CalendarLegend, DEFAULT_GYMER_LEGEND, MonthCalendar } from '@/components/ui/schedule';
 import { useAsync, useServices } from '@/hooks';
 import { vi } from '@/i18n';
 import type { DayInfo, Gymer } from '@/types/domain';
 import { GymerTabsLayout } from '../../GymerTabsLayout';
+import { BulkApplyPanel } from '../BulkApplyPanel';
+import { DayOverrideEditor } from '../DayOverrideEditor';
 import { DaySlotsPanel } from '../DaySlotsPanel';
 import { DefaultPricesSection } from '../DefaultPricesSection';
 import { toDateIso } from '../scheduleModel';
@@ -33,6 +36,9 @@ function ScheduleContent({ gymer }: { gymer: Gymer }) {
   const services = useServices();
   const [cursor, setCursor] = useState<Cursor>(todayCursor);
   const [selected, setSelected] = useState<Date | null>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  // Mốc giá mặc định đang lưu. Sau khi đổi giá mặc định phải lấy lại, nếu không ngày nào cũng bị coi là có giá riêng.
+  const [defaults, setDefaults] = useState({ weekday: gymer.priceWeekday, weekend: gymer.priceWeekend });
 
   const monthState = useAsync<MonthData>(async () => {
     const days = await services.schedule.getMonth(gymer.id, cursor.year, cursor.month);
@@ -42,6 +48,19 @@ function ScheduleContent({ gymer }: { gymer: Gymer }) {
   // Khi làm mới sau một thao tác, useAsync giữ dữ liệu cũ trong lúc tải. Dùng lại dữ liệu đó để lịch
   // không nhấp nháy về "Đang tải". Khi đổi tháng, dữ liệu cũ không khớp nên hiện trạng thái tải.
   const matched = monthState.data;
+  const shownMonth = matched && matched.year === cursor.year && matched.month === cursor.month ? matched : undefined;
+
+  const refreshDefaults = () => {
+    // Lỗi thì giữ mốc cũ; lần mở lại trang sẽ đúng.
+    services.profile
+      .getMine()
+      .then((detail) => setDefaults({ weekday: detail.gymer.priceWeekday, weekend: detail.gymer.priceWeekend }))
+      .catch(() => undefined);
+  };
+
+  const selectedIso = selected ? toDateIso(selected) : null;
+  const selectedDay = shownMonth?.days.find((d) => toDateIso(d.date) === selectedIso);
+  const selectedIsPast = selectedIso !== null && selectedIso < toDateIso(new Date());
   const showMonth = (data: MonthData) => (
     <>
       <MonthCalendar
@@ -65,25 +84,45 @@ function ScheduleContent({ gymer }: { gymer: Gymer }) {
       <DefaultPricesSection
         weekday={gymer.priceWeekday}
         weekend={gymer.priceWeekend}
-        onSaved={monthState.refetch}
+        onSaved={() => {
+          monthState.refetch();
+          refreshDefaults();
+        }}
       />
 
       <Section title={vi.gymerSchedule.calendar.title} data-testid="schedule-calendar">
-        {matched && matched.year === cursor.year && matched.month === cursor.month ? (
-          showMonth(matched)
+        {shownMonth ? (
+          showMonth(shownMonth)
         ) : (
           <AsyncView state={monthState} context="schedule">
             {(data) => showMonth(data)}
           </AsyncView>
         )}
+        <GButton kind="secondary" fullWidth onClick={() => setBulkOpen((open) => !open)}>
+          {vi.gymerSchedule.bulk.open}
+        </GButton>
       </Section>
+
+      {bulkOpen && (
+        <BulkApplyPanel
+          year={cursor.year}
+          month={cursor.month}
+          onApplied={monthState.refetch}
+          onClose={() => setBulkOpen(false)}
+        />
+      )}
 
       {selected ? (
         <DaySlotsPanel
-          key={toDateIso(selected)}
+          key={selectedIso ?? undefined}
           gymerId={gymer.id}
           date={selected}
           onChanged={monthState.refetch}
+          actions={
+            selectedIsPast ? undefined : (
+              <DayOverrideEditor date={selected} day={selectedDay} defaults={defaults} onChanged={monthState.refetch} />
+            )
+          }
         />
       ) : (
         <Section>

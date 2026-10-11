@@ -98,6 +98,82 @@ describe('SearchPage: cổng vị trí', () => {
   });
 });
 
+describe('SearchPage: khu vực dự phòng (C1b)', () => {
+  const Q1 = { lat: 10.7769, lng: 106.7009 };
+
+  it('chưa thử GPS (idle) thì chưa hiện lối chọn khu vực', () => {
+    renderPage(<SearchPage />, { services: createStubServices() });
+
+    expect(screen.queryByRole('radiogroup', { name: 'Chọn khu vực TP.HCM' })).toBeNull();
+    expect(screen.queryByRole('radio', { name: 'Quận 1' })).toBeNull();
+  });
+
+  it('từ chối quyền: hiện lối chọn khu vực; chọn quận thì tìm đúng toạ độ trung tâm và đánh dấu nguồn thủ công', async () => {
+    const getCurrent = vi.fn().mockRejectedValue(new AppError('FORBIDDEN', 'denied'));
+    const search = vi.fn().mockResolvedValue(GYMERS);
+    renderPage(<SearchPage />, {
+      services: createStubServices({ location: { getCurrent }, gymers: { search } }),
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cho phép vị trí' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('radiogroup', { name: 'Chọn khu vực TP.HCM' })).toBeTruthy();
+    expect(search).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Quận 1' }));
+
+    expect(await screen.findByText('Tìm thấy 2 Gymer')).toBeTruthy();
+    expect(search).toHaveBeenCalledWith({ center: Q1, radiusKm: 2 });
+    expect(useUserLocation.getState().source).toBe('manual');
+    expect(screen.getByText('Đang tìm quanh Quận 1')).toBeTruthy();
+    expect(screen.queryByTestId('location-gate')).toBeNull();
+  });
+
+  it('lỗi GPS (không phải từ chối quyền) cũng hiện lối chọn khu vực', async () => {
+    const getCurrent = vi.fn().mockRejectedValue(new AppError('NETWORK', 'offline'));
+    renderPage(<SearchPage />, {
+      services: createStubServices({ location: { getCurrent } }),
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cho phép vị trí' }));
+
+    expect(await screen.findByRole('radio', { name: 'Gò Vấp' })).toBeTruthy();
+  });
+
+  it('đang đặt thủ công: "Dùng vị trí hiện tại" gọi lại lấy GPS và đổi nguồn sang gps', async () => {
+    useUserLocation.getState().setPoint(Q1, 'manual');
+    const getCurrent = vi.fn().mockResolvedValue(CENTER);
+    const search = vi.fn().mockResolvedValue(GYMERS);
+    renderPage(<SearchPage />, {
+      services: createStubServices({ location: { getCurrent }, gymers: { search } }),
+    });
+
+    await screen.findByText('Tìm thấy 2 Gymer');
+    fireEvent.click(screen.getByRole('button', { name: 'Dùng vị trí hiện tại' }));
+
+    await waitFor(() => expect(useUserLocation.getState().source).toBe('gps'));
+    expect(getCurrent).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(/Đang tìm quanh/)).toBeNull();
+  });
+
+  it('đang đặt thủ công và GPS lỗi: giữ khu vực đã chọn, báo lỗi và vẫn tìm được', async () => {
+    useUserLocation.getState().setPoint(Q1, 'manual');
+    const getCurrent = vi.fn().mockRejectedValue(new AppError('FORBIDDEN', 'denied'));
+    const search = vi.fn().mockResolvedValue(GYMERS);
+    renderPage(<SearchPage />, {
+      services: createStubServices({ location: { getCurrent }, gymers: { search } }),
+    });
+
+    await screen.findByText('Tìm thấy 2 Gymer');
+    fireEvent.click(screen.getByRole('button', { name: 'Dùng vị trí hiện tại' }));
+
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByText('Đang tìm quanh Quận 1')).toBeTruthy();
+    expect(useUserLocation.getState().point).toEqual(Q1);
+    expect(useUserLocation.getState().source).toBe('manual');
+  });
+});
+
 describe('SearchPage: bộ lọc gửi đúng tham số', () => {
   beforeEach(() => {
     useUserLocation.getState().setPoint(CENTER, 'gps');

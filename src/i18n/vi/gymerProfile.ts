@@ -1,2 +1,54 @@
-// Chuỗi tab Hồ sơ của khu Gymer (task G5a, G5b). Nhóm trống để task sau điền.
-export const gymerProfile = {} as const;
+// Chuỗi tab Hồ sơ của khu Gymer (task G5a, G5b).
+// Lưu ý: chứng chỉ là do Gymer tự khai, KHÔNG dùng chữ "xác minh" trong giao diện.
+export const gymerProfile = {
+  title: 'Hồ sơ',
+  visibility: {
+    title: 'Hiển thị',
+    listed: 'Hiển thị hồ sơ với khách',
+    listedHint: 'Khi bật, khách quanh khu vực có thể tìm thấy bạn.',
+    needLocation: 'Hãy đặt vị trí phòng tập trước',
+    acceptsRequests: 'Nhận yêu cầu đặt lịch',
+    acceptsHint: 'Khách có thể gửi yêu cầu đặt lịch cho bạn.',
+  },
+  info: {
+    title: 'Thông tin',
+    name: 'Tên hiển thị',
+    nameRequired: 'Hãy nhập tên hiển thị',
+    nameTooLong: 'Tên tối đa 50 ký tự',
+    area: 'Khu vực',
+    areaHelper: 'Ví dụ: Quận 1, TP Thủ Đức',
+    areaRequired: 'Hãy nhập khu vực',
+    areaTooLong: 'Khu vực tối đa 100 ký tự',
+    bio: 'Giới thiệu',
+    bioHelper: 'Kể ngắn về bạn và cách bạn hướng dẫn.',
+    bioTooLong: 'Giới thiệu tối đa 1000 ký tự',
+    counter: (count: number, max: number) => `${count}/${max} ký tự`,
+    save: 'Lưu thông tin',
+    saved: 'Đã lưu thông tin',
+  },
+  specialties: {
+    title: 'Chuyên môn',
+    hint: 'Chọn các mục bạn có thể hướng dẫn.',
+    save: 'Lưu chuyên môn',
+    saved: 'Đã lưu chuyên môn',
+  },
+  certificates: {
+    title: 'Chứng chỉ',
+    selfDeclared: 'Tự khai',
+    note: 'Chứng chỉ do bạn tự khai.',
+    empty: 'Chưa có chứng chỉ nào.',
+    limitReached: 'Bạn đã có đủ 10 chứng chỉ, hãy xoá bớt để thêm mới.',
+    add: 'Thêm chứng chỉ',
+    addLabel: 'Tên chứng chỉ',
+    addRequired: 'Hãy nhập tên chứng chỉ',
+    addSave: 'Lưu chứng chỉ',
+    addCancel: 'Huỷ',
+    added: 'Đã thêm chứng chỉ',
+    remove: 'Xoá',
+    removeTitle: 'Xoá chứng chỉ này?',
+    removeDescription: 'Chứng chỉ sẽ bị xoá khỏi hồ sơ của bạn.',
+    removeConfirm: 'Xoá',
+    removeCancel: 'Giữ lại',
+    removed: 'Đã xoá chứng chỉ',
+  },
+} as const;

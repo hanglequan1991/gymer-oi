@@ -2,12 +2,14 @@
 import { Page, useNavigate } from 'zmp-ui';
 import { AsyncView } from '@/components/app';
 import { AppHeader, EmptyState, EMPTY_PRESETS, GButton, GymerCard, Notice } from '@/components/ui';
+import { findAreaByCenter } from '@/config/areas';
 import { useAsync, useCurrentLocation, useServices } from '@/hooks';
-import { vi } from '@/i18n';
+import { messageFromError, vi } from '@/i18n';
 import { PATHS, gymerDetail } from '@/routes/paths';
 import { useSearchFilters } from '@/stores';
 import type { Gymer } from '@/types/domain';
 import { RADIUS_OPTIONS } from '@/types/geo';
+import { AreaPicker } from '../components/AreaPicker';
 import { LocationGate } from '../components/LocationGate';
 import { SearchFilters } from '../components/SearchFilters';
 import { SEARCH_LIMIT, buildGymerSearch } from '../query';
@@ -41,6 +43,8 @@ export function SearchPage() {
   ]);
 
   const nextRadius = RADIUS_OPTIONS.find((r) => r > filters.radiusKm);
+  // Vị trí đặt thủ công là toạ độ trung tâm của một quận: tra ngược để hiện tên quận.
+  const manualArea = current.source === 'manual' && point ? findAreaByCenter(point) : undefined;
 
   return (
     <Page>
@@ -63,9 +67,35 @@ export function SearchPage() {
       />
 
       {point === undefined ? (
-        <LocationGate status={current.status} error={current.error} onRequest={() => void current.request()} />
+        <>
+          <LocationGate status={current.status} error={current.error} onRequest={() => void current.request()} />
+          {/* Lối dự phòng (C1b): chỉ khi GPS bị từ chối hoặc lỗi; khách chọn quận thì đặt vị trí thủ công và tìm lại. */}
+          {(current.status === 'denied' || current.status === 'error') && (
+            <div style={{ padding: '0 16px 16px' }}>
+              <AreaPicker onSelect={(area) => current.setManual(area.center)} />
+            </div>
+          )}
+        </>
       ) : (
         <>
+          {current.source === 'manual' && (
+            <div style={{ padding: '8px 16px 0', display: 'grid', gap: 8 }}>
+              <p style={{ margin: 0 }}>
+                {manualArea ? vi.location.searchingAround(manualArea.label) : vi.location.searchingAroundGeneric}
+              </p>
+              {(current.status === 'denied' || current.status === 'error') && (
+                <Notice tone="danger">{messageFromError(current.error, 'location')}</Notice>
+              )}
+              <GButton
+                kind="secondary"
+                loading={current.status === 'loading'}
+                disabled={current.status === 'loading'}
+                onClick={() => void current.request()}
+              >
+                {vi.location.useCurrent}
+              </GButton>
+            </div>
+          )}
           <SearchFilters />
           <div style={{ padding: '8px 16px 16px', display: 'grid', gap: 12 }}>
             <AsyncView
