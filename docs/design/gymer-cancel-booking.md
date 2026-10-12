@@ -1,4 +1,4 @@
-Trạng thái: CHỜ DUYỆT THIẾT KẾ
+Trạng thái: ĐÃ DUYỆT THIẾT KẾ (2026-10-12)
 
 # G5 — Gymer tự huỷ buổi tập đã xác nhận
 
@@ -132,7 +132,7 @@ Thẻ `RequestCard` dạng gọn như hiện nay (tên khách, badge, giờ, m�
 
 ### 3.5 Trạng thái "Đã huỷ" phía Gymer (H4)
 - Chip thứ tư `Đã huỷ (n)`, thứ tự: Chờ duyệt, Đã xác nhận, Đã từ chối, Đã huỷ. Ở khung 390px bốn chip kèm số có thể tràn: chip cuộn ngang (`ChipGroup` có hỗ trợ cuộn hay không chưa kiểm; giả định, ghi trong mục 4). Phương án gọn hơn nếu tràn: rút nhãn "Từ chối" / "Huỷ", nhưng làm lệch nhãn đã duyệt ở mockup gốc.
-- Thẻ trong chip này: badge `Bạn đã huỷ` (tone neutral) hoặc `Khách đã huỷ` (tone neutral), giờ buổi, mục tiêu, giá. Không nút. Chữ nhỏ muted bên dưới: `Khung giờ này đã trống lại.`
+- Thẻ trong chip này: badge `Bạn đã huỷ` (tone neutral) hoặc `Khách đã huỷ` (tone neutral), giờ buổi, mục tiêu, giá. Không nút. Chữ nhỏ muted bên dưới: `Khung giờ này đã được mở lại khi huỷ.`
 - Sắp xếp: giờ bắt đầu tăng dần như các chip khác. Chỉ liệt kê buổi chưa kết thúc (repo hiện lọc `ends_at > now`); buổi huỷ đã qua giờ rời danh sách. Chấp nhận ở v1 vì đây là danh sách việc cần làm, không phải lịch sử.
 - Trạng thái rỗng: tiêu đề `Chưa có buổi nào bị huỷ`, mô tả `Buổi bạn hoặc khách huỷ sẽ nằm ở đây.`
 - Badge dùng chữ + màu, không chỉ màu (đã là quy ước `Badge`).
@@ -217,3 +217,15 @@ Server đã đủ để thực thi huỷ: `cancel_booking(p_booking_id)` lưu `s
 - Q5. Khách chưa biết khi Gymer huỷ (không thông báo đẩy): có chấp nhận ở v1 không? Giảm nhẹ rẻ nhất trong phạm vi hiện tại: khi mở app, khách thấy ngay "Gymer đã huỷ" ở Lịch sử; nhưng chỉ khi họ mở app. Gymer huỷ phút chót là rủi ro đã ghi (R14).
 - Q6. Tên nút: "Huỷ buổi" (Gymer) vs "Huỷ lịch" (khách, đang dùng). Đề xuất khác nhau vì Gymer nói về "buổi tập" của khách; nếu muốn đồng nhất thì dùng "Huỷ lịch" ở cả hai.
 - Q7. Chính tả "huỷ" (theo `myBookings`, `errors`) hay "hủy" (theo `common.ts`)? Đề xuất "huỷ" và nhờ dọn `common.ts` về sau.
+
+### Quyết định của người dùng 2026-10-12
+
+Người dùng duyệt thiết kế và chấp nhận toàn bộ đề xuất mặc định của designer cho 7 câu hỏi mở:
+
+- Q1: Không hỏi, không lưu lý do huỷ ở v1 (G5-D2). Không thêm cột lý do, không đổi chữ ký `cancel_booking`.
+- Q2: Thêm chip thứ tư "Đã huỷ" ở tab Yêu cầu của Gymer, gồm cả buổi khách huỷ lẫn Gymer huỷ.
+- Q3: Tổng quan "Hôm nay" chỉ dẫn sang tab Yêu cầu, chip "Đã xác nhận". Không có nút huỷ trên Tổng quan.
+- Q4: Không tách mã `ALREADY_STARTED` ở client. Dùng câu chung cho `FORBIDDEN` (mục 3.3).
+- Q5: Chấp nhận khách không được báo đẩy khi Gymer huỷ ở v1 (R14).
+- Q6: Nút "Huỷ buổi" cho Gymer; nút "Huỷ lịch" cho khách.
+- Q7: Chính tả "huỷ" theo đề xuất; dọn `common.ts` về sau.

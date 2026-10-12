@@ -10,6 +10,10 @@ export const myBookings = {
   statusConfirmed: 'Đã xác nhận',
   statusRejected: 'Đã từ chối',
   statusCancelled: 'Đã huỷ',
+  statusCancelledByGymer: 'Gymer đã huỷ',
+  statusCancelledByYou: 'Bạn đã huỷ',
+  /** Dòng giải thích dưới thẻ khi Gymer huỷ buổi của khách. */
+  cancelledByGymerNote: 'Gymer đã huỷ buổi này. Bạn có thể tìm Gymer khác.',
   statusExpired: 'Hết hạn',
 
   // Trạng thái rỗng

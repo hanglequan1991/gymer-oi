@@ -12,6 +12,8 @@ function row(overrides: Partial<RequestRow> = {}): RequestRow {
     goal: 'Giảm mỡ',
     status: 'pending',
     expires_at: '2026-10-16T01:00:00.000Z',
+    gymer_id: 'g1',
+    cancelled_by: null,
     profiles: { display_name: 'Lan' },
     ...overrides,
   };
@@ -54,8 +56,8 @@ describe('toBookingRequest', () => {
     expect(toBookingRequest(row({ goal: '' }))).not.toHaveProperty('goal');
   });
 
-  it('ném UNKNOWN với trạng thái ngoài pending/confirmed/rejected', () => {
-    for (const status of ['cancelled', 'expired'] as const) {
+  it('ném UNKNOWN với trạng thái ngoài pending/confirmed/rejected/cancelled', () => {
+    for (const status of ['expired'] as const) {
       let caught: unknown;
       try {
         toBookingRequest(row({ status }));

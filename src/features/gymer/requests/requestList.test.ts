@@ -10,8 +10,8 @@ describe('requestList', () => {
       { ...base, id: '1', start: '2026-10-12T09:00:00+07:00', end: '', status: 'pending' },
       { ...base, id: '2', start: '2026-10-12T09:00:00+07:00', end: '', status: 'confirmed' },
     ];
-    expect(countByStatus(list)).toEqual({ pending: 1, confirmed: 1, rejected: 0 });
-    expect(countByStatus([])).toEqual({ pending: 0, confirmed: 0, rejected: 0 });
+    expect(countByStatus(list)).toEqual({ pending: 1, confirmed: 1, rejected: 0, cancelled: 0 });
+    expect(countByStatus([])).toEqual({ pending: 0, confirmed: 0, rejected: 0, cancelled: 0 });
   });
 
   it('listForTab lọc đúng trạng thái và sắp theo giờ bắt đầu, không đổi mảng gốc', () => {
@@ -52,6 +52,6 @@ describe('requestList: yêu cầu chờ duyệt quá hạn', () => {
       { ...base, id: '1', start: '', end: '', status: 'pending', expiresAt: '2026-10-11T09:00:00+07:00' },
       { ...base, id: '2', start: '', end: '', status: 'pending', expiresAt: '2026-10-12T09:00:00+07:00' },
     ];
-    expect(countByStatus(withoutStale(list, NOW))).toEqual({ pending: 1, confirmed: 0, rejected: 0 });
+    expect(countByStatus(withoutStale(list, NOW))).toEqual({ pending: 1, confirmed: 0, rejected: 0, cancelled: 0 });
   });
 });

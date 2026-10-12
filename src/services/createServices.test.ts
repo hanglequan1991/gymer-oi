@@ -27,6 +27,7 @@ const fakes = vi.hoisted(() => ({
   requests: {
     list: async () => 'requests.list',
     respond: async () => 'requests.respond',
+    cancel: async () => 'requests.cancel',
     getHealthNote: async () => 'requests.getHealthNote',
   },
   profile: {
@@ -91,6 +92,7 @@ const calls: Array<[string, (s: Services) => Promise<unknown>, string]> = [
   ['bookings.review', (s) => s.bookings.review('b1', { rating: 5 }), 'bookings.review'],
   ['requests.list', (s) => s.requests.list(), 'requests.list'],
   ['requests.respond', (s) => s.requests.respond('r1', 'confirmed'), 'requests.respond'],
+  ['requests.cancel', (s) => s.requests.cancel('r1'), 'requests.cancel'],
   ['requests.getHealthNote', (s) => s.requests.getHealthNote('b1'), 'requests.getHealthNote'],
   ['profile.getMine', (s) => s.profile.getMine(), 'profile.getMine'],
   ['profile.updateMine', (s) => s.profile.updateMine({ name: 'Quán' }), 'profile.updateMine'],
@@ -124,7 +126,7 @@ const EXPECTED_METHODS: Record<keyof Services, string[]> = {
   gymers: ['getDetail', 'search'],
   schedule: ['getClosedDays', 'getDaySlots', 'getMonth', 'setDayOverrides', 'setPrices', 'setSlotClosed'],
   bookings: ['cancel', 'create', 'getMine', 'listMine', 'review'],
-  requests: ['getHealthNote', 'list', 'respond'],
+  requests: ['cancel', 'getHealthNote', 'list', 'respond'],
   profile: [
     'addCertificate',
     'becomeGymer',

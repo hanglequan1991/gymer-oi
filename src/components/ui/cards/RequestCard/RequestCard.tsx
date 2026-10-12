@@ -26,6 +26,16 @@ export interface RequestCardProps {
   onOpen?: (id: string) => void;
   /** Nhãn nút mở chi tiết. */
   openLabel?: string;
+  /** Gọi khi bấm "Huỷ buổi", truyền id yêu cầu. Chỉ hiện với thẻ confirmed khi có cả `cancelLabel`. */
+  onCancel?: (id: string) => void;
+  /** Nhãn nút huỷ buổi. */
+  cancelLabel?: string;
+  /** Nhãn đọc màn hình của nút huỷ buổi (thay cho nhãn hiển thị khi cần chi tiết hơn). */
+  cancelAriaLabel?: string;
+  /** Dòng nhỏ ở chân thẻ thay cho nút huỷ (ví dụ "Buổi đã bắt đầu, không thể huỷ"). */
+  hint?: string;
+  /** Nhãn huy hiệu thay cho nhãn mặc định của trạng thái (ví dụ "Bạn đã huỷ"). Tone vẫn theo trạng thái. */
+  badgeLabel?: string;
   className?: string;
   style?: CSSProperties;
   'data-testid'?: string;
@@ -33,8 +43,9 @@ export interface RequestCardProps {
 
 /**
  * Thẻ yêu cầu đặt lịch: tên khách, nhãn trạng thái, thời gian, mục tiêu, giá. Ghi chú sức khoẻ không hiển thị ở đây (tải riêng khi mở chi tiết).
- * Chỉ yêu cầu đang chờ mới có nút Xác nhận và Từ chối. Khi `busy` đang bật, bấm không gọi callback;
- * việc chống bấm đúp phụ thuộc vào cha đặt `busy` (xem prop `busy`).
+ * Chỉ yêu cầu đang chờ mới có nút Xác nhận và Từ chối. Thẻ confirmed có nút Huỷ buổi khi cha truyền `onCancel`;
+ * nếu không có nút huỷ mà có `hint` thì hiện dòng `hint` ở chỗ đó. Thẻ không tự biết luật thời gian hay i18n: mọi chữ và điều kiện do cha truyền vào.
+ * Khi `busy` đang bật, bấm không gọi callback; việc chống bấm đúp phụ thuộc vào cha đặt `busy` (xem prop `busy`).
  */
 export function RequestCard({
   request,
@@ -44,13 +55,21 @@ export function RequestCard({
   compact = false,
   onOpen,
   openLabel,
+  onCancel,
+  cancelLabel,
+  cancelAriaLabel,
+  hint,
+  badgeLabel,
   className,
   style,
   'data-testid': testId,
 }: RequestCardProps) {
   const isPending = request.status === 'pending';
   const badge: { tone: BadgeTone; label: string } =
-    isPending && request.isNew ? { tone: 'warn', label: 'Mới' } : STATUS_BADGE[request.status];
+    isPending && request.isNew
+      ? { tone: 'warn', label: 'Mới' }
+      : { tone: STATUS_BADGE[request.status].tone, label: badgeLabel ?? STATUS_BADGE[request.status].label };
+  const showCancel = request.status === 'confirmed' && Boolean(onCancel && cancelLabel);
 
   const guard = (callback?: (id: string) => void) => () => {
     if (busy || !callback) return;
@@ -77,6 +96,18 @@ export function RequestCard({
           <GButton kind="ghost" onClick={() => onOpen(request.id)}>
             {openLabel}
           </GButton>
+        ) : null}
+        {showCancel ? (
+          <GButton
+            kind="danger-ghost"
+            loading={busy}
+            aria-label={cancelAriaLabel}
+            onClick={guard(onCancel)}
+          >
+            {cancelLabel}
+          </GButton>
+        ) : hint ? (
+          <p className="gy-request-card__hint">{hint}</p>
         ) : null}
         {isPending && (
           <div className="gy-request-card__actions">

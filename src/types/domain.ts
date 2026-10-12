@@ -3,8 +3,10 @@
 export type Gender = 'female' | 'male';
 export type Specialty = 'Gym' | 'Giảm mỡ' | 'Tăng cơ' | 'Yoga' | 'Calisthenics' | 'Giãn cơ';
 export type SlotState = 'available' | 'booked' | 'closed' | 'selected'; // closed = Gymer chủ động đóng
-export type RequestStatus = 'pending' | 'confirmed' | 'rejected';
-export type BookingStatus = RequestStatus | 'cancelled' | 'expired'; // phía khách; 'expired' chỉ là nhãn, xem utils/booking.ts
+export type RequestStatus = 'pending' | 'confirmed' | 'rejected' | 'cancelled';
+export type BookingStatus = RequestStatus | 'expired'; // phía khách; 'expired' chỉ là nhãn, xem utils/booking.ts
+/** Người huỷ một lượt đã xác nhận: 'gymer' hoặc 'customer'. Không lộ uuid ra UI. */
+export type CancelledBy = 'gymer' | 'customer';
 
 export interface Gymer {
   id: string;
@@ -46,6 +48,8 @@ export interface BookingRequest {
   status: RequestStatus;
   /** Hạn xác nhận (ISO), chỉ có với yêu cầu chờ duyệt; dùng với isExpired để ẩn yêu cầu quá hạn. */
   expiresAt?: string;
+  /** Chỉ có khi status = 'cancelled' và biết người huỷ; hàng huỷ cũ không có khoá này. */
+  cancelledBy?: CancelledBy;
   isNew?: boolean;
 }
 
@@ -84,6 +88,8 @@ export interface MyBooking {
   goal?: string;
   status: BookingStatus;
   expiresAt?: string; // chỉ khi status = 'pending'
+  /** Chỉ có khi status = 'cancelled' và biết người huỷ. */
+  cancelledBy?: CancelledBy;
   reviewed: boolean; // đã có đánh giá cho lượt này
   /** undefined = không có ghi chú; true/false = có ghi chú và đã/không chia sẻ với Gymer. */
   healthNoteShared?: boolean;

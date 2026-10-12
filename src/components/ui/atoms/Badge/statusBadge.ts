@@ -6,4 +6,5 @@ export const STATUS_BADGE: Record<RequestStatus, { tone: BadgeTone; label: strin
   pending: { tone: 'warn', label: 'Chờ duyệt' },
   confirmed: { tone: 'ok', label: 'Đã xác nhận' },
   rejected: { tone: 'danger', label: 'Đã từ chối' },
+  cancelled: { tone: 'neutral', label: 'Đã huỷ' },
 };

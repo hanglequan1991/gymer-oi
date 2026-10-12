@@ -12,6 +12,7 @@ import { PATHS } from '@/routes/paths';
 import type { BookingRequest, Gymer } from '@/types/domain';
 import { formatVND } from '@/utils/format';
 import { GymerTabsLayout } from '../../GymerTabsLayout';
+import { setRequestsTabIntent } from '../../requests/requestsTabIntent';
 import { buildOverview, vnDateTimeLabel, vnHhmm } from '../overviewModel';
 import './OverviewPage.css';
 
@@ -106,17 +107,31 @@ function OverviewContent() {
                   <p className="gy-overview-empty">{vi.gymerOverview.today.empty}</p>
                 ) : (
                   <ul className="gy-overview-today">
-                    {summary.today.map((b) => (
-                      <li key={b.id} className="gy-overview-today__item">
-                        <time dateTime={b.start} className="gy-overview-today__time">
-                          {vnHhmm(b.start)}
-                        </time>
-                        <div>
-                          <div className="gy-overview-today__name">{b.customerName}</div>
-                          {b.goal && <div className="gy-overview-today__goal">{b.goal}</div>}
-                        </div>
-                      </li>
-                    ))}
+                    {summary.today.map((b) => {
+                      const time = vnHhmm(b.start);
+                      return (
+                        <li key={b.id} className="gy-overview-today__item">
+                          <button
+                            type="button"
+                            className="gy-overview-today__button"
+                            aria-label={vi.gymerOverview.today.itemLabel(time, b.customerName)}
+                            onClick={() => {
+                              setRequestsTabIntent('confirmed');
+                              navigate(PATHS.gymerRequests);
+                            }}
+                          >
+                            <time dateTime={b.start} className="gy-overview-today__time">
+                              {time}
+                            </time>
+                            <span className="gy-overview-today__body">
+                              <span className="gy-overview-today__name">{b.customerName}</span>
+                              {b.goal && <span className="gy-overview-today__goal">{b.goal}</span>}
+                            </span>
+                            <span className="gy-overview-today__chevron" aria-hidden="true" />
+                          </button>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </Section>

@@ -40,11 +40,30 @@
 }
 
 .gy-overview-today__item {
+  border-bottom: 1px solid var(--gy-color-border);
+}
+
+/* Cả dòng là vùng bấm (>= 44px), mở tab Yêu cầu ở chip Đã xác nhận. */
+.gy-overview-today__button {
   display: flex;
   gap: var(--gy-space-3);
-  align-items: flex-start;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
   padding: var(--gy-space-2) 0;
-  border-bottom: 1px solid var(--gy-color-border);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+
+.gy-overview-today__button:focus-visible {
+  outline: 2px solid var(--gy-color-primary);
+  outline-offset: 2px;
 }
 
 .gy-overview-today__time {
@@ -53,14 +72,33 @@
   color: var(--gy-color-primary);
 }
 
+.gy-overview-today__body {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .gy-overview-today__name {
+  display: block;
   font-size: var(--gy-font-size-md);
   color: var(--gy-color-text);
 }
 
 .gy-overview-today__goal {
+  display: block;
   font-size: var(--gy-font-size-sm);
   color: var(--gy-color-muted);
+}
+
+/* Chevron ghép bằng viền, không dùng ký tự, để không phụ thuộc font. */
+.gy-overview-today__chevron {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  margin-right: var(--gy-space-1);
+  border-top: 2px solid var(--gy-color-muted);
+  border-right: 2px solid var(--gy-color-muted);
+  transform: rotate(45deg);
 }
 
 .gy-overview-pending__item {

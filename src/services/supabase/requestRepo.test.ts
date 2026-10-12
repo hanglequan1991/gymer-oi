@@ -16,6 +16,8 @@ function row(overrides: Partial<RequestRow> = {}): RequestRow {
     goal: null,
     status: 'pending',
     expires_at: '2026-10-16T10:00:00.000Z',
+    gymer_id: 'u1',
+    cancelled_by: null,
     profiles: { display_name: 'Lan' },
     ...overrides,
   };
@@ -48,7 +50,7 @@ describe('requestRepo.list', () => {
     expect(calls.some((c) => c.kind === 'from')).toBe(false);
   });
 
-  it('truy vấn bookings theo gymer_id của phiên, mặc định pending/confirmed/rejected, chỉ buổi chưa kết thúc, sắp tăng dần, tối đa 100', async () => {
+  it('truy vấn bookings theo gymer_id của phiên, mặc định pending/confirmed/rejected/cancelled, chỉ buổi chưa kết thúc, sắp tăng dần, tối đa 100', async () => {
     const { client, calls } = createFakeSupabase({
       ...SESSION,
       from: { bookings: { data: [row({ status: 'confirmed', expires_at: '2026-10-16T08:00:00.000Z' })] } },
@@ -61,7 +63,7 @@ describe('requestRepo.list', () => {
     expect(from.filters).toEqual([
       { method: 'select', args: [REQUEST_SELECT] },
       { method: 'eq', args: ['gymer_id', 'u1'] },
-      { method: 'in', args: ['status', ['pending', 'confirmed', 'rejected']] },
+      { method: 'in', args: ['status', ['pending', 'confirmed', 'rejected', 'cancelled']] },
       { method: 'gt', args: ['ends_at', NOW.toISOString()] },
       { method: 'order', args: ['starts_at', { ascending: true }] },
       { method: 'limit', args: [100] },

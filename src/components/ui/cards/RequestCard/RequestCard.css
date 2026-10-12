@@ -55,6 +55,15 @@
   overflow: hidden;
 }
 
+.gy-request-card__hint {
+  margin: 0;
+  max-width: 100%;
+  font-size: var(--gy-font-size-sm);
+  color: var(--gy-color-muted);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
 .gy-request-card__foot {
   display: flex;
   flex-wrap: wrap;

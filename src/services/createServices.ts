@@ -72,6 +72,7 @@ function createMockServices(ds: AppEnv['dataSource']): Services {
     requests: {
       list: notImplemented(ds, 'requests.list'),
       respond: notImplemented(ds, 'requests.respond'),
+      cancel: notImplemented(ds, 'requests.cancel'),
       getHealthNote: notImplemented(ds, 'requests.getHealthNote'),
     },
     profile: {

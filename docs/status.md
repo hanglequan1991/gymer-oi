@@ -12,14 +12,14 @@ Nguồn: `.claude/tasks/dev1-user-status.md`, `dev2-gymer-status.md`, `dev3-plat
 
 | Nhãn | Số mục | Mã |
 |---|---|---|
-| close | 19 | U1–U9; G1–G4, G6, G7; P2, P3, P7, P8 |
-| plan | 5 | G5; P1, P4, P5, P6 |
+| close | 20 | U1–U9; G1–G7; P2, P3, P7, P8 |
+| plan | 4 | P1, P4, P5, P6 |
 | open | 1 | P9 (hoãn theo quyết định) |
 | Tổng | 25 | |
 
-Đợt 2026-10-12: U8, G7 chuyển plan → close sau khi thực thi plan health-consent-ui; G3 đã mở rộng (plan gymer-schedule-day-control); U7 đã sửa lệch; G5 vẫn plan (chờ duyệt thiết kế).
+Đợt 2026-10-12: U8, G7 chuyển plan → close sau khi thực thi plan health-consent-ui; G3 đã mở rộng (plan gymer-schedule-day-control); U7 đã sửa lệch; G5 chuyển plan → close sau khi thực thi plan gymer-cancel-booking (T1–T6, review sen1 Đạt).
 
-Kiểm chứng: `npm run typecheck` và lint sạch; vitest 1039/1039 pass (trước khi sửa lỗi lưới khung giờ G3; sau sửa chạy lại vitest `src/features/gymer/schedule` 40/40 pass); test SQL cục bộ pass; `tsc -p supabase/functions/tsconfig.json` pass. Vẫn chưa chạy trên Zalo thật.
+Kiểm chứng: `npm run typecheck` và lint sạch; vitest 1041/1041 pass; build thành công; test SQL cục bộ pass; `tsc -p supabase/functions/tsconfig.json` pass. Vẫn chưa chạy trên Zalo thật.
 
 ## Phía người dùng (U1–U9)
 
@@ -43,7 +43,7 @@ Kiểm chứng: `npm run typecheck` và lint sạch; vitest 1039/1039 pass (trư
 | G2 | Tổng quan | close | `src/features/gymer/overview/pages/OverviewPage.tsx`, `overviewModel.ts` + test | app-ui-integration.md (G2) | |
 | G3 | Lịch và giá | close | `src/features/gymer/schedule/pages/SchedulePage.tsx`, `DaySlotsPanel.tsx`, `BulkApplyPanel.tsx`, `scheduleModel.ts` + test | app-ui-integration.md (G3a, G3b); plan `docs/plans/gymer-schedule-day-control.md` (ĐÃ APPROVE, đã thực thi xong 2026-10-12) | Đã mở rộng 2026-10-12: đóng/mở cả ngày và mở khung khi ngày đóng (migration `20261012090000_gymer_day_close_semantics.sql`, `getClosedDays`, MonthCalendar, SchedulePage). Migration CHƯA áp lên production: phải áp qua job migrate có dry-run, người dùng duyệt, TRƯỚC khi phát hành client; trước đó đếm số khung is_open=true trên ngày đóng mà lệnh dọn sẽ xoá |
 | G4 | Yêu cầu đặt lịch (xác nhận/từ chối) | close | `src/features/gymer/requests/pages/RequestsPage.tsx`, `requestList.ts` + test | app-ui-integration.md (G4) | |
-| G5 | Gymer tự hủy lịch | plan | Server đã có: `cancel_booking` (`...100800_rpc_booking_flow.sql` dòng 281–324), test `supabase/tests/local/cases/50_booking_flow.sql`. UI Gymer: không có | `docs/design/gymer-cancel-booking.md` + `gymer-cancel-booking-mockup.html` (CHỜ DUYỆT THIẾT KẾ, có 7 câu hỏi mở ở mục 7); supabase-schema-v1.md mục 2.4A | Quyết định 2026-10-12: đưa vào v1. Chưa lập plan (chờ duyệt thiết kế rồi sen1 lập plan); nút hủy chỉ có phía khách |
+| G5 | Gymer tự hủy lịch | close | Server: `cancel_booking` (`...100800_rpc_booking_flow.sql` dòng 281–324), test `supabase/tests/local/cases/50_booking_flow.sql`. UI Gymer: `RequestsPage.tsx` (nút 'Huỷ buổi', ConfirmDialog), `requestList.ts` (`canGymerCancel`), `mappers/request.ts` (`cancelled`, `cancelledBy`), `requestRepo.cancel`, `OverviewPage.tsx` (dòng Hôm nay bấm được), `my-bookings/BookingCard.tsx` (Gymer đã huỷ + Tìm Gymer) | `docs/plans/gymer-cancel-booking.md` (ĐÃ APPROVE, đã thực thi T1–T6; review sen1 Đạt: `gymer-cancel-booking-review.md`); `docs/design/gymer-cancel-booking.md` (ĐÃ DUYỆT 2026-10-12); supabase-schema-v1.md mục 2.4A | Đã thực thi xong 2026-10-12. Không cần migration mới; production phải có 20261010100300, 20261010100600, 20261010100800. Khách không được báo đẩy khi Gymer huỷ (đã chấp nhận). Chưa kiểm tay (390px, Zalo thật); luồng huỷ trên màn hình và `requestRepo.cancel` chưa có test tự động (hoãn) |
 | G6 | Hồ sơ | close | `src/features/gymer/profile/pages/ProfilePage.tsx`, `InfoSection.tsx`, `SpecialtiesSection.tsx`, `CertificatesSection.tsx`, `LocationSection.tsx`, `VisibilitySection.tsx` | app-ui-integration.md (G5a, G5b) | Chưa phát hành được: `ZALO_APP_SECRET` chưa đặt, S2 chưa kiểm, toạ độ 11 khu vực (`src/config/areas.ts`) chưa đối chiếu bản đồ |
 | G7 | Gymer xem ghi chú sức khỏe khi khách đồng ý | close | `src/features/gymer/requests/pages/RequestDetailPage.tsx`, `HealthNoteBlock` (`src/components/ui/feedback/HealthNoteBlock/`), `requestRepo.getHealthNote`; mapper `src/services/mappers/request.ts` | health-consent-booking.md (ĐÃ DUYỆT THIẾT KẾ); plan `docs/plans/health-consent-ui.md` (T-N2-3, T-N2-6, ĐÃ APPROVE, đã thực thi xong 2026-10-12); schema-v1-n2-health-consent.md | Phụ thuộc U8. Danh sách không còn nhúng ghi chú; trang chi tiết chỉ đọc (chưa có xác nhận/từ chối ở trang này) |
 
@@ -70,7 +70,7 @@ Kiểm chứng: `npm run typecheck` và lint sạch; vitest 1039/1039 pass (trư
 | M3 | N2 (đồng ý chia sẻ ghi chú sức khỏe): ba tài liệu không khớp. `supabase-schema-v1.md` ghi ĐÃ APPROVE (N2, 2026-10-10) nhưng dòng 7 cùng file ghi "Sửa đổi chờ approve"; `schema-v1-n2-health-consent.md` ghi CHỜ APPROVE; `health-consent-booking.md` ghi CHỜ DUYỆT THIẾT KẾ | Migration `...100650_health_note_consent.sql`, tham số `create_booking`, mapper `request.ts` đã có; UI tick chưa có | Duyệt thiết kế (kèm câu chữ "không rút lại được" cần người có chuyên môn pháp lý xác nhận) rồi plan N2; hoặc quyết định giữ nguyên hiện trạng "luôn gửi `shareHealthNote: false`". Code đã đi trước thiết kế: cần xác nhận migration N2 đã đúng quy trình. Đã giải quyết 2026-10-12: duyệt thiết kế; còn phải sửa dòng 7 `supabase-schema-v1.md` và mục 3.9/H1–H6 `app-ui-integration.md` sau khi plan `health-consent-ui` được approve. Đã thực thi xong 2026-10-12. |
 | M4 | Điều kiện chặn của review đợt C với `auth-zalo` (B1: cần bằng chứng S1) so với `spikes/s1-auth-zalo.md` ("R2 chấp nhận rủi ro, chưa kiểm chứng"). `auth-zalo` đã trên `main` và job `functions` deploy mọi function khi push `main` | `app-supabase-integration-review-dot-c.md` mục 3; `deploy.yml` | Xác nhận B1 coi như gỡ bằng quyết định chấp nhận rủi ro, hay chạy S1 trước khi deploy |
 | M5 | Plan `ci-cd-github-actions.md` còn ghi hiện trạng cũ ("không có `.github/`", "migrations rỗng", "chưa có `.nvmrc`/`app-config.json`") | Repo hiện đều có | Nên cập nhật khi plan được sen1 sửa lại |
-| M6 | G5: server đã enforce, nhưng chưa có plan hay UI cho Gymer hủy buổi đã xác nhận (mã G5 của yêu cầu không khớp G5a/G5b trong `app-ui-integration.md`) | `src/features/gymer/requests`, `overview` không có nút hủy | Quyết định có đưa vào v1 không; nếu có thì sen1 lập plan. Quyết định 2026-10-12: đưa vào v1; xem `docs/design/gymer-cancel-booking.md` |
+| M6 | G5: server đã enforce, nhưng chưa có plan hay UI cho Gymer hủy buổi đã xác nhận (mã G5 của yêu cầu không khớp G5a/G5b trong `app-ui-integration.md`) | `src/features/gymer/requests`, `overview` không có nút hủy | Quyết định có đưa vào v1 không; nếu có thì sen1 lập plan. Quyết định 2026-10-12: đưa vào v1; xem `docs/design/gymer-cancel-booking.md`. Đã thực thi xong 2026-10-12 |
 | M7 | G3: hạn chế mở/đóng khung giờ khi cả ngày đang đóng, không có thao tác đóng/mở cả ngày | `app-supabase-integration-review-dot-b.md` (G2, Q7) | Quyết định có thuộc phạm vi v1 không. Quyết định 2026-10-12: đưa vào v1; xem plan `docs/plans/gymer-schedule-day-control.md`. Đã thực thi xong 2026-10-12. |
 | M8 | Chưa kiểm thực tế: spike S1, S2, T6; smoke test thủ công (`docs/app-ui-smoke-test.md`); migration trên production; `ZALO_APP_SECRET` chưa đặt | Các file dev | Các nhãn close chỉ dựa trên đọc code và test tự động; người dùng cần chạy các spike trên Zalo thật để đóng P1, P4, P5, P6 |
 
@@ -80,7 +80,8 @@ Kiểm chứng: `npm run typecheck` và lint sạch; vitest 1039/1039 pass (trư
 - `npm ci` báo 15 lỗ hổng (8 moderate, 5 high, 2 critical) — chưa xử lý, ngoài phạm vi.
 
 ## Việc chờ người dùng
-- Duyệt thiết kế `docs/design/gymer-cancel-booking.md` (G5), kèm trả lời 7 câu hỏi mở ở mục 7.
+- Kiểm tay G5 (chip 4 trạng thái ở 390px, huỷ buổi, focus).
+- Quyết định có thêm thông báo đẩy cho khách khi Gymer huỷ (hiện chưa có).
 - Áp migration `20261012090000_gymer_day_close_semantics.sql` lên production qua job migrate (có dry-run); xác nhận `20261010100650` và `20261010100800` đã có trên production. Làm TRƯỚC khi phát hành client (G3, U8).
 - Kiểm tay trên Zalo theo `docs/app-ui-smoke-test.md` (ô tick WebView; đóng ngày rồi mở riêng khung).
 - Xác nhận văn bản pháp lý 'không thể rút lại' (U8) với người có chuyên môn pháp lý.
@@ -93,5 +94,7 @@ Kiểm chứng: `npm run typecheck` và lint sạch; vitest 1039/1039 pass (trư
 ## Việc kỹ thuật hoãn (cần quyết định)
 - Chưa có test cho `getHealthNote`, `viewableUntilIso`, `RequestDetailPage`, hành vi tick, `getClosedDays`, nhánh gymer của MonthCalendar, công tắc/Notice SchedulePage, và test SQL cho hành vi mới (ngày đóng + khung mở riêng). Hoãn theo quyết định ưu tiên hoàn thiện sản phẩm trước (P9).
 - Khoá chết `consentStatusTimeChanged`.
+- Chưa có test cho `canGymerCancel`, hai mapper (`cancelled`/`cancelledBy`), `requestRepo.cancel` và luồng huỷ ở `RequestsPage`.
+- Ý định chip đích `requestsTabIntent` có thể tồn đọng nếu `RequestsPage` không mount ngay.
 - MonthCalendar chưa hiện nhãn 'đã đóng' cho ngày đóng có khung mở riêng (gợi ý ghép `closedDays` vào `days` ở SchedulePage).
 - RequestDetailPage chưa áp bộ lọc hết hạn như danh sách.

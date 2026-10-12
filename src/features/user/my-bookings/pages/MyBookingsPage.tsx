@@ -123,6 +123,7 @@ export function MyBookingsPage() {
                           setReviewError(null);
                           setReviewingId(target.id);
                         }}
+                        onFindGymer={() => navigate(PATHS.search)}
                         reviewSlot={
                           reviewOpen ? (
                             <ReviewForm

@@ -10,13 +10,19 @@ import { formatVND } from '@/utils/format';
 const t = vi.myBookings;
 
 /** Nhãn và màu theo trạng thái hiển thị. Chữ luôn có, màu chỉ bổ sung. */
-const STATUS_VIEW: Record<BookingStatus, { tone: BadgeTone; label: string }> = {
+const STATUS_VIEW: Record<Exclude<BookingStatus, 'cancelled'>, { tone: BadgeTone; label: string }> = {
   pending: { tone: 'warn', label: t.statusPending },
   confirmed: { tone: 'ok', label: t.statusConfirmed },
   rejected: { tone: 'danger', label: t.statusRejected },
-  cancelled: { tone: 'neutral', label: t.statusCancelled },
   expired: { tone: 'neutral', label: t.statusExpired },
 };
+
+/** Nhãn huỷ theo người huỷ. Dữ liệu cũ không có cancelledBy thì chỉ hiện 'Đã huỷ' chung. */
+function cancelledLabel(cancelledBy: MyBooking['cancelledBy']): string {
+  if (cancelledBy === 'gymer') return t.statusCancelledByGymer;
+  if (cancelledBy === 'customer') return t.statusCancelledByYou;
+  return t.statusCancelled;
+}
 
 export interface BookingCardProps {
   booking: MyBooking;
@@ -29,6 +35,8 @@ export interface BookingCardProps {
   onOpenGymer(gymerId: string): void;
   onCancel(booking: MyBooking): void;
   onReview(booking: MyBooking): void;
+  /** Gymer huỷ buổi: mở trang tìm kiếm để khách tìm Gymer khác. */
+  onFindGymer(): void;
   /** Khối đánh giá, render ngay dưới lượt khi đang mở. */
   reviewSlot?: ReactNode;
 }
@@ -42,10 +50,15 @@ export function BookingCard({
   onOpenGymer,
   onCancel,
   onReview,
+  onFindGymer,
   reviewSlot,
 }: BookingCardProps) {
-  const view = STATUS_VIEW[status];
-  const showActions = canCancel || (canReview && !reviewOpen);
+  const isCancelled = status === 'cancelled';
+  const cancelledByGymer = isCancelled && b.cancelledBy === 'gymer';
+  const view = isCancelled
+    ? { tone: 'neutral' as const, label: cancelledLabel(b.cancelledBy) }
+    : STATUS_VIEW[status];
+  const showActions = canCancel || cancelledByGymer || (canReview && !reviewOpen);
 
   return (
     <li
@@ -86,11 +99,20 @@ export function BookingCard({
         <Badge tone={view.tone}>{view.label}</Badge>
       </div>
 
+      {cancelledByGymer && (
+        <span style={{ fontSize: 14, color: 'var(--gy-color-muted)' }}>{t.cancelledByGymerNote}</span>
+      )}
+
       {showActions && (
         <div style={{ display: 'flex', gap: 8 }}>
           {canCancel && (
             <GButton kind="danger-ghost" size="md" onClick={() => onCancel(b)}>
               {t.actionCancel}
+            </GButton>
+          )}
+          {cancelledByGymer && (
+            <GButton kind="secondary" size="md" onClick={onFindGymer}>
+              {t.actionFindGymer}
             </GButton>
           )}
           {canReview && !reviewOpen && (

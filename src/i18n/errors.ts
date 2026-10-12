@@ -16,6 +16,7 @@ export type ErrorContext =
   | 'bookingCancel'
   | 'bookingReview'
   | 'requestRespond'
+  | 'requestCancel'
   | 'schedule'
   | 'profile'
   | 'onboarding';
@@ -78,6 +79,15 @@ const REQUEST_RESPOND: Overrides = {
     'Yêu cầu này không còn chờ duyệt. Có thể khách đã huỷ hoặc yêu cầu đã được xử lý.',
 };
 
+const REQUEST_CANCEL: Overrides = {
+  FORBIDDEN: 'Buổi này không còn huỷ được. Có thể khách đã huỷ hoặc buổi đã bắt đầu.',
+  NOT_FOUND: 'Không tìm thấy buổi này. Có thể đã bị xoá.',
+  NETWORK:
+    'Không thể kết nối. Kiểm tra mạng rồi thử lại. Nếu không chắc, mở lại tab Yêu cầu để kiểm tra.',
+  UNKNOWN:
+    'Đã có lỗi xảy ra. Vui lòng thử lại sau. Nếu không chắc, mở lại tab Yêu cầu để kiểm tra.',
+};
+
 const SCHEDULE: Overrides = {
   VALIDATION:
     'Chưa lưu được. Ngày hoặc khung giờ đã có lịch đặt thì không đóng được; giá phải từ 0 đến 5.000.000đ.',
@@ -100,6 +110,7 @@ const OVERRIDES: Record<Exclude<ErrorContext, 'default'>, Overrides> = {
   bookingCancel: BOOKING_CANCEL,
   bookingReview: BOOKING_REVIEW,
   requestRespond: REQUEST_RESPOND,
+  requestCancel: REQUEST_CANCEL,
   schedule: SCHEDULE,
   profile: PROFILE_AND_ONBOARDING,
   onboarding: PROFILE_AND_ONBOARDING,

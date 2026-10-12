@@ -12,6 +12,8 @@ export const gymerOverview = {
   today: {
     title: 'Hôm nay',
     empty: 'Hôm nay bạn chưa có lịch.',
+    /** Nhãn đọc màn hình cho một buổi hôm nay (bấm để mở tab Yêu cầu). */
+    itemLabel: (time: string, name: string) => `Xem buổi ${time} với ${name} trong tab Yêu cầu`,
   },
   pending: {
     title: 'Yêu cầu chờ duyệt',

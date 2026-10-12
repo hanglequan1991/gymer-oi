@@ -194,6 +194,7 @@ function bookingRow(overrides: Partial<MyBookingRow> = {}): MyBookingRow {
     goal: 'Giảm mỡ',
     status: 'confirmed',
     expires_at: '2026-10-16T01:00:00.000Z',
+    cancelled_by: null,
     gymer_profiles: { display_name: 'Minh', avatar_url: null },
     reviews: [],
     ...overrides,

@@ -1,4 +1,4 @@
-// Repository yêu cầu đặt lịch phía Gymer (plan T-R, D7): list và respond.
+// Repository yêu cầu đặt lịch phía Gymer (plan T-R, D7): list, respond, cancel (plan gymer-cancel-booking, G5).
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { HealthNoteResult, RequestStatus } from '@/types/domain';
 import { isExpired } from '@/utils/booking';
@@ -14,15 +14,16 @@ import { requireUserId } from './userId';
  * Chuỗi select dùng chung cho list và đọc lại sau respond.
  * Không nhúng ghi chú sức khoẻ: ghi chú chỉ tải khi Gymer mở chi tiết (getHealthNote), plan 2.5A.
  */
-export const REQUEST_SELECT = 'id, starts_at, ends_at, price_vnd, goal, status, expires_at, profiles!bookings_customer_id_fkey(display_name)' as const;
+export const REQUEST_SELECT = 'id, gymer_id, starts_at, ends_at, price_vnd, goal, status, expires_at, cancelled_by, profiles!bookings_customer_id_fkey(display_name)' as const;
 
-const DEFAULT_STATUSES: RequestStatus[] = ['pending', 'confirmed', 'rejected'];
+const DEFAULT_STATUSES: RequestStatus[] = ['pending', 'confirmed', 'rejected', 'cancelled'];
 const LIST_LIMIT = 100;
 
 /**
  * Tạo RequestRepository. `now` dùng để lọc buổi đã kết thúc (ends_at > now, phía server) và pending quá hạn (isExpired, phía client); mặc định là thời điểm hiện tại.
- * list: chỉ đọc theo gymer_id = uid của phiên, chỉ buổi chưa kết thúc, sắp tăng dần, tối đa LIST_LIMIT dòng.
+ * list: chỉ đọc theo gymer_id = uid của phiên, chỉ buổi chưa kết thúc, sắp tăng dần, tối đa LIST_LIMIT dòng; mặc định gồm cả cancelled.
  * respond: gọi RPC respond_booking (trả undefined, nên kiểm res.error thủ công), rồi đọc lại hàng để trả trạng thái mới.
+ * cancel: gọi RPC cancel_booking (Gymer huỷ buổi confirmed chưa bắt đầu); không đọc lại, UI tải lại danh sách.
  * getHealthNote: đọc booking_health_notes theo booking_id; 0 dòng (RLS chặn) hoặc chưa chia sẻ hoặc rỗng => hidden, không phải lỗi.
  */
 export function createRequestRepo(client: SupabaseClient<Database>, deps?: { now?: () => Date }): RequestRepository {
@@ -63,6 +64,12 @@ export function createRequestRepo(client: SupabaseClient<Database>, deps?: { now
       if (!data) throw new AppError('NOT_FOUND', 'Không tìm thấy yêu cầu.');
 
       return toBookingRequest(data as RequestRow);
+    },
+
+    async cancel(requestId) {
+      await requireUserId(client);
+      const { error } = await client.rpc('cancel_booking', { p_booking_id: requestId });
+      if (error) throw toAppError(error);
     },
 
     async getHealthNote(bookingId) {
