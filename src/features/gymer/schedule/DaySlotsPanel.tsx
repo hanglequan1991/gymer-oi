@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { AsyncView } from '@/components/app';
-import { EmptyState, useToast } from '@/components/ui/feedback';
+import { EmptyState, Notice, useToast } from '@/components/ui/feedback';
 import { TimeSlotGrid } from '@/components/ui/schedule';
 import { Section } from '@/components/ui/layout';
 import { useAsync, useServices } from '@/hooks';
@@ -13,13 +13,15 @@ export interface DaySlotsPanelProps {
   gymerId: string;
   /** Ngày đang xem (không phải ngày quá khứ). Đổi ngày thì đặt key lại để trạng thái lạc quan được xoá. */
   date: Date;
+  /** Ngày đang đóng cả ngày: hiện ghi chú, khung vẫn chạm để mở riêng. */
+  dayClosed?: boolean;
   /** Gọi sau khi đổi khung giờ thành công để lịch tháng cập nhật marker. */
   onChanged: () => void;
   actions?: ReactNode;
 }
 
 /** Khung giờ của một ngày. Chạm khung trống để đóng, chạm khung đã đóng để mở. */
-export function DaySlotsPanel({ gymerId, date, onChanged, actions }: DaySlotsPanelProps) {
+export function DaySlotsPanel({ gymerId, date, dayClosed = false, onChanged, actions }: DaySlotsPanelProps) {
   const services = useServices();
   const toast = useToast();
   const dateIso = toDateIso(date);
@@ -62,6 +64,7 @@ export function DaySlotsPanel({ gymerId, date, onChanged, actions }: DaySlotsPan
     <Section title={title} data-testid="day-slots-panel">
       {actions}
       <p>{vi.gymerSchedule.day.hint}</p>
+      {dayClosed && <Notice tone="info">{vi.gymerSchedule.day.closedNotice}</Notice>}
       <AsyncView
         state={state}
         context="schedule"

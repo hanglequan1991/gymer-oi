@@ -19,6 +19,8 @@ export interface MyBookingRow {
   gymer_profiles: OneToOneEmbed<{ display_name: string; avatar_url: string | null }>;
   /** Embed reviews(id): mảng, rỗng khi chưa có đánh giá (RLS chỉ trả đánh giá của chính khách). */
   reviews: { id: string }[] | null;
+  /** Embed booking_health_notes(shared_with_gymer): 1-1, null khi không có ghi chú. Không đọc nội dung ghi chú. */
+  booking_health_notes?: OneToOneEmbed<{ shared_with_gymer: boolean }>;
 }
 
 const BOOKING_STATUSES: readonly BookingStatus[] = ['pending', 'confirmed', 'rejected', 'cancelled', 'expired'];
@@ -40,6 +42,7 @@ function firstOf<T>(embed: OneToOneEmbed<T>): T | undefined {
  * - goal rỗng hoặc chỉ có khoảng trắng: không có key goal.
  * - gymerAvatarUrl: không có key khi Gymer chưa có ảnh.
  * - reviewed = có ít nhất một đánh giá trong embed.
+ * - healthNoteShared: chỉ có key khi có hàng ghi chú (true/false theo shared_with_gymer).
  */
 export function toMyBooking(row: MyBookingRow): MyBooking {
   if (!isBookingStatus(row.status)) {
@@ -61,6 +64,9 @@ export function toMyBooking(row: MyBookingRow): MyBooking {
   if (gymer?.avatar_url) booking.gymerAvatarUrl = gymer.avatar_url;
   if (row.goal !== null && row.goal.trim() !== '') booking.goal = row.goal;
   if (row.status === 'pending') booking.expiresAt = row.expires_at;
+
+  const healthNote = firstOf(row.booking_health_notes);
+  if (healthNote) booking.healthNoteShared = healthNote.shared_with_gymer;
 
   return booking;
 }

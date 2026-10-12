@@ -13,10 +13,11 @@ const SLOT_MS = 60 * 60 * 1000;
 
 /**
  * Chuỗi select cho lượt đặt phía khách. Embed gymer_profiles qua khoá ngoại bookings_gymer_id_fkey (tên, ảnh);
- * embed reviews(id) chỉ để biết đã đánh giá chưa (RLS trả các đánh giá của chính khách).
+ * embed reviews(id) chỉ để biết đã đánh giá chưa (RLS trả các đánh giá của chính khách);
+ * embed booking_health_notes(shared_with_gymer) để nhắc lại lựa chọn chia sẻ (chỉ cờ, không đọc nội dung ghi chú).
  */
 export const MY_BOOKING_SELECT =
-  'id, gymer_id, starts_at, ends_at, price_vnd, goal, status, expires_at, gymer_profiles!bookings_gymer_id_fkey(display_name, avatar_url), reviews(id)' as const;
+  'id, gymer_id, starts_at, ends_at, price_vnd, goal, status, expires_at, gymer_profiles!bookings_gymer_id_fkey(display_name, avatar_url), reviews(id), booking_health_notes(shared_with_gymer)' as const;
 
 const LIST_LIMIT = 100;
 /** Giới hạn ký tự nhận đánh giá; khớp create_review (char_length sau btrim). */

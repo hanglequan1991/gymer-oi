@@ -1,4 +1,4 @@
-Trạng thái: CHỜ DUYỆT THIẾT KẾ
+Trạng thái: ĐÃ DUYỆT THIẾT KẾ
 
 # Đồng ý chia sẻ ghi chú sức khoẻ trong luồng đặt lịch, thông báo lỗi đặt lịch, form địa điểm Gymer
 

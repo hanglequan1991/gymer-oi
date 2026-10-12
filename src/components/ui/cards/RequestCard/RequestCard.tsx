@@ -20,15 +20,19 @@ export interface RequestCardProps {
    * và đặt lại false khi xong hoặc khi lỗi.
    */
   busy?: boolean;
-  /** Thẻ gọn: ẩn ghi chú của khách. */
+  /** Thẻ gọn (giữ cho tương thích; thẻ không còn hiện ghi chú sức khoẻ). */
   compact?: boolean;
+  /** Gọi khi bấm nút mở chi tiết, truyền id yêu cầu. Nút chỉ hiện khi có cả onOpen và openLabel. */
+  onOpen?: (id: string) => void;
+  /** Nhãn nút mở chi tiết. */
+  openLabel?: string;
   className?: string;
   style?: CSSProperties;
   'data-testid'?: string;
 }
 
 /**
- * Thẻ yêu cầu đặt lịch: tên khách, nhãn trạng thái, thời gian, mục tiêu, ghi chú, giá.
+ * Thẻ yêu cầu đặt lịch: tên khách, nhãn trạng thái, thời gian, mục tiêu, giá. Ghi chú sức khoẻ không hiển thị ở đây (tải riêng khi mở chi tiết).
  * Chỉ yêu cầu đang chờ mới có nút Xác nhận và Từ chối. Khi `busy` đang bật, bấm không gọi callback;
  * việc chống bấm đúp phụ thuộc vào cha đặt `busy` (xem prop `busy`).
  */
@@ -38,6 +42,8 @@ export function RequestCard({
   onReject,
   busy = false,
   compact = false,
+  onOpen,
+  openLabel,
   className,
   style,
   'data-testid': testId,
@@ -65,9 +71,13 @@ export function RequestCard({
       </header>
       <p className="gy-request-card__time">{formatTimeRange(request.start, request.end)}</p>
       {request.goal ? <p className="gy-request-card__goal">{`Mục tiêu: ${request.goal}`}</p> : null}
-      {!compact && request.note ? <p className="gy-request-card__note">{request.note}</p> : null}
       <footer className="gy-request-card__foot">
         <PriceLabel amount={request.price} size="sm" />
+        {onOpen && openLabel ? (
+          <GButton kind="ghost" onClick={() => onOpen(request.id)}>
+            {openLabel}
+          </GButton>
+        ) : null}
         {isPending && (
           <div className="gy-request-card__actions">
             <GButton kind="danger-ghost" loading={busy} onClick={guard(onReject)}>

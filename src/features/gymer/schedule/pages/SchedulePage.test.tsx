@@ -59,6 +59,7 @@ const SLOTS_17: Slot[] = [
 interface Mocks {
   getMine: ReturnType<typeof vi.fn>;
   getMonth: ReturnType<typeof vi.fn>;
+  getClosedDays: ReturnType<typeof vi.fn>;
   getDaySlots: ReturnType<typeof vi.fn>;
   setPrices: ReturnType<typeof vi.fn>;
   setSlotClosed: ReturnType<typeof vi.fn>;
@@ -69,6 +70,7 @@ function setup(overrides: Partial<Mocks> = {}, slots: Slot[] = SLOTS_17) {
   const mocks: Mocks = {
     getMine: vi.fn().mockResolvedValue(detail()),
     getMonth: vi.fn().mockResolvedValue(MONTH_DAYS),
+    getClosedDays: vi.fn().mockResolvedValue([]),
     getDaySlots: vi.fn().mockResolvedValue(slots),
     setPrices: vi.fn().mockResolvedValue(undefined),
     setSlotClosed: vi.fn().mockResolvedValue(undefined),
@@ -82,6 +84,7 @@ function setup(overrides: Partial<Mocks> = {}, slots: Slot[] = SLOTS_17) {
     },
     schedule: {
       getMonth: mocks.getMonth,
+      getClosedDays: mocks.getClosedDays,
       getDaySlots: mocks.getDaySlots,
       setPrices: mocks.setPrices,
       setSlotClosed: mocks.setSlotClosed,
@@ -336,7 +339,7 @@ describe('SchedulePage: giá riêng cho ngày', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Lưu cho ngày này' }));
 
     expect(await screen.findByText('Đã lưu cho ngày này')).toBeInTheDocument();
-    expect(mocks.setDayOverrides).toHaveBeenCalledWith(['2026-10-12'], { price: 300000, closed: false });
+    expect(mocks.setDayOverrides).toHaveBeenCalledWith(['2026-10-12'], { price: 300000 });
     await waitFor(() => expect(mocks.getMonth).toHaveBeenCalledTimes(2));
   });
 
@@ -350,12 +353,15 @@ describe('SchedulePage: giá riêng cho ngày', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Lưu cho ngày này' }));
 
     await waitFor(() =>
-      expect(mocks.setDayOverrides).toHaveBeenCalledWith(['2026-10-13'], { price: null, closed: false }),
+      expect(mocks.setDayOverrides).toHaveBeenCalledWith(['2026-10-13'], { price: null }),
     );
   });
 
   it('tắt nhận lịch cả ngày rồi lưu thì gửi closed true', async () => {
-    const mocks = setup({ getMonth: vi.fn().mockResolvedValue(OVERRIDE_DAYS) });
+    const mocks = setup({
+      getMonth: vi.fn().mockResolvedValue(OVERRIDE_DAYS),
+      getClosedDays: vi.fn().mockResolvedValueOnce([]).mockResolvedValue(['2026-10-12']),
+    });
     await waitCalendar();
     await selectDay(/12 tháng 10/);
     fireEvent.click(await screen.findByRole('checkbox', { name: /Nhận lịch cả ngày/ }));
@@ -364,6 +370,7 @@ describe('SchedulePage: giá riêng cho ngày', () => {
     await waitFor(() =>
       expect(mocks.setDayOverrides).toHaveBeenCalledWith(['2026-10-12'], { price: null, closed: true }),
     );
+    await waitFor(() => expect(mocks.getDaySlots).toHaveBeenCalledTimes(2));
   });
 
   it('ngày có lịch đặt không đóng được thì báo đúng lý do và giữ nội dung đang nhập', async () => {

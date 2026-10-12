@@ -117,12 +117,12 @@ describe('RequestsPage: ba tab và lọc', () => {
     expect(screen.getByText('Chưa có yêu cầu đã từ chối')).toBeInTheDocument();
   });
 
-  it('thẻ không hiện ghi chú của khách, kể cả khi dữ liệu có ghi chú', async () => {
+  it('thẻ không hiện ghi chú của khách (danh sách không mang ghi chú)', async () => {
     renderRequests({
-      list: vi.fn().mockResolvedValue([req({ id: 'r1', customerName: 'Minh', note: 'Ghi chú bí mật' })]),
+      list: vi.fn().mockResolvedValue([req({ id: 'r1', customerName: 'Minh' })]),
     });
-    await screen.findByRole('article', { name: 'Yêu cầu của Minh' });
-    expect(screen.queryByText('Ghi chú bí mật')).not.toBeInTheDocument();
+    const card = await screen.findByRole('article', { name: 'Yêu cầu của Minh' });
+    expect(card.querySelector('.gy-request-card__note')).toBeNull();
   });
 });
 

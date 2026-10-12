@@ -4,23 +4,24 @@ import { useNavigate } from 'zmp-ui';
 import { AsyncView, ErrorView } from '@/components/app';
 import {
   BottomActionBar,
+  ConsentCheckbox,
   GButton,
   KeyValueRow,
   Notice,
   Section,
   TextField,
 } from '@/components/ui';
+import { GOAL_MAX, HEALTH_NOTE_MAX, viewableUntilIso } from '@/config/booking';
 import { useAsync, useServices } from '@/hooks';
 import { isAuthError, isRetryableError, messageFromError, vi } from '@/i18n';
 import { PATHS, bookingSuccess, gymerDetail } from '@/routes/paths';
 import { useBookingDraft } from '@/stores';
 import { formatVND } from '@/utils/format';
-import { formatVNTime, formatVNWeekdayDate } from '@/utils/booking';
+import { formatVNDeadline, formatVNTime, formatVNWeekdayDate } from '@/utils/booking';
 import { HEALTH_NOTE_FIELD_ENABLED } from './config';
 import { errorCodeOf, findSubmittedMatch, parseDateIso, priceOfDay, type ReadyDraft } from './utils';
 
-const GOAL_MAX = 200;
-const HEALTH_NOTE_MAX = 1000;
+const h = vi.health;
 
 /** Phản hồi sau một lần gửi thất bại, hiển thị ngay dưới nội dung đã nhập. */
 type Feedback =
@@ -43,6 +44,9 @@ export function BookingConfirmBody({ draft, onCompleted }: BookingConfirmBodyPro
   // Nội dung nhập nằm ở đây (ngoài AsyncView) để không mất khi màn tải lại; không lưu ra storage.
   const [goal, setGoal] = useState('');
   const [healthNote, setHealthNote] = useState('');
+  // Ô đồng ý: mặc định bỏ chọn mỗi lần mở màn; không lưu storage (plan health-consent-ui, U8).
+  const [shareHealth, setShareHealth] = useState(false);
+  const [consentStatus, setConsentStatus] = useState('');
   const [priceOverride, setPriceOverride] = useState<number | undefined>(undefined);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -68,6 +72,24 @@ export function BookingConfirmBody({ draft, onCompleted }: BookingConfirmBodyPro
     onCompleted?.();
     navigate(bookingSuccess(bookingId), { replace: true });
     useBookingDraft.getState().clear();
+  }
+
+  const hasNote = healthNote.trim() !== '';
+  // Chỉ gửi true khi ô đang bật, có ghi chú không rỗng và người dùng đã tick (server trả VALIDATION nếu tick mà rỗng).
+  const shareHealthNote = HEALTH_NOTE_FIELD_ENABLED && hasNote && shareHealth;
+
+  /** Ghi chú bị xoá hết khi đang tick thì bỏ tick và báo bằng vùng polite. */
+  function onHealthNoteChange(value: string) {
+    setHealthNote(value);
+    if (value.trim() === '') {
+      if (shareHealth) {
+        setShareHealth(false);
+        setConsentStatus(h.consentStatusCleared);
+      }
+    } else {
+      // Chuyển từ rỗng sang có chữ: báo ô đã bật, không tự tick (4.2).
+      setConsentStatus(healthNote.trim() === '' ? h.consentStatusEnabled : '');
+    }
   }
 
   async function refreshPrice(oldPrice: number) {
@@ -105,10 +127,10 @@ export function BookingConfirmBody({ draft, onCompleted }: BookingConfirmBodyPro
         startIso,
         endIso,
         goal: goal.trim() || undefined,
-        // Ô ghi chú sức khoẻ chỉ gửi khi ô đang bật; nội dung không bao giờ được chia sẻ (shareHealthNote: false).
+        // Ô ghi chú sức khoẻ chỉ gửi khi ô đang bật.
         note: HEALTH_NOTE_FIELD_ENABLED ? healthNote.trim() || undefined : undefined,
         expectedPrice: price,
-        shareHealthNote: false,
+        shareHealthNote,
       });
       setNeedsRecheck(false);
       finish(bookingId);
@@ -137,6 +159,8 @@ export function BookingConfirmBody({ draft, onCompleted }: BookingConfirmBodyPro
       {(data) => {
         const price = priceOverride ?? data.price;
         const canSubmit = price !== undefined && !submitting;
+        // Mốc Gymer xem ghi chú tối đa, theo giờ Việt Nam (khớp quy tắc RLS phía server).
+        const untilText = formatVNDeadline(viewableUntilIso(endIso));
         return (
           <>
             <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -164,27 +188,73 @@ export function BookingConfirmBody({ draft, onCompleted }: BookingConfirmBodyPro
                   multiline
                   rows={2}
                   maxLength={GOAL_MAX}
-                  helper={t.goalCounter(goal.length, GOAL_MAX)}
-                  optionalLabel={t.optionalLabel}
+                  helper={
+                    goal.length >= GOAL_MAX - 20
+                      ? h.goalCounterWarn(GOAL_MAX - goal.length)
+                      : h.goalHelper
+                  }
+                  disabled={submitting}
                 />
                 {HEALTH_NOTE_FIELD_ENABLED && (
                   <TextField
-                    label={t.healthLabel}
+                    label={h.noteLabel}
                     value={healthNote}
-                    onChange={setHealthNote}
-                    placeholder={t.healthPlaceholder}
+                    onChange={onHealthNoteChange}
+                    helper={h.noteHelper}
                     multiline
-                    rows={2}
+                    rows={4}
                     maxLength={HEALTH_NOTE_MAX}
-                    helper={t.healthNotShared}
-                    optionalLabel={t.optionalLabel}
+                    disabled={submitting}
+                    optionalLabel=""
                   />
                 )}
               </Section>
 
+              {HEALTH_NOTE_FIELD_ENABLED && (
+                <Section>
+                  <ConsentCheckbox
+                    checked={shareHealth}
+                    onChange={(checked) => {
+                      setShareHealth(checked);
+                      setConsentStatus('');
+                    }}
+                    label={h.consentLabel(data.gymer.name)}
+                    enabled={hasNote}
+                    disabledReason={h.consentDisabledReason}
+                    collapsedDetails={h.consentCollapsed}
+                    busy={submitting}
+                    status={consentStatus}
+                    details={
+                      <div>
+                        <b>{h.consentExplainTitle}</b>
+                        <ul style={{ margin: '4px 0 0', paddingLeft: 18 }}>
+                          <li>{h.consentExplain1(data.gymer.name)}</li>
+                          <li>{h.consentExplain2(data.gymer.name, untilText)}</li>
+                          <li>{h.consentExplain3(data.gymer.name)}</li>
+                          <li>{h.consentExplain4}</li>
+                          <li>{h.consentExplain5(data.gymer.name)}</li>
+                        </ul>
+                        <p style={{ margin: '4px 0 0' }}>{h.consentExplainFooter(data.gymer.name)}</p>
+                      </div>
+                    }
+                  />
+                </Section>
+              )}
+
               <Notice tone="info">
                 <p style={{ margin: 0 }}>{t.paymentNotice}</p>
               </Notice>
+
+              {HEALTH_NOTE_FIELD_ENABLED && (
+                <Section>
+                  <KeyValueRow
+                    label={h.summaryTitle}
+                    value={
+                      shareHealthNote ? h.summaryYes(data.gymer.name, untilText) : h.summaryNo
+                    }
+                  />
+                </Section>
+              )}
 
               {price === undefined && <Notice tone="warn">{t.noPrice}</Notice>}
               {feedback !== null && renderFeedback(feedback, price)}

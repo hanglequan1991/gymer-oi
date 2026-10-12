@@ -1,4 +1,4 @@
-Trạng thái: CHỜ APPROVE
+Trạng thái: ĐÃ APPROVE
 
 # Plan T7 - Job `zalo` trong deploy.yml (đẩy bản Development/Testing lên Zalo)
 

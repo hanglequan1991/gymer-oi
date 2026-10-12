@@ -1,0 +1,103 @@
+/*
+ * Khối ghi chú sức khoẻ phía Gymer. Không có icon cảnh báo hay màu đỏ ở trạng thái hidden: đó không phải lỗi.
+ * Ghi chú hiển thị giữ xuống dòng và cuộn khi dài; không có nút sao chép hay chia sẻ.
+ */
+.gy-health-note {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gy-space-2);
+  color: var(--gy-color-text);
+}
+
+.gy-health-note__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gy-space-2);
+  flex-wrap: wrap;
+}
+
+.gy-health-note__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--gy-color-text);
+}
+
+.gy-health-note__box {
+  max-height: 240px;
+  overflow-y: auto;
+  padding: var(--gy-space-3) var(--gy-space-4);
+  border: 1px solid var(--gy-color-border);
+  border-radius: var(--gy-radius-control);
+  background: var(--gy-color-card);
+}
+
+.gy-health-note__text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--gy-color-text);
+}
+
+.gy-health-note__meta {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--gy-color-text);
+}
+
+.gy-health-note__hidden-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--gy-color-text);
+}
+
+.gy-health-note__hidden-hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--gy-color-muted);
+}
+
+.gy-health-note__error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--gy-space-2);
+}
+
+.gy-health-note__error-text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--gy-color-danger-text);
+}
+
+.gy-health-note__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gy-space-2);
+}
+
+.gy-health-note__skeleton-line {
+  display: block;
+  height: 14px;
+  border-radius: 6px;
+  background: var(--gy-color-busy);
+}
+
+.gy-health-note__skeleton-line--short {
+  width: 60%;
+}
+
+.gy-health-note__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

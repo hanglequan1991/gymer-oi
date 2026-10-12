@@ -116,6 +116,12 @@
   color: var(--gy-color-muted);
 }
 
+/* Ngày đóng (variant gymer): vẫn chọn được để mở lại khung, chỉ mờ nhẹ. */
+.gy-cal__day--closed {
+  opacity: 0.6;
+  cursor: pointer;
+}
+
 /* Ngày chọn: nền primary, chữ trắng. Đặt sau marker để ghi đè. */
 .gy-cal__day--selected {
   background: var(--gy-color-primary);

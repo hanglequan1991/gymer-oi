@@ -4,6 +4,7 @@ import { AsyncView } from '@/components/app';
 import { AppHeader, GButton, KeyValueRow, Notice, Section, SuccessState } from '@/components/ui';
 import { useAsync, useServices } from '@/hooks';
 import { vi } from '@/i18n';
+import { viewableUntilIso } from '@/config/booking';
 import { PATHS } from '@/routes/paths';
 import { formatVND } from '@/utils/format';
 import { formatVNDeadline, formatVNTime, formatVNWeekdayDate } from '@/utils/booking';
@@ -13,6 +14,7 @@ export function BookingSuccessPage() {
   const { bookings } = useServices();
   const navigate = useNavigate();
   const t = vi.booking;
+  const th = vi.health;
   const state = useAsync(() => bookings.getMine(bookingId), [bookingId]);
 
   return (
@@ -41,6 +43,18 @@ export function BookingSuccessPage() {
               />
               <KeyValueRow label={t.rowPrice} value={formatVND(b.price)} emphasize />
             </Section>
+            {b.healthNoteShared !== undefined && (
+              <Notice tone="info">
+                <p style={{ margin: 0 }} data-testid="health-note-status">
+                  {b.healthNoteShared
+                    ? th.successShared(
+                        b.gymerName,
+                        formatVNDeadline(viewableUntilIso(b.end)),
+                      )
+                    : th.successNotShared(b.gymerName)}
+                </p>
+              </Notice>
+            )}
             <Notice tone="info">
               <p style={{ margin: 0 }}>{t.successPaymentNotice}</p>
             </Notice>

@@ -1,11 +1,12 @@
 import { useRef, useState } from 'react';
-import { Page } from 'zmp-ui';
+import { Page, useNavigate } from 'zmp-ui';
 import { AsyncView } from '@/components/app';
 import { ChipGroup, ConfirmDialog, EmptyState, useToast } from '@/components/ui';
 import { RequestCard } from '@/components/ui/cards';
 import { AppHeader } from '@/components/ui/layout';
 import { useAsync, useServices } from '@/hooks';
 import { messageFromError, vi } from '@/i18n';
+import { gymerRequestDetail } from '@/routes/paths';
 import type { BookingRequest, RequestStatus } from '@/types/domain';
 import { GymerTabsLayout } from '../../GymerTabsLayout';
 import { REQUEST_TABS, countByStatus, listForTab, withoutStale } from '../requestList';
@@ -31,6 +32,7 @@ function errorCodeOf(err: unknown): string | undefined {
 export function RequestsPage() {
   const services = useServices();
   const toast = useToast();
+  const navigate = useNavigate();
   const requests = useAsync(() => services.requests.list(), [services]);
 
   const [tab, setTab] = useState<RequestStatus>('pending');
@@ -90,6 +92,8 @@ export function RequestsPage() {
                       busy={busyIds.has(r.id)}
                       onConfirm={() => void respond(r, 'confirmed')}
                       onReject={() => setRejectTarget(r)}
+                      onOpen={(id) => navigate(gymerRequestDetail(id))}
+                      openLabel={vi.health.gymerOpenDetail}
                     />
                   ))
                 )}

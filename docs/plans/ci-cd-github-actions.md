@@ -1,4 +1,4 @@
-Trạng thái: CHỜ APPROVE
+Trạng thái: ĐÃ APPROVE
 
 # Plan: CI/CD bằng GitHub Actions
 

@@ -10,3 +10,5 @@ export { PriceInput } from './PriceInput';
 export type { PriceInputProps } from './PriceInput';
 export { SwitchRow } from './SwitchRow';
 export type { SwitchRowProps } from './SwitchRow';
+export { ConsentCheckbox } from './ConsentCheckbox';
+export type { ConsentCheckboxProps } from './ConsentCheckbox';

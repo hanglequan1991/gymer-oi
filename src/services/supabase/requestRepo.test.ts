@@ -17,7 +17,6 @@ function row(overrides: Partial<RequestRow> = {}): RequestRow {
     status: 'pending',
     expires_at: '2026-10-16T10:00:00.000Z',
     profiles: { display_name: 'Lan' },
-    booking_health_notes: null,
     ...overrides,
   };
 }
@@ -88,8 +87,8 @@ describe('requestRepo.list', () => {
     });
   });
 
-  it('REQUEST_SELECT embed booking_health_notes(note,shared_with_gymer)', () => {
-    expect(REQUEST_SELECT).toContain('booking_health_notes(note,shared_with_gymer)');
+  it('REQUEST_SELECT không nhúng booking_health_notes (ghi chú tải riêng qua getHealthNote)', () => {
+    expect(REQUEST_SELECT).not.toContain('booking_health_notes');
   });
 
   it('loại pending đã quá hạn, giữ pending còn hạn và confirmed dù expires_at đã qua', async () => {
@@ -121,37 +120,6 @@ describe('requestRepo.list', () => {
     const [item] = await createRequestRepo(client, { now: () => NOW }).list();
     expect(item).toMatchObject({ customerName: 'Minh', goal: 'Tăng cơ', price: 300000 });
     expect(item).not.toHaveProperty('note');
-  });
-
-  it('gán note khi embed booking_health_notes có shared_with_gymer = true', async () => {
-    const { client } = createFakeSupabase({
-      ...SESSION,
-      from: {
-        bookings: {
-          data: [row({ booking_health_notes: { note: 'Đau gối', shared_with_gymer: true } })],
-        },
-      },
-    });
-    const [item] = await createRequestRepo(client, { now: () => NOW }).list();
-    expect(item.note).toBe('Đau gối');
-  });
-
-  it('không gán note khi shared_with_gymer = false hoặc embed null', async () => {
-    const { client } = createFakeSupabase({
-      ...SESSION,
-      from: {
-        bookings: {
-          data: [
-            row({ id: 'not-shared', booking_health_notes: [{ note: 'Đau gối', shared_with_gymer: false }] }),
-            row({ id: 'hidden', booking_health_notes: null }),
-          ],
-        },
-      },
-    });
-    const list = await createRequestRepo(client, { now: () => NOW }).list();
-    expect(list.map((r) => r.id)).toEqual(['not-shared', 'hidden']);
-    expect(list[0]).not.toHaveProperty('note');
-    expect(list[1]).not.toHaveProperty('note');
   });
 
   it('data null không lỗi -> danh sách rỗng', async () => {

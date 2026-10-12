@@ -4,7 +4,7 @@ Trạng thái: ĐÃ APPROVE (N2, ngày 2026-10-10)
 
 Phạm vi approve ban đầu (2026-10-10): TOÀN BỘ plan, thực thi theo 4 đợt merge (A: M1 là phép thử pipeline; B: bảng; C: policy; D: RPC). Mỗi đợt chỉ merge sau khi người dùng đọc dry-run và duyệt job `migrate`. Mọi thay đổi plan sau đây (nếu có) phải đưa trạng thái về `CHỜ APPROVE`.
 
-Sửa đổi chờ approve (2026-10-10, sen1): chốt N2 "cách 2" (khách tick đồng ý chia sẻ ghi chú sức khoẻ khi đặt lịch; Gymer chỉ đọc khi có tick, booking `confirmed` hoặc `pending` còn hạn, và đến `ends_at + 1 ngày`). Vì M4 và M7 đã/đang áp lên production nên KHÔNG sửa M4/M7; thêm migration mới M7b (`20261010100650_health_note_consent.sql`, đợt C2) và đổi M9/T8/T9 chưa áp dụng. Chi tiết: mục 2.5A, mục 3, T6b; bản tóm tắt tại `docs/plans/schema-v1-n2-health-consent.md`. Phần plan đã approve trước đó không đổi ngoài các điểm này.
+Sửa đổi N2 (2026-10-10, sen1) — đã được người dùng duyệt cùng plan; migration M7b đã có trong repo; phần UI xem `docs/plans/health-consent-ui.md`: chốt N2 "cách 2" (khách tick đồng ý chia sẻ ghi chú sức khoẻ khi đặt lịch; Gymer chỉ đọc khi có tick, booking `confirmed` hoặc `pending` còn hạn, và đến `ends_at + 1 ngày`). Vì M4 và M7 đã/đang áp lên production nên KHÔNG sửa M4/M7; thêm migration mới M7b (`20261010100650_health_note_consent.sql`, đợt C2) và đổi M9/T8/T9 chưa áp dụng. Chi tiết: mục 2.5A, mục 3, T6b; bản tóm tắt tại `docs/plans/schema-v1-n2-health-consent.md`. Phần plan đã approve trước đó không đổi ngoài các điểm này.
 
 Tác giả: sen1. Ngày: 2026-10-10. Chỉ là tài liệu; chưa viết migration thật, chưa commit/push.
 Tham chiếu: `docs/supabase-migrations.md`, `docs/ci-cd-setup.md`, `docs/project-structure.md` (mục 3), `src/types/domain.ts`, `src/services/repositories/*.ts`, `src/mocks/*`.

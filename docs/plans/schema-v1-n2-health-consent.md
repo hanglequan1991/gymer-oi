@@ -1,28 +1,24 @@
-Trạng thái: CHỜ APPROVE
+Trạng thái: ĐÃ APPROVE
 
-# Tóm tắt: N2 "cách 2" (đồng ý chia sẻ ghi chú sức khoẻ)
+# Tóm tắt: N2 "cách 2" (đồng ý chia sẻ ghi chú sức khoẻ) — phần server
 
-Tác giả: sen1. Ngày: 2026-10-10. Bản đầy đủ nằm trong `docs/plans/supabase-schema-v1.md` (mục 2.5A, 3, T6b, T8, T9); file này chỉ để tra nhanh.
+Tác giả: sen1. Viết lại ngày 2026-10-12 cho khớp hiện trạng repo (bản gốc 2026-10-10). Bản đầy đủ nằm trong `docs/plans/supabase-schema-v1.md` (mục 2.5A, 3, T6b, T8, T9). Phần UI: `docs/plans/health-consent-ui.md`. Thiết kế: `docs/design/health-consent-booking.md` (ĐÃ DUYỆT THIẾT KẾ, 2026-10-12).
 
-## Quyết định
-- Người dùng chốt: khách tick đồng ý khi `create_booking`. Có tick thì Gymer mới đọc được ghi chú; vẫn chỉ khi booking `confirmed` hoặc `pending` còn hạn, và đến `ends_at + 1 ngày`. Không tick: Gymer không đọc; khách luôn đọc của mình.
-- Cột: `booking_health_notes.shared_with_gymer boolean not null default false`. Loại `bookings.health_note_shared` (đổi bảng nóng, cờ tách khỏi dữ liệu, có thể `true` khi không có ghi chú).
-- M4 và M7 đã/đang áp production: KHÔNG sửa. Migration mới `20261010100650_health_note_consent.sql` (M7b, đợt merge C2, sau M7, trước M8/M9): thêm cột (`add column if not exists`) + `drop policy if exists` / `create policy booking_health_notes_select` điều kiện mới.
-- `create_booking` (M9, chưa áp) thêm tham số cuối `p_share_health_note boolean default false`. Tick mà ghi chú rỗng => `VALIDATION`. Không thêm mã lỗi.
+## Trạng thái server (đối chiếu code 2026-10-12): ĐÃ CÓ TRONG REPO, KHÔNG CẦN VIỆC THÊM
+- `supabase/migrations/20261010100650_health_note_consent.sql`: cột `booking_health_notes.shared_with_gymer boolean not null default false` + policy `booking_health_notes_select`: khách của booking luôn đọc; Gymer chỉ đọc khi đã tick, booking `confirmed` hoặc `pending` còn `expires_at`, và `now() <= ends_at + 1 ngày`. Rejected, cancelled, expired: Gymer không đọc.
+- `create_booking(..., p_share_health_note boolean default false)` trong `20261010100800_rpc_booking_flow.sql`: tick mà ghi chú rỗng => `VALIDATION`; ghi cờ cùng giao dịch với hàng ghi chú. Không thêm mã lỗi.
+- Client: `bookingRepo.ts` gửi `p_share_health_note`; `BookingCreateInput.shareHealthNote?`.
+- Test SQL: `supabase/tests/local/cases/15_health_consent.sql`, nhóm ghi chú trong `50_booking_flow.sql`.
+- Chưa xác minh được: migration đã lên production chưa (cần PM/người dùng đối chiếu trước khi phát hành client).
 
-## Giao việc (không trùng file)
-| Task | Dev | File |
-|---|---|---|
-| T6b M7b + test | dev3 (sau T6) | tạo `supabase/migrations/20261010100650_health_note_consent.sql`, `supabase/tests/local/cases/15_health_consent.sql`; sửa `supabase/tests/local/cases/10_rls.sql` chỉ ở seed ghi chú (thêm `shared_with_gymer = true`) |
-| T8 M9 | dev2 | `supabase/migrations/20261010100800_rpc_booking_flow.sql` (thêm tham số + logic ghi cờ) |
-| T9 test | dev3 (sau T6b, tuần tự) | `20_booking.sql` (có/không tick, quá `ends_at + 1 ngày`, pending quá hạn, tick mà rỗng) |
-| T10 | dev1/dev2 | chỉ thêm `shareHealthNote?` vào type/repository; UI tick do designer đặc tả trước |
+## Quyết định (không đổi so với bản gốc)
+- Khách tick đồng ý khi `create_booking`; có tick thì Gymer mới đọc; không tick thì Gymer không đọc, khách luôn đọc của mình. Loại `bookings.health_note_shared` (đổi bảng nóng, cờ tách khỏi dữ liệu).
+- M4 và M7 không sửa; thay đổi nằm ở migration mới `...100650`.
 
 ## Rủi ro còn lại
-- Gymer có thể đã đọc/chép ghi chú trước khi hết hạn; DB không ngăn được.
-- Khách không rút lại được sự đồng ý sau khi đặt (v1); rút tạm = huỷ booking. RPC rút lại để plan sau.
+- Gymer có thể đã đọc/chép ghi chú trước khi hết quyền; DB không ngăn được.
+- v1 không có RPC rút lại; rút tạm = huỷ booking trước giờ bắt đầu (U7 đã có). Câu chữ "không rút lại được" người dùng đã chấp nhận trách nhiệm pháp lý (2026-10-12); xem R1 ở `health-consent-ui.md`.
 - Gymer không phân biệt "không có ghi chú / không chia sẻ / hết hạn xem" (cố ý).
-- Văn bản đồng ý và mức đủ về pháp lý (dữ liệu sức khoẻ nhạy cảm, mục 2.9) chưa được kiểm; cần designer viết copy và người có chuyên môn xác nhận.
 
 ## Câu hỏi mở
-Không còn câu hỏi mở về N2. (N3 vẫn chờ.)
+Không còn câu hỏi mở về phần server. Các câu hỏi về UI ở `health-consent-ui.md` mục 5.

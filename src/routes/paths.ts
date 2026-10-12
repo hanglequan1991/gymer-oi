@@ -12,6 +12,8 @@ export const PATHS = {
   gymerOverview: '/gymer/overview',
   gymerSchedule: '/gymer/schedule',
   gymerRequests: '/gymer/requests',
+  /** Chi tiết một yêu cầu phía Gymer (chỉ đọc). */
+  gymerRequestDetail: '/gymer/requests/:requestId',
   gymerProfile: '/gymer/profile',
   /** Đăng ký trở thành Gymer; khu Gymer chuyển về đây khi tài khoản chưa là Gymer. */
   gymerJoin: '/gymer/join',
@@ -32,4 +34,9 @@ export function booking(gymerId: string): string {
 /** Đường dẫn trang đặt lịch thành công. */
 export function bookingSuccess(bookingId: string): string {
   return `/bookings/${encodeURIComponent(bookingId)}/success`;
+}
+
+/** Đường dẫn trang chi tiết yêu cầu phía Gymer. */
+export function gymerRequestDetail(requestId: string): string {
+  return `/gymer/requests/${encodeURIComponent(requestId)}`;
 }

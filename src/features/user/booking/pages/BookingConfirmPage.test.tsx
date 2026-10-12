@@ -139,7 +139,7 @@ describe('BookingConfirmPage', () => {
     const again = renderConfirm();
     await waitLoaded();
     fireEvent.change(screen.getByLabelText(/Mục tiêu tập luyện/), { target: { value: '  giảm mỡ  ' } });
-    fireEvent.change(screen.getByLabelText(/Ghi chú sức khỏe/), { target: { value: ' đau lưng ' } });
+    fireEvent.change(screen.getByLabelText(/Ghi chú sức khoẻ/), { target: { value: ' đau lưng ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }));
     await waitFor(() => expect(again.bookings.create).toHaveBeenCalledTimes(1));
     expect(vi.mocked(again.bookings.create).mock.calls[0][0]).toMatchObject({
@@ -264,15 +264,16 @@ describe('BookingConfirmPage', () => {
   it('ghi chú sức khoẻ có câu chưa chia sẻ cho Gymer', async () => {
     renderConfirm();
     await waitLoaded();
-    expect(screen.getByText('Gymer ơi chưa chia sẻ ghi chú này cho Gymer.')).toBeInTheDocument();
+    expect(screen.getByText('Chia sẻ ghi chú sức khoẻ')).toBeInTheDocument();
+    expect(screen.getByText('Không')).toBeInTheDocument();
   });
 
   it('cờ tắt thì ô ghi chú sức khoẻ biến mất', async () => {
     flags.healthNote = false;
     renderConfirm();
     await waitLoaded();
-    expect(screen.queryByLabelText(/Ghi chú sức khỏe/)).not.toBeInTheDocument();
-    expect(screen.queryByText('Gymer ơi chưa chia sẻ ghi chú này cho Gymer.')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Ghi chú sức khoẻ/)).not.toBeInTheDocument();
+    expect(screen.queryByText('Chia sẻ ghi chú sức khoẻ')).not.toBeInTheDocument();
   });
 
   it('ngày không có giá thì không cho gửi', async () => {

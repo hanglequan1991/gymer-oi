@@ -87,7 +87,10 @@ export function MonthCalendar({
               if (!d) return <div key={`blank-${di}`} className="gy-cal__blank" aria-hidden="true" />;
 
               const info = infoByKey.get(dayKey(d));
-              const disabled = Boolean(info?.disabled) || isPastDay(d, todayDate);
+              const past = isPastDay(d, todayDate);
+              // Variant gymer: ngày đóng vẫn chọn được (để mở lại khung), chỉ làm mờ.
+              const closed = variant === 'gymer' && Boolean(info?.disabled) && !past;
+              const disabled = variant === 'gymer' ? past : Boolean(info?.disabled) || past;
               const isSelected = Boolean(selected) && isSameDay(selected as Date, d);
               const isToday = isSameDay(d, todayDate);
               const marker = variant === 'gymer' && info?.marker ? info.marker : 'none';
@@ -95,6 +98,7 @@ export function MonthCalendar({
 
               const labelParts = [`${weekdayVN(d)}, ${d.getDate()} tháng ${month}`];
               if (info?.price !== undefined) labelParts.push(formatVND(info.price));
+              if (closed) labelParts.push('đã đóng');
               if (markerText) labelParts.push(markerText);
               if (isToday) labelParts.push('hôm nay');
 
@@ -109,6 +113,7 @@ export function MonthCalendar({
                     marker === 'open' && 'gy-cal__day--open',
                     marker === 'booked' && 'gy-cal__day--booked',
                     disabled && 'gy-cal__day--disabled',
+                    closed && 'gy-cal__day--closed',
                     isSelected && 'gy-cal__day--selected',
                   )}
                   aria-label={labelParts.join(', ')}

@@ -42,13 +42,18 @@ export interface BookingRequest {
   start: string; // ISO
   end: string; // ISO
   goal?: string;
-  note?: string;
   price: number;
   status: RequestStatus;
   /** Hạn xác nhận (ISO), chỉ có với yêu cầu chờ duyệt; dùng với isExpired để ẩn yêu cầu quá hạn. */
   expiresAt?: string;
   isNew?: boolean;
 }
+
+/**
+ * Kết quả đọc ghi chú sức khoẻ của một lượt đặt phía Gymer.
+ * `hidden` gồm: khách không chia sẻ, ghi chú rỗng, hoặc RLS không cho đọc (không phải lỗi).
+ */
+export type HealthNoteResult = { status: 'visible'; note: string } | { status: 'hidden' };
 
 export interface Review {
   id: string;
@@ -80,6 +85,8 @@ export interface MyBooking {
   status: BookingStatus;
   expiresAt?: string; // chỉ khi status = 'pending'
   reviewed: boolean; // đã có đánh giá cho lượt này
+  /** undefined = không có ghi chú; true/false = có ghi chú và đã/không chia sẻ với Gymer. */
+  healthNoteShared?: boolean;
 }
 
 /** Trạng thái tài khoản Gymer của chính mình. */

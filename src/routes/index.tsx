@@ -6,7 +6,7 @@ import { GymerDetailPage } from '@/features/user/gymer-detail';
 import { BookingConfirmPage, BookingSuccessPage } from '@/features/user/booking';
 import { OverviewPage } from '@/features/gymer/overview';
 import { SchedulePage } from '@/features/gymer/schedule';
-import { RequestsPage } from '@/features/gymer/requests';
+import { RequestDetailPage, RequestsPage } from '@/features/gymer/requests';
 import { ProfilePage } from '@/features/gymer/profile';
 import { MyBookingsPage } from '@/features/user/my-bookings';
 import { BecomeGymerPage } from '@/features/gymer/onboarding';
@@ -42,6 +42,7 @@ export function AppRoutes() {
         <Route path={PATHS.gymerOverview} element={<OverviewPage />} />
         <Route path={PATHS.gymerSchedule} element={<SchedulePage />} />
         <Route path={PATHS.gymerRequests} element={<RequestsPage />} />
+        <Route path={PATHS.gymerRequestDetail} element={<RequestDetailPage />} />
         <Route path={PATHS.gymerProfile} element={<ProfilePage />} />
         <Route path={PATHS.gymerJoin} element={<BecomeGymerPage />} />
         {GalleryPage && (

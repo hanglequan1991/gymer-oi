@@ -13,7 +13,6 @@ function row(overrides: Partial<RequestRow> = {}): RequestRow {
     status: 'pending',
     expires_at: '2026-10-16T01:00:00.000Z',
     profiles: { display_name: 'Lan' },
-    booking_health_notes: null,
     ...overrides,
   };
 }
@@ -53,33 +52,6 @@ describe('toBookingRequest', () => {
   it('không có key goal khi goal null hoặc rỗng', () => {
     expect(toBookingRequest(row({ goal: null }))).not.toHaveProperty('goal');
     expect(toBookingRequest(row({ goal: '' }))).not.toHaveProperty('goal');
-  });
-
-  it('embed booking_health_notes là object và shared_with_gymer = true -> gán note', () => {
-    const r = toBookingRequest(row({ booking_health_notes: { note: 'Đau gối', shared_with_gymer: true } }));
-    expect(r.note).toBe('Đau gối');
-  });
-
-  it('embed là mảng và shared_with_gymer = true -> gán note từ phần tử đầu', () => {
-    const r = toBookingRequest(row({ booking_health_notes: [{ note: 'Đau lưng', shared_with_gymer: true }] }));
-    expect(r.note).toBe('Đau lưng');
-  });
-
-  it('embed null hoặc mảng rỗng -> không có key note', () => {
-    expect(toBookingRequest(row({ booking_health_notes: null }))).not.toHaveProperty('note');
-    expect(toBookingRequest(row({ booking_health_notes: [] }))).not.toHaveProperty('note');
-  });
-
-  it('shared_with_gymer = false -> không gán note, kể cả khi note có chữ', () => {
-    const object = toBookingRequest(row({ booking_health_notes: { note: 'Đau gối', shared_with_gymer: false } }));
-    const array = toBookingRequest(row({ booking_health_notes: [{ note: 'Đau gối', shared_with_gymer: false }] }));
-    expect(object).not.toHaveProperty('note');
-    expect(array).not.toHaveProperty('note');
-  });
-
-  it('note rỗng hoặc chỉ khoảng trắng dù được chia sẻ -> không có key note', () => {
-    expect(toBookingRequest(row({ booking_health_notes: { note: '', shared_with_gymer: true } }))).not.toHaveProperty('note');
-    expect(toBookingRequest(row({ booking_health_notes: { note: '   ', shared_with_gymer: true } }))).not.toHaveProperty('note');
   });
 
   it('ném UNKNOWN với trạng thái ngoài pending/confirmed/rejected', () => {

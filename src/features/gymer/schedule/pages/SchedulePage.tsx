@@ -20,6 +20,8 @@ interface MonthData {
   year: number;
   month: number; // 1-12
   days: DayInfo[];
+  /** Các ngày (YYYY-MM-DD) Gymer đang đóng cả ngày. */
+  closedDays: ReadonlySet<string>;
 }
 
 interface Cursor {
@@ -43,8 +45,12 @@ function ScheduleContent({ gymer }: { gymer: Gymer }) {
   const [defaults, setDefaults] = useState({ weekday: gymer.priceWeekday, weekend: gymer.priceWeekend });
 
   const monthState = useAsync<MonthData>(async () => {
-    const days = await services.schedule.getMonth(gymer.id, cursor.year, cursor.month);
-    return { year: cursor.year, month: cursor.month, days };
+    // Lỗi của một trong hai truy vấn làm cả khối lỗi: nếu rơi về "không có ngày đóng" thì công tắc sẽ sai.
+    const [days, closedDays] = await Promise.all([
+      services.schedule.getMonth(gymer.id, cursor.year, cursor.month),
+      services.schedule.getClosedDays(cursor.year, cursor.month),
+    ]);
+    return { year: cursor.year, month: cursor.month, days, closedDays: new Set(closedDays) };
   }, [services, gymer.id, cursor.year, cursor.month]);
 
   // Khi làm mới sau một thao tác, useAsync giữ dữ liệu cũ trong lúc tải. Dùng lại dữ liệu đó để lịch
@@ -63,6 +69,7 @@ function ScheduleContent({ gymer }: { gymer: Gymer }) {
   const selectedIso = selected ? toDateIso(selected) : null;
   const selectedDay = shownMonth?.days.find((d) => toDateIso(d.date) === selectedIso);
   const selectedIsPast = selectedIso !== null && selectedIso < toDateIso(vnTodayDate());
+  const dayClosed = selectedIso !== null && (shownMonth?.closedDays.has(selectedIso) ?? false);
   const showMonth = (data: MonthData) => (
     <>
       <MonthCalendar
@@ -116,13 +123,21 @@ function ScheduleContent({ gymer }: { gymer: Gymer }) {
 
       {selected ? (
         <DaySlotsPanel
-          key={selectedIso ?? undefined}
+          key={selectedIso === null ? undefined : `${selectedIso}|${dayClosed}`}
           gymerId={gymer.id}
           date={selected}
+          dayClosed={dayClosed}
           onChanged={monthState.refetch}
           actions={
             selectedIsPast ? undefined : (
-              <DayOverrideEditor date={selected} day={selectedDay} defaults={defaults} onChanged={monthState.refetch} />
+              <DayOverrideEditor
+                date={selected}
+                day={selectedDay}
+                dayClosed={dayClosed}
+                hasBooking={selectedDay?.marker === 'booked'}
+                defaults={defaults}
+                onChanged={monthState.refetch}
+              />
             )
           }
         />

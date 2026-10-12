@@ -28,12 +28,14 @@ export function bookingTab(b: MyBooking, now: Date): BookingTab {
   return notEnded && active ? 'upcoming' : 'history';
 }
 
-/** Được huỷ khi: pending còn hạn, hoặc confirmed và chưa đến giờ bắt đầu (khớp luật server). */
+/**
+ * Được huỷ khi: pending còn hạn hoặc confirmed, và buổi chưa bắt đầu (start > now).
+ * Khớp luật server cancel_booking: từ chối với ALREADY_STARTED cho cả pending lẫn confirmed.
+ */
 export function canCancel(b: MyBooking, now: Date): boolean {
   if (isBookingExpired(b, now)) return false;
-  if (b.status === 'pending') return true;
-  if (b.status === 'confirmed') return startMs(b) > now.getTime();
-  return false;
+  if (b.status !== 'pending' && b.status !== 'confirmed') return false;
+  return startMs(b) > now.getTime();
 }
 
 /** Được đánh giá khi: confirmed, đã kết thúc, và chưa đánh giá (mỗi buổi một lần). */

@@ -114,7 +114,7 @@ function toMyBooking(b: FakeBooking): MyBooking {
 
 /**
  * Phía Gymer chỉ thấy ghi chú khi khách đã chia sẻ (shared_with_gymer). Hàm này mô phỏng hợp đồng đó
- * của mapper: nếu chưa chia sẻ thì note là undefined. Lưu ý: đây là hợp đồng của fake, không phải RLS thật.
+ * của mapper: yêu cầu không mang ghi chú sức khoẻ (ghi chú chỉ đọc qua getHealthNote). Đây là hợp đồng của fake, không phải RLS thật.
  */
 function toRequest(b: FakeBooking): BookingRequest {
   return {
@@ -123,7 +123,6 @@ function toRequest(b: FakeBooking): BookingRequest {
     start: b.start,
     end: b.end,
     goal: b.goal,
-    note: b.shareHealthNote ? b.healthNote : undefined,
     price: b.price,
     status: b.status as RequestStatus,
     expiresAt: b.expiresAt,
@@ -266,7 +265,7 @@ async function bookFromSearch() {
 
   await expectHeader('Xác nhận đặt lịch');
   fireEvent.change(await screen.findByLabelText(/Mục tiêu tập luyện/), { target: { value: 'Giảm 5kg' } });
-  fireEvent.change(screen.getByLabelText(/Ghi chú sức khỏe/), { target: { value: HEALTH_NOTE } });
+  fireEvent.change(screen.getByLabelText(/Ghi chú sức khoẻ/), { target: { value: HEALTH_NOTE } });
   fireEvent.click(screen.getByRole('button', { name: 'Gửi yêu cầu' }));
   await screen.findByText('Đã gửi yêu cầu');
 }

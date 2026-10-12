@@ -69,7 +69,8 @@ describe('bookingTab', () => {
 
 describe('canCancel', () => {
   it.each([
-    ['pending còn hạn', booking({ status: 'pending', expiresAt: at(1) }), true],
+    ['pending còn hạn, chưa đến giờ bắt đầu', booking({ status: 'pending', expiresAt: at(1), startH: 2 }), true],
+    ['pending còn hạn nhưng đã đến giờ bắt đầu', booking({ status: 'pending', expiresAt: at(1), startH: -1 }), false],
     ['pending quá hạn', booking({ status: 'pending', expiresAt: at(-1) }), false],
     ['confirmed chưa đến giờ bắt đầu', booking({ status: 'confirmed', startH: 2 }), true],
     ['confirmed đã đến giờ bắt đầu', booking({ status: 'confirmed', startH: -1 }), false],

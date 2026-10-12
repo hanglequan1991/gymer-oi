@@ -18,6 +18,7 @@ export const gymerSchedule = {
   day: {
     hint: 'Chạm khung giờ để đóng hoặc mở. Khung đã có khách đặt không đóng được.',
     empty: 'Ngày này chưa có khung giờ.',
+    closedNotice: 'Ngày này đang đóng. Chạm một khung giờ để mở riêng khung đó.',
   },
   // Giá riêng và đóng/mở cả ngày, áp dụng cho ngày đang chọn (G3b).
   override: {
@@ -25,7 +26,8 @@ export const gymerSchedule = {
     priceHint: 'Để trống rồi lưu để bỏ giá riêng và dùng giá mặc định.',
     current: (price: string) => `Ngày này đang có giá riêng ${price}.`,
     openLabel: 'Nhận lịch cả ngày',
-    openHint: 'Tắt để đóng cả ngày. Khung đã có khách đặt vẫn giữ nguyên.',
+    openHint: 'Tắt để đóng cả ngày (các khung bạn mở riêng sẽ được bỏ). Ngày đã có khách đặt thì không đóng được.',
+    openHintBooked: 'Ngày này đã có lịch đặt nên không đóng cả ngày được.',
     save: 'Lưu cho ngày này',
     saved: 'Đã lưu cho ngày này',
     skipped: 'Ngày này đã có lịch đặt nên chưa đóng được.',

@@ -10,8 +10,12 @@ import { isWeekendDate, priceError, toDateIso } from './scheduleModel';
 export interface DayOverrideEditorProps {
   /** Ngày đang chọn, không phải ngày quá khứ (phần cha lo việc này). */
   date: Date;
-  /** Ô của ngày trong lịch tháng đang xem. Thiếu thì coi như chưa có giá riêng và đang mở. */
+  /** Ô của ngày trong lịch tháng đang xem. Thiếu thì coi như chưa có giá riêng. */
   day?: DayInfo;
+  /** Ngày đang đóng cả ngày (lấy từ getClosedDays, không suy từ ô lịch). */
+  dayClosed: boolean;
+  /** Ngày đã có lịch đặt giữ chỗ: không đóng cả ngày được. */
+  hasBooking: boolean;
   /** Giá mặc định đang lưu, để biết ngày có giá riêng hay không. */
   defaults: { weekday: number; weekend: number };
   /** Gọi sau khi lưu thành công để lịch tháng tải lại. */
@@ -22,13 +26,12 @@ export interface DayOverrideEditorProps {
  * Giá riêng và đóng/mở cả ngày của một ngày. Phần này chỉ đọc trạng thái đã lưu rồi dựng form;
  * form nằm trong OverrideForm có key theo trạng thái đã lưu, nên khi lịch tải lại thì form reset theo server.
  */
-export function DayOverrideEditor({ date, day, defaults, onChanged }: DayOverrideEditorProps) {
+export function DayOverrideEditor({ date, day, dayClosed, hasBooking, defaults, onChanged }: DayOverrideEditorProps) {
   const dateIso = toDateIso(date);
   const defaultPrice = isWeekendDate(date) ? defaults.weekend : defaults.weekday;
   // Server đã tính giá của ngày. Khác giá mặc định của loại ngày nghĩa là đang có giá riêng.
   const savedPrice = day?.price !== undefined && day.price !== defaultPrice ? day.price : null;
-  // disabled = đang đóng và không có khách. Ngày đóng có khách không xảy ra nên suy ra được trạng thái mở.
-  const savedOpen = !day?.disabled;
+  const savedOpen = !dayClosed;
 
   return (
     <OverrideForm
@@ -36,6 +39,7 @@ export function DayOverrideEditor({ date, day, defaults, onChanged }: DayOverrid
       dateIso={dateIso}
       savedPrice={savedPrice}
       savedOpen={savedOpen}
+      hasBooking={hasBooking}
       onChanged={onChanged}
     />
   );
@@ -45,10 +49,11 @@ interface OverrideFormProps {
   dateIso: string;
   savedPrice: number | null;
   savedOpen: boolean;
+  hasBooking: boolean;
   onChanged: () => void;
 }
 
-function OverrideForm({ dateIso, savedPrice, savedOpen, onChanged }: OverrideFormProps) {
+function OverrideForm({ dateIso, savedPrice, savedOpen, hasBooking, onChanged }: OverrideFormProps) {
   const services = useServices();
   const toast = useToast();
   const [price, setPrice] = useState<number | null>(savedPrice);
@@ -59,13 +64,18 @@ function OverrideForm({ dateIso, savedPrice, savedOpen, onChanged }: OverrideFor
   const priceErr = price !== null ? priceError(price) : undefined;
   const changed = price !== savedPrice || open !== savedOpen;
   const canSave = changed && !priceErr && !saving;
+  // Đang mở mà có lịch đặt thì không đóng được: khóa công tắc và nói lý do ngay, không để bấm rồi mới báo.
+  const closeBlocked = savedOpen && hasBooking;
 
   const save = async () => {
     if (!canSave) return;
     setSaving(true);
     try {
-      // Gửi cả hai trường theo trạng thái trên form: trường không đổi thì giữ nguyên giá trị server.
-      const res = await services.schedule.setDayOverrides([dateIso], { price, closed: !open });
+      // Chỉ gửi closed khi công tắc khác trạng thái đã lưu. Server vẫn chặn đóng ngày có lịch đặt (skipped).
+      const res = await services.schedule.setDayOverrides([dateIso], {
+        price,
+        ...(open !== savedOpen ? { closed: !open } : {}),
+      });
       if (res.skipped.includes(dateIso)) {
         // Không đóng được: giữ nội dung đang nhập để người dùng thấy và quyết định tiếp.
         toast.error(vi.gymerSchedule.override.skipped);
@@ -94,10 +104,10 @@ function OverrideForm({ dateIso, savedPrice, savedOpen, onChanged }: OverrideFor
       <p>{vi.gymerSchedule.override.priceHint}</p>
       <SwitchRow
         label={vi.gymerSchedule.override.openLabel}
-        description={vi.gymerSchedule.override.openHint}
+        description={closeBlocked ? vi.gymerSchedule.override.openHintBooked : vi.gymerSchedule.override.openHint}
         checked={open}
         onChange={setOpen}
-        disabled={saving}
+        disabled={saving || closeBlocked}
       />
       <GButton fullWidth loading={saving} disabled={!canSave} onClick={save}>
         {vi.gymerSchedule.override.save}

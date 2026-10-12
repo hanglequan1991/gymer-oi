@@ -6,6 +6,8 @@ export interface ScheduleRepository {
   getMonth(gymerId: string, year: number, month: number): Promise<DayInfo[]>;
   /** Các khung giờ trong một ngày. Slot.id = "<dateIso>T<HH:mm>" theo giờ Việt Nam, ví dụ "2026-10-17T07:00". */
   getDaySlots(gymerId: string, dateIso: string): Promise<Slot[]>;
+  /** Ngày đóng của chính Gymer trong tháng (có gymer_day_overrides.is_open = false), dạng 'YYYY-MM-DD'. `month` là 1-12. */
+  getClosedDays(year: number, month: number): Promise<string[]>;
 
   // Phía Gymer
   /** Đặt giá ngày thường và cuối tuần. */

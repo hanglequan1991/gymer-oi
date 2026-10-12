@@ -12,6 +12,7 @@ const fakes = vi.hoisted(() => ({
   schedule: {
     getMonth: async () => 'schedule.getMonth',
     getDaySlots: async () => 'schedule.getDaySlots',
+    getClosedDays: async () => 'schedule.getClosedDays',
     setPrices: async () => 'schedule.setPrices',
     setSlotClosed: async () => 'schedule.setSlotClosed',
     setDayOverrides: async () => 'schedule.setDayOverrides',
@@ -23,7 +24,11 @@ const fakes = vi.hoisted(() => ({
     cancel: async () => 'bookings.cancel',
     review: async () => 'bookings.review',
   },
-  requests: { list: async () => 'requests.list', respond: async () => 'requests.respond' },
+  requests: {
+    list: async () => 'requests.list',
+    respond: async () => 'requests.respond',
+    getHealthNote: async () => 'requests.getHealthNote',
+  },
   profile: {
     getMine: async () => 'profile.getMine',
     updateMine: async () => 'profile.updateMine',
@@ -67,6 +72,7 @@ const calls: Array<[string, (s: Services) => Promise<unknown>, string]> = [
   ['gymers.getDetail', (s) => s.gymers.getDetail('g1'), 'gymers.getDetail'],
   ['schedule.getMonth', (s) => s.schedule.getMonth('g1', 2026, 10), 'schedule.getMonth'],
   ['schedule.getDaySlots', (s) => s.schedule.getDaySlots('g1', '2026-10-09'), 'schedule.getDaySlots'],
+  ['schedule.getClosedDays', (s) => s.schedule.getClosedDays(2026, 10), 'schedule.getClosedDays'],
   ['schedule.setPrices', (s) => s.schedule.setPrices({ weekday: 100000, weekend: 150000 }), 'schedule.setPrices'],
   ['schedule.setSlotClosed', (s) => s.schedule.setSlotClosed('slot1', true), 'schedule.setSlotClosed'],
   [
@@ -85,6 +91,7 @@ const calls: Array<[string, (s: Services) => Promise<unknown>, string]> = [
   ['bookings.review', (s) => s.bookings.review('b1', { rating: 5 }), 'bookings.review'],
   ['requests.list', (s) => s.requests.list(), 'requests.list'],
   ['requests.respond', (s) => s.requests.respond('r1', 'confirmed'), 'requests.respond'],
+  ['requests.getHealthNote', (s) => s.requests.getHealthNote('b1'), 'requests.getHealthNote'],
   ['profile.getMine', (s) => s.profile.getMine(), 'profile.getMine'],
   ['profile.updateMine', (s) => s.profile.updateMine({ name: 'Quán' }), 'profile.updateMine'],
   ['profile.getMyStatus', (s) => s.profile.getMyStatus(), 'profile.getMyStatus'],
@@ -115,9 +122,9 @@ const calls: Array<[string, (s: Services) => Promise<unknown>, string]> = [
 /** Tên phương thức theo từng nhóm, theo hợp đồng ở docs/plans/app-ui-integration.md mục 3.1. */
 const EXPECTED_METHODS: Record<keyof Services, string[]> = {
   gymers: ['getDetail', 'search'],
-  schedule: ['getDaySlots', 'getMonth', 'setDayOverrides', 'setPrices', 'setSlotClosed'],
+  schedule: ['getClosedDays', 'getDaySlots', 'getMonth', 'setDayOverrides', 'setPrices', 'setSlotClosed'],
   bookings: ['cancel', 'create', 'getMine', 'listMine', 'review'],
-  requests: ['list', 'respond'],
+  requests: ['getHealthNote', 'list', 'respond'],
   profile: [
     'addCertificate',
     'becomeGymer',

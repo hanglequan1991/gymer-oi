@@ -57,6 +57,7 @@ function createMockServices(ds: AppEnv['dataSource']): Services {
     schedule: {
       getMonth: notImplemented(ds, 'schedule.getMonth'),
       getDaySlots: notImplemented(ds, 'schedule.getDaySlots'),
+      getClosedDays: notImplemented(ds, 'schedule.getClosedDays'),
       setPrices: notImplemented(ds, 'schedule.setPrices'),
       setSlotClosed: notImplemented(ds, 'schedule.setSlotClosed'),
       setDayOverrides: notImplemented(ds, 'schedule.setDayOverrides'),
@@ -71,6 +72,7 @@ function createMockServices(ds: AppEnv['dataSource']): Services {
     requests: {
       list: notImplemented(ds, 'requests.list'),
       respond: notImplemented(ds, 'requests.respond'),
+      getHealthNote: notImplemented(ds, 'requests.getHealthNote'),
     },
     profile: {
       getMine: notImplemented(ds, 'profile.getMine'),

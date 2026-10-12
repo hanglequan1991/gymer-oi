@@ -18,6 +18,13 @@ function assertPrice(label: string, value: number): void {
   }
 }
 
+/** Năm nguyên dương và tháng 1-12; sai thì VALIDATION. */
+function assertYearMonth(year: number, month: number): void {
+  if (!Number.isInteger(year) || year < 1 || !Number.isInteger(month) || month < 1 || month > 12) {
+    throw new AppError('VALIDATION', `Tháng "${year}-${month}" không hợp lệ (month từ 1 đến 12).`);
+  }
+}
+
 /** Ngày dạng 'YYYY-MM-DD' và là ngày có thật (chặn 2026-02-30). Không dùng Date.parse vì dễ lệch múi giờ. */
 function assertDateIso(value: string): void {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
@@ -104,6 +111,24 @@ export function createScheduleRepo(client: SupabaseClient<Database>): ScheduleRe
     async getDaySlots(gymerId, dateIso) {
       const res = await client.rpc('get_day_slots', { p_gymer_id: gymerId, p_day: dateIso });
       return unwrap(res).map((row) => toSlot(dateIso, row));
+    },
+
+    async getClosedDays(year, month) {
+      assertYearMonth(year, month);
+      const uid = await requireUserId(client);
+      const first = `${year}-${String(month).padStart(2, '0')}-01`;
+      const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+      const last = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+      const res = await client
+        .from('gymer_day_overrides')
+        .select('day')
+        .eq('gymer_id', uid)
+        .eq('is_open', false)
+        .gte('day', first)
+        .lte('day', last)
+        .order('day', { ascending: true });
+      return unwrap(res).map((row) => row.day);
     },
 
     async setPrices({ weekday, weekend }) {

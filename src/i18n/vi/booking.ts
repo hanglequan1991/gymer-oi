@@ -12,12 +12,6 @@ export const booking = {
   rowPrice: 'Tổng tạm tính',
   goalLabel: 'Mục tiêu tập luyện',
   goalPlaceholder: 'VD: giảm 5kg trong 3 tháng',
-  goalCounter: (count: number, max: number) => `${count}/${max}`,
-  healthLabel: 'Ghi chú sức khỏe',
-  healthPlaceholder: 'VD: đau lưng nhẹ',
-  optionalLabel: '(không bắt buộc)',
-  /** Hiện dưới ô ghi chú sức khoẻ: ghi chú chưa được chia sẻ với Gymer (D12). */
-  healthNotShared: 'Gymer ơi chưa chia sẻ ghi chú này cho Gymer.',
   paymentNotice:
     'Thanh toán nằm ngoài ứng dụng. Sau khi đặt, bạn sẽ thỏa thuận và thanh toán trực tiếp với Gymer. Gymer ơi không thu tiền.',
   submitLabel: 'Gửi yêu cầu',

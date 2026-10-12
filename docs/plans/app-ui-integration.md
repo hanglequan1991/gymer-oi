@@ -1,4 +1,4 @@
-Trạng thái: CHỜ APPROVE
+Trạng thái: ĐÃ APPROVE
 
 # Plan: hoàn tất UI v1 của Gymer ơi và nối với services/Supabase
 
@@ -167,8 +167,8 @@ Hợp đồng test helper (T03): `createStubServices(overrides?: { [K in keyof S
 | 6 | C4 Lịch của tôi | G1 Trở thành Gymer | G3a Lịch và giá (cơ bản) | Đợt 2-5 |
 | 7 | G5a Hồ sơ Gymer | C1b Chọn khu vực dự phòng | G3b Giá riêng + áp dụng hàng loạt | Đợt 6 |
 | 8 | G5b Form vị trí Gymer | Z1 Test luồng tổng | Z2 Tài liệu smoke test | Đợt 7 |
-| 9 (CHỜ DUYỆT THIẾT KẾ) | H1 Hằng số + component đồng ý | H2 Services ghi chú | H3 Câu lỗi theo spec | người dùng duyệt spec |
-| 10 (CHỜ DUYỆT THIẾT KẾ) | H4 Form đặt lịch đồng ý | H5 Chi tiết yêu cầu Gymer | H6 Form vị trí bản đầy đủ | Đợt 9 |
+| 9 (Thiết kế ĐÃ DUYỆT 2026-10-12; task H1-H5 thay bằng plan `health-consent-ui.md`; H6 giữ nguyên, ngoài phạm vi) | H1 Hằng số + component đồng ý | H2 Services ghi chú | H3 Câu lỗi theo spec | người dùng duyệt spec |
+| 10 (Thiết kế ĐÃ DUYỆT 2026-10-12; task H1-H5 thay bằng plan `health-consent-ui.md`; H6 giữ nguyên, ngoài phạm vi) | H4 Form đặt lịch đồng ý | H5 Chi tiết yêu cầu Gymer | H6 Form vị trí bản đầy đủ | Đợt 9 |
 
 Điểm review của sen1: cuối mỗi đợt (xem mục 6). Quy tắc file: trong cùng một đợt không file nào thuộc hai task; file chung được giao tuần tự qua các đợt (ghi rõ ở từng task).
 
@@ -395,9 +395,9 @@ Chung: đọc `src/services/supabase/database.types.ts` để lấy tên bảng/
 
 ---
 
-### 3.9 ĐỢT 9-10: Chia sẻ ghi chú sức khoẻ (CHỜ NGƯỜI DÙNG DUYỆT THIẾT KẾ)
+### 3.9 ĐỢT 9-10: Chia sẻ ghi chú sức khoẻ (Thiết kế ĐÃ DUYỆT 2026-10-12; task H1-H5 thay bằng plan `health-consent-ui.md`; H6 giữ nguyên, ngoài phạm vi)
 
-**Không giao các task H1-H6 cho đến khi** người dùng duyệt rõ ràng `docs/design/health-consent-booking.md` (hiện: "CHỜ DUYỆT THIẾT KẾ"), trả lời các câu hỏi Q1-Q10 của tài liệu đó, và có xác nhận pháp lý cho văn bản đồng ý (Q9). Các Đợt 1-8 KHÔNG phụ thuộc đợt này. Trước đó: Gymer không thấy ghi chú ở bất kỳ màn nào (G4 luôn `compact`, C3 luôn gửi `shareHealthNote: false`).
+**Thiết kế đã duyệt 2026-10-12** (`docs/design/health-consent-booking.md`). Task H1-H5 thay bằng plan `docs/plans/health-consent-ui.md`; H6 giữ nguyên, ngoài phạm vi. Các Đợt 1-8 KHÔNG phụ thuộc đợt này. Trước đó: Gymer không thấy ghi chú ở bất kỳ màn nào (G4 luôn `compact`, C3 luôn gửi `shareHealthNote: false`).
 
 Bảng điểm chặn của spec và nơi xử lý:
 
