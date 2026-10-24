@@ -62,14 +62,20 @@ EOF
 # zmp giả. Ghi lời gọi (không ghi giá trị env bí mật) vào $FAKE_CALLS.
 cat >"$FAKE_BIN" <<'EOF'
 #!/usr/bin/env bash
-printf '%s | ZMP_TOKEN=%s | ZMP_ACCESS_TOKEN=%s | %s\n' \
-  "$1" "${ZMP_TOKEN-unset}" "${ZMP_ACCESS_TOKEN-unset}" "$*" >>"$FAKE_CALLS"
+printf '%s | ZMP_TOKEN=%s | ZMP_ACCESS_TOKEN=%s | %s | APP_ID=%s\n' \
+  "$1" "${ZMP_TOKEN-unset}" "${ZMP_ACCESS_TOKEN-unset}" "$*" "${APP_ID-unset}" >>"$FAKE_CALLS"
 case "$1" in
   login)
     case "${FAKE_LOGIN:-ok}" in
       ok)
         printf 'APP_ID=%s\nZMP_TOKEN=%s\n' "$3" "$FAKE_JWT" >.env
         echo "Đăng nhập thành công (giả)."
+        exit 0
+        ;;
+      otherapp)
+        # .env ghi APP_ID khác ZMP_APP_ID (giả lập E1 sai).
+        printf 'APP_ID=999999999\nZMP_TOKEN=%s\n' "$FAKE_JWT" >.env
+        echo "Đăng nhập thành công (giả, .env khác app)."
         exit 0
         ;;
       silent)
@@ -265,6 +271,21 @@ expect_rc "ca 17: thiếu ZMP_ACCESS_TOKEN" 2
 run deploy-dev GITHUB_SHA=abcdef1234567890 GITHUB_RUN_NUMBER=42
 expect_rc "ca 18: mô tả phiên bản từ SHA và số run" 0
 expect_calls "ca 18: mô tả -m dựng từ SHA 7 ký tự và số run" "deploy -e -p -o dist -m gymer-oi abcdef1 run 42"
+
+# 19. deploy nhận APP_ID từ env (ZMP_APP_ID), không từ .env: .env do login ghi sai app vẫn deploy đúng app
+T_LOGIN=otherapp run deploy-dev
+expect_rc "ca 19: .env ghi APP_ID khác, deploy vẫn chạy" 0
+expect_calls "ca 19: deploy nhận APP_ID=ZMP_APP_ID qua env" "deploy -e -p -o dist -m gymer-oi local run local | APP_ID=$APP_ID"
+if grep -q 'APP_ID=999999999' "$CALLS"; then fail "ca 19: deploy lấy APP_ID từ .env"; else pass "ca 19: deploy không lấy APP_ID từ .env"; fi
+if grep -qE "\| deploy [^|]*(--app-id|$APP_ID)" "$CALLS"; then
+  fail "ca 19: APP_ID nằm trong argv của deploy"
+else
+  pass "ca 19: APP_ID không nằm trong argv của deploy"
+fi
+
+# 20. login không nhận APP_ID qua env (chỉ deploy được truyền)
+run login-only
+if grep -q '^login .*| APP_ID=unset$' "$CALLS"; then pass "ca 20: login không nhận APP_ID qua env"; else fail "ca 20: login không nhận APP_ID qua env"; fi
 
 # Kiểm tĩnh
 if bash -n "$SCRIPT" && bash -n "$HERE/zalo-deploy.test.sh"; then

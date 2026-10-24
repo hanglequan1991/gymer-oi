@@ -309,6 +309,8 @@ jobs:
                 ;;
             esac
           fi
+          # Chặn URL/khóa Supabase rỗng hoặc sai khi đẩy lên Zalo. Không in giá trị.
+          bash scripts/ci/check-supabase-env.sh "$ZALO_MODE"
           # Chặn khóa bí mật Supabase lọt vào bundle (mọi mode). Không in giá trị khóa.
           node -e '
             const k = (process.env.VITE_SUPABASE_ANON_KEY || "").trim();
