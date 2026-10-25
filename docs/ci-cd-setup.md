@@ -254,6 +254,7 @@ Pipeline không tự tạo các mục dưới đây. Không dán giá trị bí 
 - Trường hợp này xảy ra khi một run đang giữ group (ví dụ đang chờ duyệt `migrate`). Mặc định `ZALO_PUSH_MODE=check` nên hậu quả hiện tại thấp (chỉ build và kiểm, không upload).
 - Khắc phục: sau khi thấy run bị hủy do hàng đợi, chạy Actions > Deploy > Run workflow với `zalo_mode=check` để chắc bản hiện tại được xử lý. Từ bậc 4 trở đi có thể dùng `deploy-dev`. Dispatch luôn coi `has_app=true`, nên không bị bỏ qua.
 - Bước build của job `zalo` (`.github/workflows/deploy.yml`) từ chối `VITE_SUPABASE_ANON_KEY` nếu có tiền tố `sb_secret_` hoặc là JWT có `role=service_role`. Thông báo lỗi không in giá trị khoá. Giới hạn: không bắt được khoá bí mật ở dạng khác.
+- Ở chế độ `deploy-dev` và `deploy-testing`, bước build còn từ chối nếu `VITE_SUPABASE_URL` rỗng hoặc không bắt đầu bằng `https://`, hoặc `VITE_SUPABASE_ANON_KEY` rỗng (`scripts/ci/check-supabase-env.sh`). Chế độ `check` và `login-only` không bị ảnh hưởng.
 
 ## 9. Checklist sau khi cấu hình
 

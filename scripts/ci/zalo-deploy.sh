@@ -265,7 +265,8 @@ DEPLOY_ARGS+=(-o dist -m "$DESC")
 
 unset ZMP_TOKEN
 set +e
-timeout --kill-after=10 900 env -u ZMP_ACCESS_TOKEN -u ZMP_TOKEN "$ZMP_CLI_BIN" "${DEPLOY_ARGS[@]}" \
+# APP_ID truyền qua env (không qua argv, không có token): không phụ thuộc vào .env do login ghi.
+timeout --kill-after=10 900 env -u ZMP_ACCESS_TOKEN -u ZMP_TOKEN APP_ID="$ZMP_APP_ID" "$ZMP_CLI_BIN" "${DEPLOY_ARGS[@]}" \
   >"$LOG_DIR/deploy.log" 2>&1 </dev/null
 DEPLOY_RC=$?
 set -e
