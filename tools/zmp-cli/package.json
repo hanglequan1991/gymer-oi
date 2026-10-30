@@ -5,6 +5,6 @@
   "description": "Công cụ zmp-cli được pin để dùng trong CI deploy Zalo Mini App. Cài riêng, không dùng lockfile của app.",
   "license": "UNLICENSED",
   "dependencies": {
-    "zmp-cli": "4.0.3"
+    "zmp-cli": "4.0.5"
   }
 }
