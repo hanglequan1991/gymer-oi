@@ -18,7 +18,7 @@
     "react-dom": "18.3.1",
     "zmp-sdk": "2.53.0",
     "zmp-ui": "1.11.14",
-    "zustand": "5.0.15"
+    "zustand": "5.0.16"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
