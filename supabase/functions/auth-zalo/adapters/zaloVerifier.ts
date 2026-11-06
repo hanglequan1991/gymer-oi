@@ -87,6 +87,26 @@ export function createZaloVerifier(fetchFn: FetchFn, config: ZaloVerifierConfig)
 }
 
 /**
+ * Log chẩn đoán cho một nhánh UNAVAILABLE trong parseZaloMeText/extractRawId.
+ * Chỉ nhận nhãn cố định, không nhận nội dung phản hồi: không log token, secret, id, name, picture hay thân.
+ */
+function unavailable(branch: string, message: string): ZaloAuthError {
+  console.warn(`[auth-zalo] Phản hồi Zalo không hợp lệ: ${branch}`);
+  return new ZaloAuthError('UNAVAILABLE', message);
+}
+
+/**
+ * Dòng log cho mã lỗi Zalo ngoài ZALO_INVALID_TOKEN_CODES: mã số, và nếu `message` là chuỗi thì tối đa
+ * 100 ký tự đầu của nó (ký tự điều khiển, gồm xuống dòng, đổi thành dấu cách). Không log trường nào khác.
+ */
+function errorCodeLog(errorCode: number, message: unknown): string {
+  const base = `[auth-zalo] Zalo trả mã lỗi ${errorCode}`;
+  if (typeof message !== 'string') return base;
+  const cleaned = Array.from(message.replace(/[\x00-\x1f\x7f]/g, ' ')).slice(0, 100).join('');
+  return `${base}: ${cleaned}`;
+}
+
+/**
  * Đọc thân phản hồi /v2.0/me dạng text. Chỉ tin các trường id, name, picture.
  *
  * - `error` vắng mặt/null/0: thành công. `error` trong ZALO_INVALID_TOKEN_CODES: INVALID_TOKEN.
@@ -102,21 +122,22 @@ export function parseZaloMeText(text: string): ZaloUser {
   try {
     parsed = JSON.parse(text);
   } catch {
-    throw new ZaloAuthError('UNAVAILABLE', 'Phản hồi Zalo không đọc được.');
+    throw unavailable('thân không phải JSON', 'Phản hồi Zalo không đọc được.');
   }
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-    throw new ZaloAuthError('UNAVAILABLE', 'Phản hồi Zalo sai định dạng.');
+    throw unavailable('thân không phải object', 'Phản hồi Zalo sai định dạng.');
   }
   const obj = parsed as Record<string, unknown>;
 
   const errorCode = readErrorCode(obj.error);
   if (errorCode === undefined) {
-    throw new ZaloAuthError('UNAVAILABLE', 'Phản hồi Zalo có mã lỗi không đọc được.');
+    throw unavailable('trường error không đọc được', 'Phản hồi Zalo có mã lỗi không đọc được.');
   }
   if (errorCode !== 0) {
     if (ZALO_INVALID_TOKEN_CODES.includes(errorCode)) {
       throw new ZaloAuthError('INVALID_TOKEN', 'Token Zalo không hợp lệ.');
     }
+    console.warn(errorCodeLog(errorCode, obj.message));
     throw new ZaloAuthError('UNAVAILABLE', 'Zalo trả lỗi tạm thời.');
   }
 
@@ -142,22 +163,25 @@ function readErrorCode(raw: unknown): number | undefined {
  */
 function extractRawId(text: string, jsonId: unknown): string {
   const keyCount = (text.match(/"id"\s*:/g) ?? []).length;
-  if (keyCount !== 1) {
-    throw new ZaloAuthError('UNAVAILABLE', 'Phản hồi Zalo thiếu id hoặc có nhiều id.');
+  if (keyCount === 0) {
+    throw unavailable('thiếu khoá id', 'Phản hồi Zalo thiếu id hoặc có nhiều id.');
+  }
+  if (keyCount > 1) {
+    throw unavailable('có nhiều khoá id', 'Phản hồi Zalo thiếu id hoặc có nhiều id.');
   }
   const match = /"id"\s*:\s*("?)(\d{1,40})\1\s*[,}]/.exec(text);
   if (match === null) {
-    throw new ZaloAuthError('UNAVAILABLE', 'Phản hồi Zalo có id không hợp lệ.');
+    throw unavailable('id không phải chuỗi chữ số hợp lệ', 'Phản hồi Zalo có id không hợp lệ.');
   }
   const digits = match[2];
   if (typeof jsonId === 'string') {
-    if (jsonId !== digits) throw new ZaloAuthError('UNAVAILABLE', 'Phản hồi Zalo có id không hợp lệ.');
+    if (jsonId !== digits) throw unavailable('id trong JSON không khớp văn bản gốc', 'Phản hồi Zalo có id không hợp lệ.');
   } else if (typeof jsonId === 'number') {
     if (Number.isSafeInteger(jsonId) && String(jsonId) !== digits) {
-      throw new ZaloAuthError('UNAVAILABLE', 'Phản hồi Zalo có id không hợp lệ.');
+      throw unavailable('id số không khớp văn bản gốc', 'Phản hồi Zalo có id không hợp lệ.');
     }
   } else {
-    throw new ZaloAuthError('UNAVAILABLE', 'Phản hồi Zalo thiếu id.');
+    throw unavailable('id có kiểu không hợp lệ', 'Phản hồi Zalo thiếu id.');
   }
   return digits;
 }
