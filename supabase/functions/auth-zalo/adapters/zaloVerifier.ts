@@ -5,7 +5,11 @@ import type { ZaloUser, ZaloVerifier } from '../ports.ts';
 
 // S1: endpoint và tên header là giả thuyết của plan (docs/spikes/s1-auth-zalo.md), chưa kiểm với Zalo thật.
 export const ZALO_ME_ENDPOINT = 'https://graph.zalo.me/v2.0/me';
-const ZALO_ME_FIELDS = 'id,name,picture';
+// Chỉ xin `id`. Xin `name`/`picture` khiến Zalo trả mã -501 "Personal information is limited due to
+// IP address not inside Vietnam" khi edge function chạy ngoài Việt Nam (Seoul). Tên và ảnh do app lấy
+// từ getUserInfo trên điện thoại (zmpAuth.getProfile), không lấy từ đây. Parser vẫn nhận name/picture
+// nếu Zalo có trả, nhưng không yêu cầu chúng.
+const ZALO_ME_FIELDS = 'id';
 const DEFAULT_TIMEOUT_MS = 8000;
 
 /**

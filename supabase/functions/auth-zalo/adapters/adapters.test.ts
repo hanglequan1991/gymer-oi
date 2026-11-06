@@ -127,11 +127,33 @@ describe('createZaloVerifier', () => {
 
     expect(user).toEqual({ zaloId: '1001', name: 'An', avatarUrl: 'https://a/b.png' });
     expect(calls).toHaveLength(1);
-    expect(calls[0].url).toBe('https://graph.zalo.me/v2.0/me?fields=id,name,picture');
+    expect(calls[0].url).toBe('https://graph.zalo.me/v2.0/me?fields=id');
     const headers = calls[0].init?.headers as Record<string, string>;
     expect(headers.access_token).toBe(TOKEN);
     expect(headers.secret_key).toBe(APP_SECRET);
     expect(JSON.stringify(user)).not.toContain(TOKEN);
+  });
+
+  it('chỉ xin fields=id: URL không chứa name hay picture (tránh mã -501 ngoài Việt Nam)', async () => {
+    const calls: string[] = [];
+    const verifier = createZaloVerifier(async (url) => {
+      calls.push(url);
+      return jsonResponse(200, { error: 0, id: '1001' });
+    }, {});
+    await verifier.verify(TOKEN);
+
+    const query = new URL(calls[0]).searchParams.get('fields');
+    expect(query).toBe('id');
+    expect(calls[0]).not.toContain('name');
+    expect(calls[0]).not.toContain('picture');
+  });
+
+  it('phản hồi chỉ có id thì ra user hợp lệ với name rỗng và không có avatarUrl', async () => {
+    const verifier = createZaloVerifier(async () => new Response('{"id":"123"}', { status: 200 }), {});
+    const user = await verifier.verify(TOKEN);
+
+    expect(user).toEqual({ zaloId: '123', name: '' });
+    expect(user).not.toHaveProperty('avatarUrl');
   });
 
   it.each([400, 401, 403])('HTTP %i là UNAVAILABLE (không suy ra token sai từ status), log status và không log token', async (status) => {
