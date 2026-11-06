@@ -3,12 +3,9 @@
 # Thứ tự các job CD: changes -> plan-migrate -> migrate -> functions -> zalo.
 name: Deploy
 
+# Trigger push đã tắt ngày 2026-11-06 theo quyết định bỏ CI/CD, deploy thủ công.
+# Muốn bật lại thì thêm lại `push: branches: [main]` (kèm paths-ignore cho docs/ và *.md).
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
   # Chạy lại có chủ đích (ví dụ sau khi sửa lỗi, hoặc để kiểm checklist khi chưa có commit ngoài docs).
   # zalo_mode mặc định none: không chạy job zalo, giữ nguyên hành vi dispatch cũ (chạy lại migrate/functions).
   workflow_dispatch:

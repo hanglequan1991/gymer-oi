@@ -1,10 +1,10 @@
-# CI dùng chung: chạy trên pull_request và được gọi từ deploy.yml qua workflow_call
-# (deploy.yml gọi CI trên mỗi push vào main, nên workflow này không tự lắng nghe push).
+# CI dùng chung: chỉ được gọi từ deploy.yml qua workflow_call.
+# Trigger pull_request đã tắt ngày 2026-11-06 theo quyết định bỏ CI/CD, deploy thủ công.
+# Muốn bật lại thì thêm lại `pull_request:` vào khối `on:` bên dưới.
 # Không dùng secrets; build dùng VITE_DATA_SOURCE=mock.
 name: CI
 
 on:
-  pull_request:
   workflow_call:
 
 # Quyền tối thiểu. Workflow được gọi qua workflow_call không vượt quyền của caller.
