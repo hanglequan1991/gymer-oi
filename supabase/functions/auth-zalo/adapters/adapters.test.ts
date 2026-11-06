@@ -318,6 +318,58 @@ function fakeAdmin(opts: { ops: string[]; createdId?: string; createError?: DbEr
   };
 }
 
+describe('log chẩn đoán của ZaloVerifier', () => {
+  it('HTTP 200 kèm error = -123 vẫn là UNAVAILABLE; log có mã -123 và message, không có token hay secret', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const verifier = createZaloVerifier(async () => jsonResponse(200, { error: -123, message: 'abc' }), { appSecret: APP_SECRET });
+      const err = await catchError(verifier.verify(TOKEN));
+      expect(err).toBeInstanceOf(ZaloAuthError);
+      expect((err as ZaloAuthError).code).toBe('UNAVAILABLE');
+      const logged = warn.mock.calls.map((c) => c.map((a) => String(a)).join(' '));
+      expect(logged.some((l) => l.includes('-123'))).toBe(true);
+      expect(logged.some((l) => l.includes('abc'))).toBe(true);
+      for (const line of logged) {
+        expect(line).not.toContain(TOKEN);
+        expect(line).not.toContain(APP_SECRET);
+      }
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it('message dài bị cắt còn 100 ký tự; xuống dòng đổi thành dấu cách', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      expect(codeOf(() => parseZaloMeText(JSON.stringify({ error: -5, message: 'a'.repeat(150) })))).toBe('UNAVAILABLE');
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(String(warn.mock.calls[0][0])).toBe(`[auth-zalo] Zalo trả mã lỗi -5: ${'a'.repeat(100)}`);
+
+      warn.mockClear();
+      expect(codeOf(() => parseZaloMeText(JSON.stringify({ error: -6, message: 'x\ny' })))).toBe('UNAVAILABLE');
+      expect(String(warn.mock.calls[0][0])).toBe('[auth-zalo] Zalo trả mã lỗi -6: x y');
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it('nhiều khoá id: log nhãn nhánh, không log id hay name trong thân', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const body = '{"error":0,"id":"111222333444","data":{"id":"555666777888"},"name":"Tên Riêng"}';
+      expect(codeOf(() => parseZaloMeText(body))).toBe('UNAVAILABLE');
+      expect(warn).toHaveBeenCalledTimes(1);
+      const logged = String(warn.mock.calls[0][0]);
+      expect(logged).toContain('[auth-zalo]');
+      expect(logged).not.toContain('111222333444');
+      expect(logged).not.toContain('555666777888');
+      expect(logged).not.toContain('Tên Riêng');
+    } finally {
+      warn.mockRestore();
+    }
+  });
+});
+
 describe('createUserStore', () => {
   it('findUserIdByZaloId trả null khi chưa có và user_id khi đã có', async () => {
     const ops: string[] = [];
